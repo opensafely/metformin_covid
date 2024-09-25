@@ -32,23 +32,22 @@ from codelists import *
 ## variable helper functions 
 from variable_helper_functions import *
 
-## json and pathlib (for the dates)
+## json (for the dates)
 import json
-from pathlib import Path
 
 # numpy for random seed - and set random seed
 import numpy as np 
 np.random.seed(1928374) # random seed
 
 ## datetime function
-#from datetime import date ## needed?
+from datetime import date ## needed?
 
 #######################################################################################
 # DEFINE the dates: Import study dates defined in "study-dates.R" and exported to JSON
 #######################################################################################
-study_dates = json.loads(
-    Path("output/study_dates.json").read_text(),
-)
+with open("output/study_dates.json") as f:
+  study_dates = json.load(f)
+
 studystart_date = study_dates["studystart_date"]
 studyend_date = study_dates["studyend_date"]
 
