@@ -47,9 +47,8 @@ np.random.seed(1928374) # random seed
 # DEFINE the dates: Import study dates defined in "study-dates.R" and exported to JSON
 #######################################################################################
 study_dates = json.loads(
-    Path("analysis/design/study-dates.json").read_text(),
+    Path("output/study_dates.json").read_text(),
 )
-# Change these in ./lib/design/study-dates.R if necessary
 studystart_date = study_dates["studystart_date"]
 studyend_date = study_dates["studyend_date"]
 
@@ -340,11 +339,11 @@ dataset.cov_bin_hosp_baseline = (
 )
 
 ## Metformin use at baseline, defined as receiving a metformin prescription up until 6 months prior to baseline date (assuming half-yearly prescription for stable diabetes across GPs in the UK)
-dataset.cov_bin_metfin_before_baseline = last_matching_med_dmd_between(metformin_codes, (baseline_date - days(183)), baseline_date).exists_for_patient() # https://www.opencodelists.org/codelist/user/john-tazare/metformin-dmd/48e43356/ / # Calculated from 1 year = 365.25 days, taking into account leap years. 
-dataset.cov_date_metfin_before_baseline = last_matching_med_dmd_between(metformin_codes, (baseline_date - days(183)), baseline_date).date
+dataset.cov_bin_metfin_before_baseline = last_matching_med_dmd_between(metformin_codes_dmd, (baseline_date - days(183)), baseline_date).exists_for_patient() # https://www.opencodelists.org/codelist/user/john-tazare/metformin-dmd/48e43356/ / # Calculated from 1 year = 365.25 days, taking into account leap years. 
+dataset.cov_date_metfin_before_baseline = last_matching_med_dmd_between(metformin_codes_dmd, (baseline_date - days(183)), baseline_date).date
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.cov_bin_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy, baseline_date).exists_for_patient() 
+dataset.cov_bin_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_dmd, baseline_date).exists_for_patient() 
 
 ## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
 dataset.cov_bin_ckd_45 = (
@@ -354,17 +353,17 @@ dataset.cov_bin_ckd_45 = (
 
 ## Advance decompensated liver cirrhosis, on or before baseline
 dataset.cov_bin_liver_cirrhosis = (
-    last_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_codes + ascitic_drainage_snomed_codes, baseline_date).exists_for_patient() |
-    last_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10_codes, baseline_date).exists_for_patient()
+    last_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, baseline_date).exists_for_patient() |
+    last_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, baseline_date).exists_for_patient()
 )
 
 ## Use of the following medications in the last 14 days (drug-drug interaction with metformin)
-dataset.cov_bin_metfin_interaction = last_matching_med_dmd_between(metformin_interaction_codes, (baseline_date - days(14)), baseline_date).exists_for_patient()
-dataset.cov_date_metfin_interaction = last_matching_med_dmd_between(metformin_interaction_codes, (baseline_date - days(14)), baseline_date).date
+dataset.cov_bin_metfin_interaction = last_matching_med_dmd_between(metformin_interaction_dmd, (baseline_date - days(14)), baseline_date).exists_for_patient()
+dataset.cov_date_metfin_interaction = last_matching_med_dmd_between(metformin_interaction_dmd, (baseline_date - days(14)), baseline_date).date
 
 ## Prior Long COVID diagnosis, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-dataset.cov_bin_long_covid = last_matching_event_clinical_snomed_before(long_covid_diagnostic_codes + long_covid_referral_codes + long_covid_assessment_codes, baseline_date).exists_for_patient()
-dataset.cov_date_long_covid = last_matching_event_clinical_snomed_before(long_covid_diagnostic_codes + long_covid_referral_codes + long_covid_assessment_codes, baseline_date).date
+dataset.cov_bin_long_covid = last_matching_event_clinical_snomed_before(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date).exists_for_patient()
+dataset.cov_date_long_covid = last_matching_event_clinical_snomed_before(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date).date
 
 
 
@@ -586,15 +585,15 @@ dataset.cov_bin_healthcare_worker = (
 # INTERVENTION/EXPOSURE variables
 #######################################################################################
 # METFORMIN, based on codelist https://www.opencodelists.org/codelist/user/john-tazare/metformin-dmd/48e43356/
-dataset.exp_date_first_metfin = first_matching_med_dmd_between(metformin_codes, baseline_date, studyend_date).date 
+dataset.exp_date_first_metfin = first_matching_med_dmd_between(metformin_codes_dmd, baseline_date, studyend_date).date 
 dataset.exp_count_metfin = (
     medications.where(
-        medications.dmd_code.is_in(metformin_codes))
+        medications.dmd_code.is_in(metformin_codes_dmd))
         .where(medications.date.is_on_or_after(baseline_date))
         .count_for_patient()
 )
 # we will code the treatment window in R, but to compare
-dataset.exp_bin_10d_metfin = first_matching_med_dmd_between(metformin_codes, baseline_date, baseline_date + days(10)).exists_for_patient()
+dataset.exp_bin_10d_metfin = first_matching_med_dmd_between(metformin_codes_dmd, baseline_date, baseline_date + days(10)).exists_for_patient()
 
 
 #######################################################################################
@@ -648,13 +647,13 @@ dataset.out_date_covid19 = minimum_of(tmp_out_date_covid19_primary_care, tmp_out
 
 
 ## Long COVID, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-out_bin_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_codes + long_covid_referral_codes + long_covid_assessment_codes, baseline_date, studyend_date).exists_for_patient()
+out_bin_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
 dataset.out_bin_long_covid = out_bin_long_covid
-dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_codes + long_covid_referral_codes + long_covid_assessment_codes, baseline_date, studyend_date).date
+dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).date
 # Any viral fatigue code in primary care after baseline date
-out_bin_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_codes, baseline_date, studyend_date).exists_for_patient()
+out_bin_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
 dataset.out_bin_viral_fatigue = out_bin_viral_fatigue
-dataset.out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_codes, baseline_date, studyend_date).date
+dataset.out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).date
 # combined
 dataset.out_bin_long_fatigue = out_bin_long_covid | out_bin_viral_fatigue
 

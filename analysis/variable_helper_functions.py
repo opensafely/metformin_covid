@@ -9,7 +9,8 @@ from ehrql.tables.tpp import (
     clinical_events, 
     medications, 
     ons_deaths,
-    emergency_care_attendances
+    emergency_care_attendances,
+    patients
 )
 from ehrql import days # for BMI function
 from ehrql.codes import CTV3Code # for BMI function
@@ -19,7 +20,6 @@ import operator
 from functools import reduce
 def any_of(conditions):
     return reduce(operator.or_, conditions)
-from ehrql.tables import tpp as schema
 
 ### ANY HISTORY of ... (including baseline_date)
 ## In PRIMARY CARE
@@ -78,7 +78,7 @@ def last_matching_event_ec_snomed_before(codelist, baseline_date, where=True):
         for column_name in ([f"diagnosis_{i:02d}" for i in range(1, 25)])
     ]
     return(
-        emergency_care_attendances.where()
+        emergency_care_attendances.where(where)
         .where(any_of(conditions))
         .where(emergency_care_attendances.arrival_date.is_before(baseline_date))
         .sort_by(emergency_care_attendances.arrival_date)
@@ -155,7 +155,7 @@ def last_matching_event_ec_snomed_between(codelist, start_date, baseline_date, w
         for column_name in ([f"diagnosis_{i:02d}" for i in range(1, 25)])
     ]
     return(
-        emergency_care_attendances.where()
+        emergency_care_attendances.where(where)
         .where(any_of(conditions))
         .where(emergency_care_attendances.arrival_date.is_on_or_between(start_date, baseline_date))
         .sort_by(emergency_care_attendances.arrival_date)
@@ -285,8 +285,7 @@ def cause_of_death_matches(codelist):
 
 ### BMI calculation
 def most_recent_bmi(*, minimum_age_at_measurement, where=True):
-    clinical_events = schema.clinical_events
-    age_threshold = schema.patients.date_of_birth + days(
+    age_threshold = patients.date_of_birth + days(
         # This is obviously inexact but, given that the dates of birth are rounded to
         # the first of the month anyway, there's no point trying to be more accurate
         int(365.25 * minimum_age_at_measurement)
