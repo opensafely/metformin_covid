@@ -1,22 +1,15 @@
 ################################################################################
-# A custom made function to process the extracted data incl. application of diabetes algorithm
+# A custom made function to process the extracted data incl. application of the diabetes algorithm
 # Based on and Credits to https://github.com/opensafely/pax-non-users/tree/2dbf044472efdcfeb86f8fc2c8eea222e7eefe32
 # diabetes_algorithm.R based on and Credits to https://github.com/opensafely/post-covid-diabetes/tree/main
 ################################################################################
 
-# Question: Drop unnecessary variables after diabetes algorithm application?
-
 # load libraries
 library(forcats)
 # load custom user functions
-source(here::here("lib", "functions", "fct_case_when.R"))
+source(here::here("analysis", "data_import", "functions", "fct_case_when.R"))
 source(here::here("analysis", "data_import", "functions", "diabetes_algorithm.R"))
 source(here::here("analysis", "data_import", "functions", "define_status_and_fu_primary.R"))
-# source(here::here("analysis", "data_import", "functions", "define_status_and_fu_all.R"))
-# source(here::here("analysis", "data_import", "functions", "add_kidney_vars_to_data.R"))
-# source(here::here("analysis", "data_import", "functions", "define_covid_hosp_admissions.R"))
-# source(here::here("analysis", "data_import", "functions", "define_allcause_hosp_admissions.R"))
-# source(here::here("analysis", "data_import", "functions", "define_allcause_hosp_diagnosis.R"))
 source(here::here("analysis", "data_import", "functions", "add_period_cuts.R"))
 
 # create function "process_data"

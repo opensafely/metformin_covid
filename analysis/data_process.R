@@ -2,12 +2,6 @@
 #
 # Processing data
 #
-# This script can be run via an action in project.yaml
-#
-# The output of this script is:
-# -./output/data/data_processed.rds
-# - ./output/data_properties/n_excluded.rds
-#
 ################################################################################
 
 ################################################################################
@@ -47,35 +41,6 @@ study_dates <-
 input_filename <- "dataset.arrow"
 data_extracted <- extract_data(input_filename)
 
-## dummy data issues?
-# data_extracted %>% # why are all the deaths only covid? Why no noncovid deaths?
-#   select(qa_date_of_death, out_bin_death_cause_covid) %>%
-#   View()
-# table(data_extracted$out_date_dereg) # why are there no dereg dates available?
-
-# # change data if run using dummy data
-# if(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")){
-#   data_extracted <-
-#     data_extracted %>%
-#     mutate(died_ons_covid_any_date =
-#              if_else(!is.na(death_date), death_date, died_ons_covid_any_date),
-#            death_date =
-#              if_else(!is.na(died_ons_covid_any_date), died_ons_covid_any_date, death_date),
-#            date_treated = if_else(!is.na(date_treated),
-#                                   covid_test_positive_date + runif(nrow(data_extracted), 0, 4) %>% round(),
-#                                   NA_Date_),
-#            paxlovid_covid_therapeutics = if_else(!is.na(paxlovid_covid_therapeutics),
-#                                                  date_treated,
-#                                                  NA_Date_),
-#            sotrovimab_covid_therapeutics = if_else(!is.na(sotrovimab_covid_therapeutics),
-#                                                    date_treated,
-#                                                    NA_Date_),
-#            molnupiravir_covid_therapeutics = if_else(!is.na(molnupiravir_covid_therapeutics),
-#                                                      date_treated,
-#                                                      NA_Date_)
-#     )
-# }
-
 ################################################################################
 # 2 Process data
 ################################################################################
@@ -85,32 +50,6 @@ data_processed <-
   map(.x = list(6, 7, 8, 9), # add additional longer grace periods besides the primary grace period 10 days (baseline_date + 9)
       .f = ~ process_data(data_extracted, study_dates, treat_window_days = .x))
 names(data_processed) <- c("grace7", "grace8", "grace9", "grace10")
-
-# currently all deaths are covid-related (see above) and deregistration date not available -> modify dummy data?
-# unique(data_processed_g10$out_date_death_28)
-# unique(data_processed_g10$out_date_noncovid_death) # no noncovid deaths
-# unique(data_processed_g10$out_date_covid_death)
-
-# data_processed_g10 %>% # why do some have a date of death before baseline dates and marked qa_bin_was_alive == TRUE? dummy data?
-#   select(patient_id, baseline_date, period_week, period_month, period_2month, period_3month, status_primary, fu_primary, qa_date_of_death, qa_bin_was_alive) %>%
-#   View()
-
-# # change data if run using dummy data
-# if(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")){
-#   data_processed <-
-#     map(.x = data_processed,
-#         .f = ~ .x %>% group_by(patient_id) %>%
-#           mutate(period_month = runif(1, 0, 12) %>% ceiling(),
-#                  period_2month = runif(1, 0, 6) %>% ceiling(),
-#                  period_3month = runif(1, 0, 4) %>% ceiling(),
-#                  period_week = runif(1, 0, 52) %>% ceiling(),
-#                  covid_test_positive_date = sample(seq(ymd("20220210"), ymd("20230209"), by = 1), 1),
-#                  tb_postest_vacc_cat = sample(c(">= 84 days or unknown", "< 7 days", "7-27 days", "28-83 days"), 1) %>%
-#                    factor(levels = c(">= 84 days or unknown", "< 7 days", "7-27 days", "28-83 days"))) %>%
-#           ungroup() %>%
-#           mutate(ageband = if_else(is.na(ageband), "18-39", ageband %>% as.character()) %>%
-#                    factor(levels = c("18-39", "40-59", "60-79", "80+"))))
-# }
 
 ################################################################################
 # 3 Apply quality assurance criteria
@@ -185,20 +124,6 @@ data_processed <-
         filter(cov_bin_metfin_interaction == FALSE) %>%
         filter(cov_bin_long_covid == FALSE)
   )
-
-# why are some periods (at the end) NA? Double-check!
-# data_processed$grace10 %>%
-#   select(patient_id, baseline_date, period_week, period_month, period_2month, period_3month, status_primary, fu_primary, qa_date_of_death, qa_bin_was_alive) %>%
-#   View()
-
-# # contraindications
-# n_excluded_contraindicated <- calc_n_excluded_contraindicated(data_processed$grace10)
-# data_processed <-
-#   map(.x = data_processed,
-#       .f = ~ .x %>% add_contraindicated_indicator())
-# data_processed_excl_contraindicated  <-
-#   map(.x = data_processed,
-#       .f = ~ .x %>% filter(contraindicated == FALSE))
 
 ################################################################################
 # 5 Apply treatment window
