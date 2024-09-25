@@ -1,3 +1,706 @@
 {
-  "files": {}
+  "files": {
+    "user-RochelleKnight-prostate_cancer_snomed.csv": {
+      "id": "user/RochelleKnight/prostate_cancer_snomed/0437497e",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/prostate_cancer_snomed/0437497e/",
+      "downloaded_at": "2024-09-25 17:22:19.336864Z",
+      "sha": "7249bb62e32d2d60600b0d1e32562f23bd92c6aa"
+    },
+    "user-RochelleKnight-prostate_cancer_icd10.csv": {
+      "id": "user/RochelleKnight/prostate_cancer_icd10/6b27d648",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/prostate_cancer_icd10/6b27d648/",
+      "downloaded_at": "2024-09-25 17:22:19.491989Z",
+      "sha": "fc1791f84b1195fc21df000d3300015b1ff7d1ec"
+    },
+    "user-RochelleKnight-pregnancy_and_birth_snomed.csv": {
+      "id": "user/RochelleKnight/pregnancy_and_birth_snomed/1d46bcb3",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/pregnancy_and_birth_snomed/1d46bcb3/",
+      "downloaded_at": "2024-09-25 17:22:19.687739Z",
+      "sha": "3dec4001ddd33ddaf16ce92ec450c2206880ec40"
+    },
+    "user-elsie_horne-cocp_dmd.csv": {
+      "id": "user/elsie_horne/cocp_dmd/1666a7a3",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/cocp_dmd/1666a7a3/",
+      "downloaded_at": "2024-09-25 17:22:19.869573Z",
+      "sha": "ace0cce9a466e05dc0ad302be50275d0121908b2"
+    },
+    "user-elsie_horne-hrt_dmd.csv": {
+      "id": "user/elsie_horne/hrt_dmd/19196799",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/hrt_dmd/19196799/",
+      "downloaded_at": "2024-09-25 17:22:20.052154Z",
+      "sha": "95dde1e61efe8ee6af3358e9640bf139c0c1c9d9"
+    },
+    "opensafely-covid-identification-in-primary-care-probable-covid-positive-test.csv": {
+      "id": "opensafely/covid-identification-in-primary-care-probable-covid-positive-test/2020-07-16",
+      "url": "https://www.opencodelists.org/codelist/opensafely/covid-identification-in-primary-care-probable-covid-positive-test/2020-07-16/",
+      "downloaded_at": "2024-09-25 17:22:20.218952Z",
+      "sha": "563b536aaf850da011233653e91e10030a5bc15f"
+    },
+    "opensafely-covid-identification-in-primary-care-probable-covid-clinical-code.csv": {
+      "id": "opensafely/covid-identification-in-primary-care-probable-covid-clinical-code/2020-07-16",
+      "url": "https://www.opencodelists.org/codelist/opensafely/covid-identification-in-primary-care-probable-covid-clinical-code/2020-07-16/",
+      "downloaded_at": "2024-09-25 17:22:20.407924Z",
+      "sha": "5de38f993b166d6ef97c6ea822635317a6c7ae85"
+    },
+    "opensafely-covid-identification-in-primary-care-probable-covid-sequelae.csv": {
+      "id": "opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16",
+      "url": "https://www.opencodelists.org/codelist/opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16/",
+      "downloaded_at": "2024-09-25 17:22:20.602262Z",
+      "sha": "38dc0c0a34e2b8b376ba72819923f442c30b4946"
+    },
+    "user-RochelleKnight-confirmed-hospitalised-covid-19.csv": {
+      "id": "user/RochelleKnight/confirmed-hospitalised-covid-19/1f0d2526",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/confirmed-hospitalised-covid-19/1f0d2526/",
+      "downloaded_at": "2024-09-25 17:22:20.918491Z",
+      "sha": "7b472652a66eed89b0495a2cf43cf6e894451cb8"
+    },
+    "opensafely-ethnicity.csv": {
+      "id": "opensafely/ethnicity/2020-04-27",
+      "url": "https://www.opencodelists.org/codelist/opensafely/ethnicity/2020-04-27/",
+      "downloaded_at": "2024-09-25 17:22:21.061673Z",
+      "sha": "3d2f3998b71863a80b24d60f6f4282e14191ae13"
+    },
+    "primis-covid19-vacc-uptake-eth2001.csv": {
+      "id": "primis-covid19-vacc-uptake/eth2001/v1",
+      "url": "https://www.opencodelists.org/codelist/primis-covid19-vacc-uptake/eth2001/v1/",
+      "downloaded_at": "2024-09-25 17:22:21.231572Z",
+      "sha": "2ff9aea91a05f41fe911a885eee50d2494247d58"
+    },
+    "user-hjforbes-type-1-diabetes.csv": {
+      "id": "user/hjforbes/type-1-diabetes/674fbd7a",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/type-1-diabetes/674fbd7a/",
+      "downloaded_at": "2024-09-25 17:22:21.451134Z",
+      "sha": "54a7772024e03c2129cb0c0c7ba77944eacd054a"
+    },
+    "user-hjforbes-type-2-diabetes.csv": {
+      "id": "user/hjforbes/type-2-diabetes/3530d710",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/type-2-diabetes/3530d710/",
+      "downloaded_at": "2024-09-25 17:22:21.647784Z",
+      "sha": "08421a5b1e92d07e47cbab2e12ecd71856cee98a"
+    },
+    "user-hjforbes-other-or-nonspecific-diabetes.csv": {
+      "id": "user/hjforbes/other-or-nonspecific-diabetes/0311f0a6",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/other-or-nonspecific-diabetes/0311f0a6/",
+      "downloaded_at": "2024-09-25 17:22:21.853535Z",
+      "sha": "1461877af2c069504535089d669e830616629f67"
+    },
+    "user-hjforbes-gestational-diabetes.csv": {
+      "id": "user/hjforbes/gestational-diabetes/1ed423d1",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/gestational-diabetes/1ed423d1/",
+      "downloaded_at": "2024-09-25 17:22:22.200852Z",
+      "sha": "4298a4affa79a1f04130cf5c630892a25819292c"
+    },
+    "opensafely-type-1-diabetes-secondary-care.csv": {
+      "id": "opensafely/type-1-diabetes-secondary-care/2020-09-27",
+      "url": "https://www.opencodelists.org/codelist/opensafely/type-1-diabetes-secondary-care/2020-09-27/",
+      "downloaded_at": "2024-09-25 17:22:22.465677Z",
+      "sha": "e51303ce0e7eb6ac9e0d1763bd23e49b0f273429"
+    },
+    "user-r_denholm-type-2-diabetes-secondary-care-bristol.csv": {
+      "id": "user/r_denholm/type-2-diabetes-secondary-care-bristol/0b7f6cd4",
+      "url": "https://www.opencodelists.org/codelist/user/r_denholm/type-2-diabetes-secondary-care-bristol/0b7f6cd4/",
+      "downloaded_at": "2024-09-25 17:22:22.652800Z",
+      "sha": "64dfc55f964cd811b59f0d142d661e1ad1b26f29"
+    },
+    "user-hjforbes-nondiagnostic-diabetes-codes.csv": {
+      "id": "user/hjforbes/nondiagnostic-diabetes-codes/50f30a3b",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/nondiagnostic-diabetes-codes/50f30a3b/",
+      "downloaded_at": "2024-09-25 17:22:22.995641Z",
+      "sha": "3b3bd24a816d04aeaaad93495d8c04772a12672f"
+    },
+    "opensafely-insulin-medication.csv": {
+      "id": "opensafely/insulin-medication/2020-04-26",
+      "url": "https://www.opencodelists.org/codelist/opensafely/insulin-medication/2020-04-26/",
+      "downloaded_at": "2024-09-25 17:22:23.166219Z",
+      "sha": "e0be9fcdb96da316ff672893b99f727ad4495364"
+    },
+    "opensafely-antidiabetic-drugs.csv": {
+      "id": "opensafely/antidiabetic-drugs/2020-07-16",
+      "url": "https://www.opencodelists.org/codelist/opensafely/antidiabetic-drugs/2020-07-16/",
+      "downloaded_at": "2024-09-25 17:22:23.341747Z",
+      "sha": "821d163d926e12fc6bd07fc78187f2756e1c221f"
+    },
+    "user-r_denholm-non-metformin-antidiabetic-drugs_bristol.csv": {
+      "id": "user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58",
+      "url": "https://www.opencodelists.org/codelist/user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58/",
+      "downloaded_at": "2024-09-25 17:22:23.513535Z",
+      "sha": "1ac45646e6612579a38b3eff64524c72d150c6f1"
+    },
+    "user-alainamstutz-hba1c-bristol.csv": {
+      "id": "user/alainamstutz/hba1c-bristol/7482c0c7",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/hba1c-bristol/7482c0c7/",
+      "downloaded_at": "2024-09-25 17:22:23.686321Z",
+      "sha": "cd4f06e53ae5eb4c8e16f8f0c0911a417aeba94a"
+    },
+    "opensafely-prediabetes-snomed.csv": {
+      "id": "opensafely/prediabetes-snomed/6bdbb7dd",
+      "url": "https://www.opencodelists.org/codelist/opensafely/prediabetes-snomed/6bdbb7dd/",
+      "downloaded_at": "2024-09-25 17:22:23.853512Z",
+      "sha": "a52da34bd7178717df884211fca799db460a6b43"
+    },
+    "user-john-tazare-metformin-dmd.csv": {
+      "id": "user/john-tazare/metformin-dmd/48e43356",
+      "url": "https://www.opencodelists.org/codelist/user/john-tazare/metformin-dmd/48e43356/",
+      "downloaded_at": "2024-09-25 17:22:24.009415Z",
+      "sha": "ff4159659a614591714f21b6c6c5ed2a9bc66259"
+    },
+    "user-alainamstutz-metformin-intolerance-bristol.csv": {
+      "id": "user/alainamstutz/metformin-intolerance-bristol/5af86d52",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/metformin-intolerance-bristol/5af86d52/",
+      "downloaded_at": "2024-09-25 17:22:24.187334Z",
+      "sha": "3073335629d2ab79a0a86f556c309654f873cf07"
+    },
+    "nhsd-primary-care-domain-refsets-ckdatrisk1_cod.csv": {
+      "id": "nhsd-primary-care-domain-refsets/ckdatrisk1_cod/08a67d83",
+      "url": "https://www.opencodelists.org/codelist/nhsd-primary-care-domain-refsets/ckdatrisk1_cod/08a67d83/",
+      "downloaded_at": "2024-09-25 17:22:24.386779Z",
+      "sha": "7da4477498d4e5e1439d83bf000b6a2f9c55f2bd"
+    },
+    "user-alainamstutz-metformin-drug-drug-interaction-bristol-dmd.csv": {
+      "id": "user/alainamstutz/metformin-drug-drug-interaction-bristol-dmd/76baa07d",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/metformin-drug-drug-interaction-bristol-dmd/76baa07d/",
+      "downloaded_at": "2024-09-25 17:22:24.580082Z",
+      "sha": "f60e92b6f1318b30f11d0e7662e9e551074033ab"
+    },
+    "opensafely-nice-managing-the-long-term-effects-of-covid-19.csv": {
+      "id": "opensafely/nice-managing-the-long-term-effects-of-covid-19/64f1ae69",
+      "url": "https://www.opencodelists.org/codelist/opensafely/nice-managing-the-long-term-effects-of-covid-19/64f1ae69/",
+      "downloaded_at": "2024-09-25 17:22:24.747505Z",
+      "sha": "8ba3006b5e3d054bbc6ed1861d08fdc682a52a31"
+    },
+    "opensafely-referral-and-signposting-for-long-covid.csv": {
+      "id": "opensafely/referral-and-signposting-for-long-covid/12d06dc0",
+      "url": "https://www.opencodelists.org/codelist/opensafely/referral-and-signposting-for-long-covid/12d06dc0/",
+      "downloaded_at": "2024-09-25 17:22:24.914700Z",
+      "sha": "4574b35cc14eee04bd149d0226f1dae0dfadcb3e"
+    },
+    "opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv": {
+      "id": "opensafely/assessment-instruments-and-outcome-measures-for-long-covid/79c0fa8a",
+      "url": "https://www.opencodelists.org/codelist/opensafely/assessment-instruments-and-outcome-measures-for-long-covid/79c0fa8a/",
+      "downloaded_at": "2024-09-25 17:22:25.138831Z",
+      "sha": "f09228d28e9a43ea823b4570e7d82ff3714a0010"
+    },
+    "user-alex-walker-post-viral-syndrome.csv": {
+      "id": "user/alex-walker/post-viral-syndrome/70708fd6",
+      "url": "https://www.opencodelists.org/codelist/user/alex-walker/post-viral-syndrome/70708fd6/",
+      "downloaded_at": "2024-09-25 17:22:25.357118Z",
+      "sha": "d6a2a1eb1cb88fb84af69d57146192e20b8f1eb1"
+    },
+    "opensafely-condition-advanced-decompensated-cirrhosis-of-the-liver.csv": {
+      "id": "opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver/071038cf",
+      "url": "https://www.opencodelists.org/codelist/opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver/071038cf/",
+      "downloaded_at": "2024-09-25 17:22:25.562914Z",
+      "sha": "cc91d2287dc30a4417140d1d2960dea6eecd61dc"
+    },
+    "opensafely-condition-advanced-decompensated-cirrhosis-of-the-liver-and-associated-conditions-icd-10.csv": {
+      "id": "opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver-and-associated-conditions-icd-10/00e40554",
+      "url": "https://www.opencodelists.org/codelist/opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver-and-associated-conditions-icd-10/00e40554/",
+      "downloaded_at": "2024-09-25 17:22:25.752307Z",
+      "sha": "d0b25cdc87dd1916e6b9e038456d25e8c28cd811"
+    },
+    "opensafely-procedure-ascitic-drainage.csv": {
+      "id": "opensafely/procedure-ascitic-drainage/39388836",
+      "url": "https://www.opencodelists.org/codelist/opensafely/procedure-ascitic-drainage/39388836/",
+      "downloaded_at": "2024-09-25 17:22:25.944018Z",
+      "sha": "ca7b31e702e404f0d8aa2e48aa12f244d197e4dc"
+    },
+    "opensafely-smoking-clear.csv": {
+      "id": "opensafely/smoking-clear/2020-04-29",
+      "url": "https://www.opencodelists.org/codelist/opensafely/smoking-clear/2020-04-29/",
+      "downloaded_at": "2024-09-25 17:22:26.137936Z",
+      "sha": "0b5f3afe1db96dcce5141220e893a42ba2e5a8f7"
+    },
+    "user-alainamstutz-ever-smoking-bristol.csv": {
+      "id": "user/alainamstutz/ever-smoking-bristol/00731978",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/ever-smoking-bristol/00731978/",
+      "downloaded_at": "2024-09-25 17:22:26.324243Z",
+      "sha": "c3e7edc73c29dd335433274151560fc4c5df91b8"
+    },
+    "primis-covid19-vacc-uptake-longres.csv": {
+      "id": "primis-covid19-vacc-uptake/longres/v1",
+      "url": "https://www.opencodelists.org/codelist/primis-covid19-vacc-uptake/longres/v1/",
+      "downloaded_at": "2024-09-25 17:22:26.494299Z",
+      "sha": "4d4c94b9c6aa267c6a60657150bbc5ec7d2d7625"
+    },
+    "user-elsie_horne-bmi_obesity_snomed.csv": {
+      "id": "user/elsie_horne/bmi_obesity_snomed/0764e9b4",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/bmi_obesity_snomed/0764e9b4/",
+      "downloaded_at": "2024-09-25 17:22:26.691315Z",
+      "sha": "18926afcb4bc165e7709a17c89735b2c03b81005"
+    },
+    "user-elsie_horne-bmi_obesity_icd10.csv": {
+      "id": "user/elsie_horne/bmi_obesity_icd10/6e55767e",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/bmi_obesity_icd10/6e55767e/",
+      "downloaded_at": "2024-09-25 17:22:26.872703Z",
+      "sha": "9235bab1c2f3b5581dd34431839db55f3d3bdb59"
+    },
+    "user-elsie_horne-ami_snomed.csv": {
+      "id": "user/elsie_horne/ami_snomed/36d11028",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/ami_snomed/36d11028/",
+      "downloaded_at": "2024-09-25 17:22:27.129010Z",
+      "sha": "37aef412e1075e06cb5da738e5ba31fc214e432d"
+    },
+    "user-elsie_horne-ami_prior_icd10.csv": {
+      "id": "user/elsie_horne/ami_prior_icd10/360a5c99",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/ami_prior_icd10/360a5c99/",
+      "downloaded_at": "2024-09-25 17:22:27.330617Z",
+      "sha": "7ca20f7f5d9db9133b839a1c4edb297c64046997"
+    },
+    "user-RochelleKnight-ami_icd10.csv": {
+      "id": "user/RochelleKnight/ami_icd10/3dea268d",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/ami_icd10/3dea268d/",
+      "downloaded_at": "2024-09-25 17:22:27.511302Z",
+      "sha": "5152287e39c99ceed1fee19ac5a742b66f2bb3de"
+    },
+    "user-RochelleKnight-stroke_isch_icd10.csv": {
+      "id": "user/RochelleKnight/stroke_isch_icd10/278d734e",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/stroke_isch_icd10/278d734e/",
+      "downloaded_at": "2024-09-25 17:22:27.716032Z",
+      "sha": "a4564a582dabdb385a2caf6bb6a24e4bfcaf92dc"
+    },
+    "user-RochelleKnight-stroke_sah_hs_icd10.csv": {
+      "id": "user/RochelleKnight/stroke_sah_hs_icd10/0e7e0019",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/stroke_sah_hs_icd10/0e7e0019/",
+      "downloaded_at": "2024-09-25 17:22:27.905145Z",
+      "sha": "5b89d97b42ad643add51f045c847728a61d0c91e"
+    },
+    "user-elsie_horne-stroke_isch_snomed.csv": {
+      "id": "user/elsie_horne/stroke_isch_snomed/1cfae964",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/stroke_isch_snomed/1cfae964/",
+      "downloaded_at": "2024-09-25 17:22:28.142223Z",
+      "sha": "76b915a793f91c4675796295f217e74e2f467bae"
+    },
+    "user-elsie_horne-stroke_sah_hs_snomed.csv": {
+      "id": "user/elsie_horne/stroke_sah_hs_snomed/6adc02f9",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/stroke_sah_hs_snomed/6adc02f9/",
+      "downloaded_at": "2024-09-25 17:22:28.331693Z",
+      "sha": "581ddc923d2711c3c48251f88cd0c40bced047c8"
+    },
+    "user-elsie_horne-other_arterial_embolism_icd10.csv": {
+      "id": "user/elsie_horne/other_arterial_embolism_icd10/463adc5d",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/other_arterial_embolism_icd10/463adc5d/",
+      "downloaded_at": "2024-09-25 17:22:28.513439Z",
+      "sha": "1400d26dcbdabfd0920bc61da9e39a66e111e19d"
+    },
+    "user-tomsrenin-other_art_embol.csv": {
+      "id": "user/tomsrenin/other_art_embol/3838d352",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/other_art_embol/3838d352/",
+      "downloaded_at": "2024-09-25 17:22:28.722189Z",
+      "sha": "ab665e36ad2bfd73aea38579fcaab2451f2aff46"
+    },
+    "user-tomsrenin-pvt.csv": {
+      "id": "user/tomsrenin/pvt/51484687",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/pvt/51484687/",
+      "downloaded_at": "2024-09-25 17:22:28.921678Z",
+      "sha": "1cc8fc446e9c757f979df44f63e0d4003e3bb0a5"
+    },
+    "user-tomsrenin-dvt_main.csv": {
+      "id": "user/tomsrenin/dvt_main/1c76a027",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/dvt_main/1c76a027/",
+      "downloaded_at": "2024-09-25 17:22:29.147747Z",
+      "sha": "b4a6e2f5d708f146211e9478d218745c9de5d327"
+    },
+    "user-tomsrenin-dvt_icvt.csv": {
+      "id": "user/tomsrenin/dvt_icvt/03672cf2",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/dvt_icvt/03672cf2/",
+      "downloaded_at": "2024-09-25 17:22:29.335571Z",
+      "sha": "71e9f95fda4718e9b06fa754aa0903381736924c"
+    },
+    "user-tomsrenin-dvt-preg.csv": {
+      "id": "user/tomsrenin/dvt-preg/6a57b9bc",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/dvt-preg/6a57b9bc/",
+      "downloaded_at": "2024-09-25 17:22:29.535960Z",
+      "sha": "abe3398410f2a4a195f9cedd6a07bf7139a24c11"
+    },
+    "user-tomsrenin-dvt-other.csv": {
+      "id": "user/tomsrenin/dvt-other/1f29601d",
+      "url": "https://www.opencodelists.org/codelist/user/tomsrenin/dvt-other/1f29601d/",
+      "downloaded_at": "2024-09-25 17:22:29.740203Z",
+      "sha": "fcf9ebe14d0240fdc30ee45f7de1fe2503d85bd5"
+    },
+    "user-elsie_horne-pe_snomed.csv": {
+      "id": "user/elsie_horne/pe_snomed/6d8ec2ef",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/pe_snomed/6d8ec2ef/",
+      "downloaded_at": "2024-09-25 17:22:29.954593Z",
+      "sha": "bb1ca6e3f59d4a136fba0bdfd6c9760a317b9434"
+    },
+    "user-elsie_horne-portal_vein_thrombosis_icd10.csv": {
+      "id": "user/elsie_horne/portal_vein_thrombosis_icd10/22606950",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/portal_vein_thrombosis_icd10/22606950/",
+      "downloaded_at": "2024-09-25 17:22:30.156665Z",
+      "sha": "68ab66c54a622d81330d8cb718422fa4554e1560"
+    },
+    "user-RochelleKnight-dvt_dvt_icd10.csv": {
+      "id": "user/RochelleKnight/dvt_dvt_icd10/24dab358",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/dvt_dvt_icd10/24dab358/",
+      "downloaded_at": "2024-09-25 17:22:30.356662Z",
+      "sha": "a58107609d45a2400d985a7f45ba03ea218a3a31"
+    },
+    "user-elsie_horne-dvt_icvt_icd10.csv": {
+      "id": "user/elsie_horne/dvt_icvt_icd10/30a4dcad",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dvt_icvt_icd10/30a4dcad/",
+      "downloaded_at": "2024-09-25 17:22:30.550414Z",
+      "sha": "5c1f4d677b9411b6b52d5da8d9c234baf45d0d02"
+    },
+    "user-elsie_horne-dvt_pregnancy_icd10.csv": {
+      "id": "user/elsie_horne/dvt_pregnancy_icd10/6576830d",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dvt_pregnancy_icd10/6576830d/",
+      "downloaded_at": "2024-09-25 17:22:30.769038Z",
+      "sha": "9d329a04c29cb4bbe16e7685c8e8b223e3d1eef1"
+    },
+    "user-elsie_horne-other_dvt_icd10.csv": {
+      "id": "user/elsie_horne/other_dvt_icd10/547f4fba",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/other_dvt_icd10/547f4fba/",
+      "downloaded_at": "2024-09-25 17:22:30.962952Z",
+      "sha": "c3d8dbfd49282af699396b8996c9d46d74e8723d"
+    },
+    "user-elsie_horne-icvt_pregnancy_icd10.csv": {
+      "id": "user/elsie_horne/icvt_pregnancy_icd10/3b6fdc85",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/icvt_pregnancy_icd10/3b6fdc85/",
+      "downloaded_at": "2024-09-25 17:22:31.189435Z",
+      "sha": "5549985dd9f06c465df3a32f935a60d5578c1835"
+    },
+    "user-RochelleKnight-pe_icd10.csv": {
+      "id": "user/RochelleKnight/pe_icd10/59ac59b8",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/pe_icd10/59ac59b8/",
+      "downloaded_at": "2024-09-25 17:22:31.365916Z",
+      "sha": "066b79182d212664aff52aa293ba048295499eb9"
+    },
+    "user-elsie_horne-hf_snomed.csv": {
+      "id": "user/elsie_horne/hf_snomed/33579ca3",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/hf_snomed/33579ca3/",
+      "downloaded_at": "2024-09-25 17:22:31.570298Z",
+      "sha": "1ec565133002e86008e9f7b77dc3582bf2a9eb6f"
+    },
+    "user-RochelleKnight-hf_icd10.csv": {
+      "id": "user/RochelleKnight/hf_icd10/72bbcced",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/hf_icd10/72bbcced/",
+      "downloaded_at": "2024-09-25 17:22:31.756845Z",
+      "sha": "6b98f3f1c343f87e39de5b9b0f6d6f805a3fdd3d"
+    },
+    "user-hjforbes-angina_snomed.csv": {
+      "id": "user/hjforbes/angina_snomed/52df16a2",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/angina_snomed/52df16a2/",
+      "downloaded_at": "2024-09-25 17:22:31.944494Z",
+      "sha": "a3898f852193d02a74604d9d2d4a2535b8262a8c"
+    },
+    "user-RochelleKnight-angina_icd10.csv": {
+      "id": "user/RochelleKnight/angina_icd10/756e8ce3",
+      "url": "https://www.opencodelists.org/codelist/user/RochelleKnight/angina_icd10/756e8ce3/",
+      "downloaded_at": "2024-09-25 17:22:32.138984Z",
+      "sha": "ac68628572a80c270f36bc9c2744e83c1cb2f3a6"
+    },
+    "user-elsie_horne-dementia_snomed.csv": {
+      "id": "user/elsie_horne/dementia_snomed/7bd3364c",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dementia_snomed/7bd3364c/",
+      "downloaded_at": "2024-09-25 17:22:32.392796Z",
+      "sha": "aaf3c972001fc48fa32a2030e4996d4ce7ca5012"
+    },
+    "user-elsie_horne-dementia_icd10.csv": {
+      "id": "user/elsie_horne/dementia_icd10/2df21cb7",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dementia_icd10/2df21cb7/",
+      "downloaded_at": "2024-09-25 17:22:32.587859Z",
+      "sha": "d22eb43caf43b93fc2e9a431fc3f3b91d9e73c3c"
+    },
+    "user-elsie_horne-dementia_vascular_icd10.csv": {
+      "id": "user/elsie_horne/dementia_vascular_icd10/27c5e93c",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dementia_vascular_icd10/27c5e93c/",
+      "downloaded_at": "2024-09-25 17:22:32.790185Z",
+      "sha": "af55dec671d26621f1a8c01c9b002b096eed27ce"
+    },
+    "user-elsie_horne-dementia_vascular_snomed.csv": {
+      "id": "user/elsie_horne/dementia_vascular_snomed/0eb67607",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/dementia_vascular_snomed/0eb67607/",
+      "downloaded_at": "2024-09-25 17:22:32.978429Z",
+      "sha": "47a67ea3a18239dbdff6c0f514ea81fe6d2d1bec"
+    },
+    "user-elsie_horne-cancer_snomed.csv": {
+      "id": "user/elsie_horne/cancer_snomed/23271cdf",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/cancer_snomed/23271cdf/",
+      "downloaded_at": "2024-09-25 17:22:33.475187Z",
+      "sha": "d058582fe371bdf49fb60a829e255163c57bcaba"
+    },
+    "user-elsie_horne-cancer_icd10.csv": {
+      "id": "user/elsie_horne/cancer_icd10/55460349",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/cancer_icd10/55460349/",
+      "downloaded_at": "2024-09-25 17:22:33.682267Z",
+      "sha": "e7d60dcd0d942c6db6095390c5befcf623cb4b36"
+    },
+    "nhsd-primary-care-domain-refsets-hyp_cod.csv": {
+      "id": "nhsd-primary-care-domain-refsets/hyp_cod/20210127",
+      "url": "https://www.opencodelists.org/codelist/nhsd-primary-care-domain-refsets/hyp_cod/20210127/",
+      "downloaded_at": "2024-09-25 17:22:33.888893Z",
+      "sha": "2c1fb493d94ce1610482d575ef14c35bd09e47c1"
+    },
+    "user-elsie_horne-hypertension_icd10.csv": {
+      "id": "user/elsie_horne/hypertension_icd10/1a48296e",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/hypertension_icd10/1a48296e/",
+      "downloaded_at": "2024-09-25 17:22:34.069561Z",
+      "sha": "196b2688d715a5265757642853d94f824741f783"
+    },
+    "user-elsie_horne-hypertension_drugs_dmd.csv": {
+      "id": "user/elsie_horne/hypertension_drugs_dmd/0009f464",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/hypertension_drugs_dmd/0009f464/",
+      "downloaded_at": "2024-09-25 17:22:34.292468Z",
+      "sha": "9d97d2f8dd93c7942db9463b4e5e300a5ec35a85"
+    },
+    "user-hjforbes-depression-symptoms-and-diagnoses.csv": {
+      "id": "user/hjforbes/depression-symptoms-and-diagnoses/499814eb",
+      "url": "https://www.opencodelists.org/codelist/user/hjforbes/depression-symptoms-and-diagnoses/499814eb/",
+      "downloaded_at": "2024-09-25 17:22:34.507320Z",
+      "sha": "fb7d78483687797b51f106137a809c0e469ca6c0"
+    },
+    "user-kurttaylor-depression_icd10.csv": {
+      "id": "user/kurttaylor/depression_icd10/4dc56a05",
+      "url": "https://www.opencodelists.org/codelist/user/kurttaylor/depression_icd10/4dc56a05/",
+      "downloaded_at": "2024-09-25 17:22:34.711511Z",
+      "sha": "ae1ab7bb89c1636e7f582b9cb2a164221b1b1f46"
+    },
+    "user-elsie_horne-depression_icd10.csv": {
+      "id": "user/elsie_horne/depression_icd10/116935fd",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/depression_icd10/116935fd/",
+      "downloaded_at": "2024-09-25 17:22:34.893257Z",
+      "sha": "3453d912aa7f2d43a3b58a388c54204eea44daa2"
+    },
+    "user-elsie_horne-depression_snomed.csv": {
+      "id": "user/elsie_horne/depression_snomed/7859c2c7",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/depression_snomed/7859c2c7/",
+      "downloaded_at": "2024-09-25 17:22:35.114352Z",
+      "sha": "7715294e5c7b5d11f10fd359679abd79d351257f"
+    },
+    "user-elsie_horne-copd_snomed.csv": {
+      "id": "user/elsie_horne/copd_snomed/419c1000",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/copd_snomed/419c1000/",
+      "downloaded_at": "2024-09-25 17:22:35.377353Z",
+      "sha": "8621c69b3c52fd62b4ed4811411037eb9a2c9bb1"
+    },
+    "user-elsie_horne-copd_icd10.csv": {
+      "id": "user/elsie_horne/copd_icd10/5aab8335",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/copd_icd10/5aab8335/",
+      "downloaded_at": "2024-09-25 17:22:35.541480Z",
+      "sha": "06a1624b3719e3185010fa65aa7322d9176f914c"
+    },
+    "user-elsie_horne-liver_disease_icd10.csv": {
+      "id": "user/elsie_horne/liver_disease_icd10/75a702d1",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/liver_disease_icd10/75a702d1/",
+      "downloaded_at": "2024-09-25 17:22:35.727496Z",
+      "sha": "0ad936ee6779893439a3e1fa042cdeeead7504ca"
+    },
+    "user-elsie_horne-liver_disease_snomed.csv": {
+      "id": "user/elsie_horne/liver_disease_snomed/5c978f9c",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/liver_disease_snomed/5c978f9c/",
+      "downloaded_at": "2024-09-25 17:22:35.946772Z",
+      "sha": "1126b645b1e22440f513a66cc2cf91a20d7177ad"
+    },
+    "user-elsie_horne-ckd_snomed.csv": {
+      "id": "user/elsie_horne/ckd_snomed/25d9dcd5",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/ckd_snomed/25d9dcd5/",
+      "downloaded_at": "2024-09-25 17:22:36.183112Z",
+      "sha": "bff2f324ff0a1569ce7709903fd6a67b6ee5334d"
+    },
+    "user-elsie_horne-ckd_icd10.csv": {
+      "id": "user/elsie_horne/ckd_icd10/0cca69a0",
+      "url": "https://www.opencodelists.org/codelist/user/elsie_horne/ckd_icd10/0cca69a0/",
+      "downloaded_at": "2024-09-25 17:22:36.364740Z",
+      "sha": "f31feab84ee380583be736e0122aae653af0ba30"
+    },
+    "user-alainamstutz-gestational-diabetes-icd10-bristol.csv": {
+      "id": "user/alainamstutz/gestational-diabetes-icd10-bristol/474e7a09",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/gestational-diabetes-icd10-bristol/474e7a09/",
+      "downloaded_at": "2024-09-25 17:22:36.560942Z",
+      "sha": "f5252471f672989c537156c1dcf3a8ffaae6215d"
+    },
+    "user-alainamstutz-pcos-bristol.csv": {
+      "id": "user/alainamstutz/pcos-bristol/796d6073",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/pcos-bristol/796d6073/",
+      "downloaded_at": "2024-09-25 17:22:36.740219Z",
+      "sha": "e71383b9929c60748cf5c135d56ee47045cdaa6e"
+    },
+    "user-alainamstutz-pcos-icd10-bristol.csv": {
+      "id": "user/alainamstutz/pcos-icd10-bristol/605ded3e",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/pcos-icd10-bristol/605ded3e/",
+      "downloaded_at": "2024-09-25 17:22:36.944285Z",
+      "sha": "2f7dc386fda6333e52192d913eb9bed898df19c4"
+    },
+    "user-alainamstutz-diabetes-complications-bristol.csv": {
+      "id": "user/alainamstutz/diabetes-complications-bristol/33a486c0",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-complications-bristol/33a486c0/",
+      "downloaded_at": "2024-09-25 17:22:37.176323Z",
+      "sha": "bde887584170c74ff58ecc9c8a83a80b0b348036"
+    },
+    "user-alainamstutz-diabetes-complications-icd10-bristol.csv": {
+      "id": "user/alainamstutz/diabetes-complications-icd10-bristol/1a95138b",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-complications-icd10-bristol/1a95138b/",
+      "downloaded_at": "2024-09-25 17:22:37.354021Z",
+      "sha": "4d201ba4c8499adaa8ac34304f28f3b5e5f57931"
+    },
+    "opensafely-glycated-haemoglobin-hba1c-tests.csv": {
+      "id": "opensafely/glycated-haemoglobin-hba1c-tests/2ab11f20",
+      "url": "https://www.opencodelists.org/codelist/opensafely/glycated-haemoglobin-hba1c-tests/2ab11f20/",
+      "downloaded_at": "2024-09-25 17:22:37.536506Z",
+      "sha": "fb9a968b5644c14c570bf2b8708381600f4bd1f5"
+    },
+    "user-alainamstutz-ogtt-bristol.csv": {
+      "id": "user/alainamstutz/ogtt-bristol/0185a056",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/ogtt-bristol/0185a056/",
+      "downloaded_at": "2024-09-25 17:22:37.701643Z",
+      "sha": "0afde2aca2402c8202929a7382d1d17a4f6e575c"
+    },
+    "opensafely-cholesterol-tests-numerical-value.csv": {
+      "id": "opensafely/cholesterol-tests-numerical-value/7e3a22f3",
+      "url": "https://www.opencodelists.org/codelist/opensafely/cholesterol-tests-numerical-value/7e3a22f3/",
+      "downloaded_at": "2024-09-25 17:22:37.889362Z",
+      "sha": "4e90c401f67eca3a3aa716edea013340a6164f44"
+    },
+    "bristol-hdl-cholesterol.csv": {
+      "id": "bristol/hdl-cholesterol/64775990",
+      "url": "https://www.opencodelists.org/codelist/bristol/hdl-cholesterol/64775990/",
+      "downloaded_at": "2024-09-25 17:22:38.098712Z",
+      "sha": "ce9f10f91453a33d5de195b7d02656bf11782760"
+    },
+    "opensafely-covid-identification.csv": {
+      "id": "opensafely/covid-identification/2020-06-03",
+      "url": "https://www.opencodelists.org/codelist/opensafely/covid-identification/2020-06-03/",
+      "downloaded_at": "2024-09-25 17:22:38.274109Z",
+      "sha": "124db6929439379b7dacd55ba26ae4f2ed9370bc"
+    },
+    "opensafely-direct-acting-oral-anticoagulants-doac.csv": {
+      "id": "opensafely/direct-acting-oral-anticoagulants-doac/2020-10-05",
+      "url": "https://www.opencodelists.org/codelist/opensafely/direct-acting-oral-anticoagulants-doac/2020-10-05/",
+      "downloaded_at": "2024-09-25 17:22:38.583991Z",
+      "sha": "9c310c5b9ceb4211aa33eb97b09033405735a922"
+    },
+    "opensafely-aplastic-anaemia.csv": {
+      "id": "opensafely/aplastic-anaemia/2020-04-24",
+      "url": "https://www.opencodelists.org/codelist/opensafely/aplastic-anaemia/2020-04-24/",
+      "downloaded_at": "2024-09-25 17:22:38.775316Z",
+      "sha": "bd34ff54f789dce031e3581006cc0befcee0b35c"
+    },
+    "opensafely-asplenia.csv": {
+      "id": "opensafely/asplenia/2020-06-02",
+      "url": "https://www.opencodelists.org/codelist/opensafely/asplenia/2020-06-02/",
+      "downloaded_at": "2024-09-25 17:22:38.945000Z",
+      "sha": "7599ea87a8f3d9d92389a728966d3077b00ac828"
+    },
+    "opensafely-asthma-diagnosis.csv": {
+      "id": "opensafely/asthma-diagnosis/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/asthma-diagnosis/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:39.156775Z",
+      "sha": "722a6ba77a1289a0941cfaa7ce0b9fa32c836f3c"
+    },
+    "opensafely-asthma-inhaler-salbutamol-medication.csv": {
+      "id": "opensafely/asthma-inhaler-salbutamol-medication/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/asthma-inhaler-salbutamol-medication/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:39.353039Z",
+      "sha": "1938865a29f7db8993532aba4d0cde68117c643b"
+    },
+    "opensafely-asthma-inhaler-steroid-medication.csv": {
+      "id": "opensafely/asthma-inhaler-steroid-medication/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/asthma-inhaler-steroid-medication/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:39.546787Z",
+      "sha": "4228da7a16336f633432039249e0665cecb0bec3"
+    },
+    "opensafely-cancer-excluding-lung-and-haematological.csv": {
+      "id": "opensafely/cancer-excluding-lung-and-haematological/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/cancer-excluding-lung-and-haematological/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:39.790688Z",
+      "sha": "8fa1164b587028c4bd5903289e0948642d399e56"
+    },
+    "opensafely-chronic-cardiac-disease.csv": {
+      "id": "opensafely/chronic-cardiac-disease/2020-04-08",
+      "url": "https://www.opencodelists.org/codelist/opensafely/chronic-cardiac-disease/2020-04-08/",
+      "downloaded_at": "2024-09-25 17:22:40.003967Z",
+      "sha": "2267f6fada9c77a2bbf62ce7a1c07ddf48348d61"
+    },
+    "opensafely-chronic-liver-disease.csv": {
+      "id": "opensafely/chronic-liver-disease/2020-06-02",
+      "url": "https://www.opencodelists.org/codelist/opensafely/chronic-liver-disease/2020-06-02/",
+      "downloaded_at": "2024-09-25 17:22:40.196237Z",
+      "sha": "d31d212d23c5f0e15f63236d2106282fb070bd7c"
+    },
+    "opensafely-chronic-respiratory-disease.csv": {
+      "id": "opensafely/chronic-respiratory-disease/2020-04-10",
+      "url": "https://www.opencodelists.org/codelist/opensafely/chronic-respiratory-disease/2020-04-10/",
+      "downloaded_at": "2024-09-25 17:22:40.399983Z",
+      "sha": "77946d9b844f348daf5c8c9e81346b9776d13998"
+    },
+    "opensafely-dementia.csv": {
+      "id": "opensafely/dementia/2020-04-22",
+      "url": "https://www.opencodelists.org/codelist/opensafely/dementia/2020-04-22/",
+      "downloaded_at": "2024-09-25 17:22:40.571917Z",
+      "sha": "9d40ff3a5c2428af4651c765f2c418de3a3ad4b4"
+    },
+    "opensafely-haematological-cancer.csv": {
+      "id": "opensafely/haematological-cancer/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/haematological-cancer/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:40.813899Z",
+      "sha": "59d65c613a7b984ba46eca8a74eedcc6320609fe"
+    },
+    "opensafely-hiv.csv": {
+      "id": "opensafely/hiv/2020-07-13",
+      "url": "https://www.opencodelists.org/codelist/opensafely/hiv/2020-07-13/",
+      "downloaded_at": "2024-09-25 17:22:40.986684Z",
+      "sha": "c36a629c306e57081f702c3f30671364e452a3ee"
+    },
+    "opensafely-lung-cancer.csv": {
+      "id": "opensafely/lung-cancer/2020-04-15",
+      "url": "https://www.opencodelists.org/codelist/opensafely/lung-cancer/2020-04-15/",
+      "downloaded_at": "2024-09-25 17:22:41.204413Z",
+      "sha": "645584a20f81c4d76187a2c305c904e8b8c63dbb"
+    },
+    "opensafely-other-neurological-conditions.csv": {
+      "id": "opensafely/other-neurological-conditions/2020-06-02",
+      "url": "https://www.opencodelists.org/codelist/opensafely/other-neurological-conditions/2020-06-02/",
+      "downloaded_at": "2024-09-25 17:22:41.391121Z",
+      "sha": "855e7e09a0500401ae2429c6a401978e8c9075ec"
+    },
+    "opensafely-permanent-immunosuppression.csv": {
+      "id": "opensafely/permanent-immunosuppression/2020-06-02",
+      "url": "https://www.opencodelists.org/codelist/opensafely/permanent-immunosuppression/2020-06-02/",
+      "downloaded_at": "2024-09-25 17:22:41.569428Z",
+      "sha": "15dd49a1cbc8b8e9f4a9e05bbcbeb45b4e03106e"
+    },
+    "opensafely-asthma-oral-prednisolone-medication.csv": {
+      "id": "opensafely/asthma-oral-prednisolone-medication/2020-04-27",
+      "url": "https://www.opencodelists.org/codelist/opensafely/asthma-oral-prednisolone-medication/2020-04-27/",
+      "downloaded_at": "2024-09-25 17:22:41.765208Z",
+      "sha": "05c7047b64ade549c42b565161a51f421d119c50"
+    },
+    "opensafely-ra-sle-psoriasis.csv": {
+      "id": "opensafely/ra-sle-psoriasis/2020-04-14",
+      "url": "https://www.opencodelists.org/codelist/opensafely/ra-sle-psoriasis/2020-04-14/",
+      "downloaded_at": "2024-09-25 17:22:41.966807Z",
+      "sha": "51e59c80348f3b45f7ce323683a1df7cdb673c0e"
+    },
+    "opensafely-sickle-cell-disease.csv": {
+      "id": "opensafely/sickle-cell-disease/2020-04-14",
+      "url": "https://www.opencodelists.org/codelist/opensafely/sickle-cell-disease/2020-04-14/",
+      "downloaded_at": "2024-09-25 17:22:42.178795Z",
+      "sha": "c30644d91b2c23e805f1ad6b723c30d1f4cc2191"
+    },
+    "opensafely-solid-organ-transplantation.csv": {
+      "id": "opensafely/solid-organ-transplantation/2020-04-10",
+      "url": "https://www.opencodelists.org/codelist/opensafely/solid-organ-transplantation/2020-04-10/",
+      "downloaded_at": "2024-09-25 17:22:42.389719Z",
+      "sha": "94178a9e19770b9c43c08fe42df6ab5ed0d9ec49"
+    },
+    "opensafely-temporary-immunosuppression.csv": {
+      "id": "opensafely/temporary-immunosuppression/2020-04-24",
+      "url": "https://www.opencodelists.org/codelist/opensafely/temporary-immunosuppression/2020-04-24/",
+      "downloaded_at": "2024-09-25 17:22:42.588569Z",
+      "sha": "99f6c0787e17e16430549a4cfb5084612faba2ac"
+    },
+    "opensafely-stroke-updated.csv": {
+      "id": "opensafely/stroke-updated/2020-06-02",
+      "url": "https://www.opencodelists.org/codelist/opensafely/stroke-updated/2020-06-02/",
+      "downloaded_at": "2024-09-25 17:22:42.796171Z",
+      "sha": "e62a8af49698022220de1e1e438d6b6c611e666e"
+    },
+    "opensafely-warfarin.csv": {
+      "id": "opensafely/warfarin/2020-10-05",
+      "url": "https://www.opencodelists.org/codelist/opensafely/warfarin/2020-10-05/",
+      "downloaded_at": "2024-09-25 17:22:43.014780Z",
+      "sha": "cff4844e5e96a3adca06ca1efbfd2aa3b35d0230"
+    }
+  }
 }

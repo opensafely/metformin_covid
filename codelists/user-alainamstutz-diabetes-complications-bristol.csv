@@ -1,0 +1,363 @@
+code,term
+100631000000108,O/E - right eye background diabetic retinopathy
+100641000000104,O/E - left eye background diabetic retinopathy
+100651000000101,O/E - right eye preproliferative diabetic retinopathy
+100661000000103,O/E - left eye preproliferative diabetic retinopathy
+100671000000105,O/E - right eye proliferative diabetic retinopathy
+100681000000107,O/E - left eye proliferative diabetic retinopathy
+102261000000104,Seen in diabetic foot clinic
+102491000000106,Under care of diabetic foot screener
+102781000119107,Sensory neuropathy due to type 1 diabetes mellitus
+103981000119101,Proliferative retinopathy following surgery due to diabetes mellitus
+104941000119109,Ischemia of retina due to type 1 diabetes mellitus
+104961000119108,Ischemia of retina due to type 2 diabetes mellitus
+105521000000100,Under care of diabetic foot screener
+10656231000119100,Ulcer of skin of toe due to type 1 diabetes mellitus
+10656271000119102,Ulcer of skin of toe due to type 2 diabetes mellitus
+10660471000119109,Ulcer of left foot due to type 2 diabetes mellitus
+10661671000119102,Ulcer of right foot due to type 2 diabetes mellitus
+109171000119104,Retinal edema due to type 1 diabetes mellitus
+110181000119105,Peripheral sensory neuropathy due to type 2 diabetes mellitus
+1144894004,Peripheral autonomic neuropathy due to diabetes mellitus
+1231625008,Tractional retinal detachment due to proliferative diabetic retinopathy
+1231650006,Combined rhegmatogenous and tractional retinal detachment due to proliferative diabetic retinopathy
+1231691008,Vitreous hemorrhage due to proliferative diabetic retinopathy
+1231698002,Tractional retinal detachment with macula involvement due to proliferative diabetic retinopathy
+1259048007,Lesion of brachial plexus due to diabetes mellitus
+126534007,Mixed sensorimotor polyneuropathy due to diabetes mellitus
+126535008,Motor polyneuropathy due to diabetes mellitus
+127011001,Sensory neuropathy due to diabetes mellitus
+127013003,Disorder of kidney due to diabetes mellitus
+127991000119101,Hypertension concurrent and due to end stage renal disease on dialysis due to type 2 diabetes mellitus
+128001000119105,Hypertension concurrent and due to end stage renal disease on dialysis due to type 1 diabetes mellitus
+138881000119106,Mild nonproliferative retinopathy due to type 1 diabetes mellitus
+138891000119109,Moderate nonproliferative retinopathy due to type 1 diabetes mellitus
+138911000119106,Mild nonproliferative retinopathy due to type 2 diabetes mellitus
+138921000119104,Moderate nonproliferative retinopathy due to type 2 diabetes mellitus
+140101000119109,Hypertension in chronic kidney disease stage 5 due to type 2 diabetes mellitus
+140111000119107,Hypertension in chronic kidney disease stage 4 due to type 2 diabetes mellitus
+140121000119100,Hypertension in chronic kidney disease stage 3 due to type 2 diabetes mellitus
+140131000119102,Hypertension in chronic kidney disease stage 2 due to type 2 diabetes mellitus
+140381000119104,Neuropathic ulcer of toe due to type 2 diabetes mellitus
+140391000119101,Ulcer of toe due to type 2 diabetes mellitus
+140521000119107,Ischemic ulcer of foot due to type 2 diabetes mellitus
+140531000119105,Neuropathic ulcer of foot due to type 2 diabetes mellitus
+1501000119109,Proliferative retinopathy due to type 2 diabetes mellitus
+1511000119107,Peripheral neuropathy due to type 2 diabetes mellitus
+1521000119100,Ulcer of foot due to type 2 diabetes mellitus
+154678005,Diabetes + eye manifestation (& [cataract] or [retinopathy])
+154679002,Proliferative diabetic retinopathy
+154680004,Background diabetic retinopathy
+154681000,Preproliferative diabetic retinopathy
+154683002,Diabetes + neuropathy (& [amyotrophy])
+154686005,Acute painful diabetic neuropathy
+1551000119108,Nonproliferative retinopathy due to type 2 diabetes mellitus
+155107006,Diabetic retinopathy
+157141000119108,Proteinuria due to type 2 diabetes mellitus
+164881000119109,Ulcer of foot due to type 1 diabetes mellitus
+16697421000119103,Moderate nonproliferative retinopathy of left eye due to diabetes mellitus type 1
+16697471000119102,Moderate nonproliferative retinopathy of right eye due to diabetes mellitus type 1
+16697521000119104,Moderate nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
+167251000000103,O/E - right eye stable treated proliferative diabetic retinopathy
+167261000000100,O/E - left eye stable treated proliferative diabetic retinopathy
+167361000000109,O/E - right chronic diabetic foot ulcer
+167371000000102,O/E - left chronic diabetic foot ulcer
+16745051000119107,Nonproliferative retinopathy of right eye due to diabetes mellitus type 2
+16745131000119100,Nonproliferative retinopathy of left eye due to diabetes mellitus type 2
+16745211000119100,Nonproliferative retinopathy of left eye due to diabetes mellitus type 1
+16745411000119104,Mild nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
+16745531000119108,Mild nonproliferative retinopathy of left eye due to diabetes mellitus type 2
+16745611000119102,Mild nonproliferative retinopathy of right eye due to diabetes mellitus type 1
+16745651000119101,Mild nonproliferative retinopathy of right eye due to diabetes mellitus type 2
+16745891000119105,Mild nonproliferative retinopathy of left eye due to diabetes mellitus type 1
+16745931000119102,Mild nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 2
+16746131000119105,Moderate nonproliferative retinopathy of left eye due to diabetes mellitus type 2
+16746261000119108,Moderate nonproliferative retinopathy of right eye due to diabetes mellitus type 2
+16746341000119103,Moderate nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 2
+16746661000119106,Nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
+16746741000119102,Nonproliferative retinopathy of right eye due to diabetes mellitus type 1
+16746901000119101,Severe nonproliferative retinopathy of left eye due to diabetes mellitus type 2
+16746941000119104,Severe nonproliferative retinopathy of left eye due to diabetes mellitus type 1
+16747021000119109,Severe nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 2
+16747101000119101,Severe nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
+16747141000119104,Severe nonproliferative retinopathy of right eye due to diabetes mellitus type 2
+16747341000119101,Severe nonproliferative retinopathy of right eye due to diabetes mellitus type 1
+16747661000119109,Nonproliferative retinopathy of bilateral eyes due to diabetes mellitus type 2
+16747741000119100,Proliferative retinopathy of left eye due to diabetes mellitus type 1
+16747901000119104,Proliferative retinopathy of left eye due to diabetes mellitus type 2
+16748141000119100,Proliferative retinopathy of bilateral eyes due to diabetes mellitus type 2
+16748741000119101,Proliferative retinopathy of right eye due to diabetes mellitus type 1
+16749661000119102,Proliferative retinopathy of right eye due to diabetes mellitus type 2
+16749781000119101,Proliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
+16890881000119106,History of proliferative retinopathy due to diabetes mellitus
+16890921000119104,History of nonproliferative diabetic retinopathy
+171851000000104,O/E - right eye stable treated proliferative diabetic retinopathy
+171861000000101,O/E - left eye stable treated proliferative diabetic retinopathy
+171961000000107,O/E - right chronic diabetic foot ulcer
+171971000000100,O/E - left chronic diabetic foot ulcer
+1771691000000102,Ulcer of foot due to diabetes mellitus in remission
+1771701000000102,Ulcer of right foot due to diabetes mellitus in remission
+1771711000000100,Ulcer of left foot due to diabetes mellitus in remission
+18521000119106,Microalbuminuria due to type 1 diabetes mellitus
+186901000000105,O/E - sight threatening diabetic retinopathy
+190338009,Diabetes mellitus: [with renal manifestation] or [nephropathy]
+190341000000105,O/E - sight threatening diabetic retinopathy
+193141005,Mononeuritis multiplex due to diabetes mellitus
+193182005,Diabetic neuropathy &/or diabetic polyneuropathy
+193183000,Acute painful neuropathy due to diabetes mellitus
+193184006,Chronic painful neuropathy due to diabetes mellitus
+193185007,Asymptomatic neuropathy due to diabetes mellitus
+193349004,Preproliferative retinopathy due to diabetes mellitus
+193350004,Advanced maculopathy due to diabetes mellitus
+193353002,Diabetic retinopathy NOS
+19378003,Pseudotabes due to diabetes mellitus
+197605007,Nephrotic syndrome due to diabetes mellitus
+200687002,Cellulitis of foot due to diabetes mellitus
+201250006,Ischemic ulcer of foot due to diabetes mellitus
+201251005,Neuropathic ulcer of foot due to diabetes mellitus
+201252003,Mixed diabetic ulcer - foot
+201724008,Neuropathic arthropathy due to diabetes mellitus
+207023003,[D]Widespread diabetic foot gangrene
+230572002,Neuropathy due to diabetes mellitus
+230574001,Acute painful polyneuropathy due to diabetes mellitus
+230575000,Chronic painful polyneuropathy due to diabetes mellitus
+230576004,Asymmetric polyneuropathy due to diabetes mellitus
+230577008,Mononeuropathy due to diabetes mellitus
+230579006,Thoracic radiculopathy due to diabetes mellitus
+232019003,Visually threatening diabetic retinopathy
+232020009,Disorder of macula due to diabetes mellitus
+232021008,Proliferative retinopathy with optic disc neovascularization due to diabetes mellitus
+232022001,Proliferative retinopathy with neovascularization elsewhere than the optic disc due to diabetes mellitus
+232023006,Traction detachment of retina due to diabetes mellitus
+236499007,Microalbuminuric nephropathy due to diabetes mellitus
+236500003,Proteinuric nephropathy due to diabetes mellitus
+243421000119104,Proteinuria due to type 1 diabetes mellitus
+25412000,Microaneurysm of retinal artery due to diabetes mellitus
+267470000,Diabetes + nephropathy (& [Kimmelstiel-Wilson syndrome])
+267471001,Diabetes + eye manifestation (& [cataract] or [retinopathy])
+267472008,Diabetes + neuropathy (& [amyotrophy])
+267604001,Myasthenic syndrome due to diabetic mellitus
+280137006,Diabetic foot
+28331000119107,Retinal edema due to type 2 diabetes mellitus
+309426007,Glomerulopathy due to diabetes mellitus
+310387003,Intracapillary glomerulosclerosis of kidney due to diabetes mellitus
+311366001,Kimmelstiel-Wilson syndrome
+311782002,Advanced retinal disease due to diabetes mellitus
+312903003,Mild nonproliferative retinopathy due to diabetes mellitus
+312904009,Moderate nonproliferative retinopathy due to diabetes mellitus
+312905005,Severe nonproliferative retinopathy due to diabetes mellitus
+312906006,Non-high-risk proliferative retinopathy due to diabetes mellitus
+312907002,High risk proliferative retinopathy due to diabetes mellitus
+312908007,Quiescent proliferative retinopathy due to diabetes mellitus
+312909004,Proliferative retinopathy with iris neovascularization due to diabetes mellitus
+312912001,Macular edema due to diabetes mellitus
+314010006,Diffuse exudative maculopathy due to diabetes mellitus
+314011005,Focal exudative maculopathy due to diabetes mellitus
+314014002,Ischemic maculopathy due to diabetes mellitus
+314015001,Mixed maculopathy due to diabetes mellitus
+31411005,Background diabetic retinopathy
+314537004,Optic papillopathy due to diabetes mellitus
+325310006,Diabetic neuropathy treatment [no drugs here]
+35777006,Mononeuropathy multiplex due to diabetes mellitus
+359611005,Neuropathy with neurologic complication due to diabetes mellitus
+361216007,Femoral mononeuropathy due to diabetes mellitus
+368141000119106,Autonomic neuropathy due to drug induced diabetes mellitus
+368181000119101,Ulcer of foot due to drug induced diabetes mellitus
+368201000119100,Disorder of kidney due to drug induced diabetes mellitus
+368251000119101,Polyneuropathy due to drug induced diabetes mellitus
+368421000119108,Chronic kidney disease stage 1 due to drug induced diabetes mellitus
+368431000119106,Chronic kidney disease stage 2 due to drug induced diabetes mellitus
+368441000119102,Chronic kidney disease stage 3 due to drug induced diabetes mellitus
+368451000119100,Chronic kidney disease stage 4 due to drug induced diabetes mellitus
+368461000119103,Chronic kidney disease stage 5 due to drug induced diabetes mellitus
+368471000119109,End stage renal disease on dialysis due to drug induced diabetes mellitus
+368521000119107,Disorder of nerve co-occurrent and due to type 1 diabetes mellitus
+368581000119106,Neuropathy due to type 2 diabetes mellitus
+368711000119106,Mild nonproliferative retinopathy due to secondary diabetes mellitus
+368721000119104,Non-proliferative retinopathy due to secondary diabetes mellitus
+368741000119105,Moderate non-proliferative retinopathy due to secondary diabetes mellitus
+371087003,Ulcer of foot due to diabetes mellitus
+373041000000101,Impaired vision due to diabetic retinopathy
+38046004,Diffuse glomerulosclerosis of kidney due to diabetes mellitus
+38205001,Diarrhea due to diabetes mellitus
+39058009,Lumbosacral radiculoplexus neuropathy due to diabetes mellitus
+390718008,Non proliferative diabetic retinopathy
+390719000,Proliferative diabetic retinopathy - high risk
+390720006,High risk non proliferative diabetic retinopathy
+390834004,Nonproliferative retinopathy due to diabetes mellitus
+391178000,High risk non proliferative diabetic retinopathy
+39127005,Symmetric proximal motor neuropathy due to diabetes mellitus
+392797006,O/E - Right diabetic foot - ulcerated
+392801007,O/E - Left diabetic foot - ulcerated
+393751000,O/E - Right diabetic foot - ulcerated
+393755009,O/E - Left diabetic foot - ulcerated
+394673007,On examination - Right diabetic foot - ulcerated
+394674001,On examination - Left diabetic foot - ulcerated
+399862001,High risk proliferative retinopathy without macular edema due to diabetes mellitus
+399863006,Very severe nonproliferative retinopathy without macular edema due to diabetes mellitus
+399864000,Macular edema not clinically significant due to diabetes mellitus
+399865004,Very severe proliferative retinopathy due to diabetes mellitus
+399866003,Venous beading of retina due to diabetes mellitus
+399868002,Intraretinal microvascular anomaly due to diabetes mellitus
+399869005,High risk proliferative retinopathy not amenable to photocoagulation due to diabetes mellitus
+399870006,Non-high-risk proliferative retinopathy with no macular edema due to diabetes mellitus
+399871005,Visually threatening retinopathy due to diabetes mellitus
+399872003,Severe nonproliferative retinopathy with clinically significant macular edema due to diabetes mellitus
+399873008,Severe nonproliferative retinopathy without macular edema due to diabetes mellitus
+399874002,High risk proliferative retinopathy with clinically significant macula edema due to diabetes mellitus
+399875001,Non-high-risk proliferative retinopathy with clinically significant macular edema due to diabetes mellitus
+399876000,Very severe nonproliferative retinopathy due to diabetes mellitus
+399877009,Very severe nonproliferative retinopathy with clinically significant macular edema due to diabetes mellitus
+400914004,Early Treatment of Diabetic Retinopathy Study visual acuity chart
+408394009,Under care of diabetic foot screener
+408409007,On examination - right eye background diabetic retinopathy
+408410002,On examination - left eye background diabetic retinopathy
+408411003,On examination - right eye preproliferative diabetic retinopathy
+408412005,On examination - left eye preproliferative diabetic retinopathy
+408413000,On examination - right eye proliferative diabetic retinopathy
+408414006,On examination - left eye proliferative diabetic retinopathy
+414890007,On examination - left chronic diabetic foot ulcer
+414894003,On examination - left eye stable treated proliferative diabetic retinopathy
+414906009,On examination - right chronic diabetic foot ulcer
+414910007,On examination - right eye stable treated proliferative diabetic retinopathy
+417677008,On examination - sight threatening diabetic retinopathy
+420279001,Renal disorder due to type 2 diabetes mellitus
+420436000,Mononeuropathy due to type 2 diabetes mellitus
+420486006,Exudative maculopathy due to type 1 diabetes mellitus
+420514000,Persistent proteinuria due to type 1 diabetes mellitus
+420715001,Persistent microalbuminuria due to type 2 diabetes mellitus
+420789003,Retinopathy due to type 1 diabetes mellitus
+420918009,Mononeuropathy due to type 1 diabetes mellitus
+421305000,Persistent microalbuminuria due to type 1 diabetes mellitus
+421779007,Exudative maculopathy due to type 2 diabetes mellitus
+421893009,Renal disorder due to type 1 diabetes mellitus
+421986006,Persistent proteinuria due to type 2 diabetes mellitus
+422034002,Retinopathy due to type 2 diabetes mellitus
+424736006,Peripheral neuropathy due to diabetes mellitus
+425455002,Glomerulonephritis due to diabetes mellitus
+427027005,Lumbosacral radiculoplexus neuropathy due to type 2 diabetes mellitus
+427571000,Lumbosacral radiculoplexus neuropathy due to type 1 diabetes mellitus
+427943001,Ophthalmoplegia due to diabetes mellitus
+445170001,Macroalbuminuric nephropathy due to diabetes mellitus
+4855003,Retinopathy due to diabetes mellitus
+486761000000108,Impaired vision due to diabetic retinopathy 
+487331000000102,Impaired vision due to diabetic retinopathy 
+488181000000102,Impaired vision due to diabetic retinopathy 
+49455004,Polyneuropathy due to diabetes mellitus
+497741000000106,[D]Widespread diabetic foot gangrene
+50620007,Autonomic neuropathy due to diabetes mellitus
+59276001,Proliferative retinopathy due to diabetes mellitus
+60961000119107,Nonproliferative diabetic retinopathy due to type 1 diabetes mellitus
+60971000119101,Proliferative retinopathy due to type 1 diabetes mellitus
+620661000000106,Diabetic retinopathy NOS
+63510008,Nodular glomerulosclerosis of kidney due to diabetes mellitus
+706894000,Retinopathy due to unstable diabetes mellitus type 1
+707221002,Glomerulosclerosis of kidney due to diabetes mellitus
+711000119100,Chronic kidney disease stage 5 due to type 2 diabetes mellitus
+712882000,Autonomic neuropathy due to type 1 diabetes mellitus
+712883005,Autonomic neuropathy due to type 2 diabetes mellitus
+713702000,Gastroparesis due to type 1 diabetes mellitus
+713703005,Gastroparesis due to type 2 diabetes mellitus
+713704004,Gastroparesis due to diabetes mellitus
+713705003,Polyneuropathy due to type 1 diabetes mellitus
+713706002,Polyneuropathy due to type 2 diabetes mellitus
+71421000119105,Hypertension in chronic kidney disease due to type 2 diabetes mellitus
+71441000119104,Nephrotic syndrome due to type 2 diabetes mellitus
+71701000119105,Hypertension in chronic kidney disease due to type 1 diabetes mellitus
+71721000119101,Nephrotic syndrome due to type 1 diabetes mellitus
+71771000119100,Neuropathic arthropathy due to type 1 diabetes mellitus
+71791000119104,Peripheral neuropathy due to type 1 diabetes mellitus
+720029003,Diabetic retinopathy phototherapy mask
+721000119107,Chronic kidney disease stage 4 due to type 2 diabetes mellitus
+723074006,Renal papillary necrosis due to diabetes mellitus
+731000119105,Chronic kidney disease stage 3 due to type 2 diabetes mellitus
+741000119101,Chronic kidney disease stage 2 due to type 2 diabetes mellitus
+751000119104,Chronic kidney disease stage 1 due to type 2 diabetes mellitus
+769181007,Preproliferative retinopathy of right eye due to diabetes mellitus
+769182000,Preproliferative retinopathy of left eye due to diabetes mellitus
+769183005,Mild nonproliferative retinopathy of right eye due to diabetes mellitus
+769184004,Mild nonproliferative retinopathy of left eye due to diabetes mellitus
+769185003,Moderate nonproliferative retinopathy of right eye due to diabetes mellitus
+769186002,Moderate nonproliferative retinopathy of left eye due to diabetes mellitus
+769187006,Severe nonproliferative retinopathy of right eye due to diabetes mellitus
+769188001,Severe nonproliferative retinopathy of left eye due to diabetes mellitus
+769190000,Very severe nonproliferative retinopathy of right eye due to diabetes mellitus
+769191001,Very severe nonproliferative retinopathy of left eye due to diabetes mellitus
+769217008,Macular edema of right eye due to diabetes mellitus
+769218003,Macular edema of left eye due to diabetes mellitus
+769219006,Macular edema due to type 1 diabetes mellitus
+769220000,Macular edema due to type 2 diabetes mellitus
+769221001,Clinically significant macular edema of right eye due to diabetes mellitus
+769222008,Clinically significant macular edema of left eye due to diabetes mellitus
+769244003,Disorder of right macula due to diabetes mellitus
+769245002,Disorder of left macula due to diabetes mellitus
+770094004,Cervical radiculoplexus neuropathy due to diabetes mellitus
+770095003,Cranial nerve palsy due to diabetes mellitus
+770097006,Clinically significant macular edema due to diabetes mellitus
+770098001,Cranial nerve palsy due to type 1 diabetes mellitus
+770323005,Retinal edema due to diabetes mellitus
+770324004,Ischemia of retina due to diabetes mellitus
+770581008,Microaneurysm of right retinal artery due to diabetes mellitus
+770582001,Microaneurysm of left retinal artery due to diabetes mellitus
+770599000,Venous beading of right retina due to diabetes mellitus
+770600002,Venous beading of left retina due to diabetes mellitus
+770765001,Proliferative retinopathy of right eye due to diabetes mellitus
+770766000,Proliferative retinopathy of left eye due to diabetes mellitus
+771000119108,Chronic kidney disease due to type 2 diabetes mellitus
+773001000000103,Symptomatic diabetic peripheral neuropathy
+774521000000103,History of diabetic nephropathy
+775841000000109,Diabetic retinopathy detected by national screening programme
+781000119106,Neuropathic arthropathy due to type 2 diabetes mellitus
+789542009,Neuropathy due to type 1 diabetes mellitus
+789562001,Ulcer of heel due to diabetes mellitus
+789567007,Ulcer of heel due to type 2 diabetes mellitus
+789568002,Ulcer of midfoot due to diabetes mellitus
+789569005,Neuropathic ulcer of heel due to type 2 diabetes mellitus
+789570006,Neuropathic ulcer of midfoot due to type 2 diabetes mellitus
+789571005,Ulcer of heel due to type 1 diabetes mellitus
+789572003,Ulcer of midfoot due to type 1 diabetes mellitus
+789585000,Sensory polyneuropathy due to diabetes mellitus
+792926007,Armanni-Ebstein kidney due to diabetes mellitus
+79554005,Asymmetric proximal motor neuropathy due to diabetes mellitus
+816177009,Nonproliferative retinopathy of left eye due to diabetes mellitus
+816178004,Nonproliferative retinopathy of right eye due to diabetes mellitus
+816961009,Stable treated proliferative retinopathy of right eye due to diabetes mellitus
+816962002,Stable treated proliferative retinopathy of left eye due to diabetes mellitus
+81830002,Mononeuropathy simplex due to diabetes mellitus
+82541000119100,Traction detachment of retina due to type 2 diabetes mellitus
+82571000119107,Traction detachment of retina due to type 1 diabetes mellitus
+855051000000102,Proteinuric diabetic nephropathy
+860721006,Disorder of macula of bilateral eyes due to diabetes mellitus
+860883001,Generalized autonomic neuropathy due to diabetes mellitus
+860977000,Ulcer of right foot due to diabetes mellitus
+860978005,Ulcer of left foot due to diabetes mellitus
+860979002,Chronic ulcer of right foot due to diabetes mellitus
+860980004,Chronic ulcer of left foot due to diabetes mellitus
+866003,Diabetic neuropathy
+870420005,Severe nonproliferative retinopathy with venous beading of retina due to diabetes mellitus
+870421009,Cystoid macular edema due to diabetes mellitus
+870529009,Persistent macular edema due to diabetes mellitus
+87151000000101,Seen in diabetic foot clinic
+871778008,Centrally involved macular edema due to diabetes mellitus
+871781003,Non centrally involved macular edema due to diabetes mellitus
+87461000119100,Ulcer of forefoot due to type 2 diabetes mellitus
+87491000119107,Ulcer of forefoot due to type 1 diabetes mellitus
+87921000119104,Cranial nerve palsy due to type 2 diabetes mellitus
+90721000119101,Chronic kidney disease stage 1 due to type 1 diabetes mellitus
+90731000119103,Chronic kidney disease stage 2 due to type 1 diabetes mellitus
+90741000119107,Chronic kidney disease stage 3 due to type 1 diabetes mellitus
+90751000119109,Chronic kidney disease stage 4 due to type 1 diabetes mellitus
+90761000119106,Chronic kidney disease stage 5 due to type 1 diabetes mellitus
+90771000119100,End stage renal disease on dialysis due to type 1 diabetes mellitus
+90781000119102,Microalbuminuria due to type 2 diabetes mellitus
+90791000119104,End stage renal disease on dialysis due to type 2 diabetes mellitus
+95751000000105,O/E - right eye background diabetic retinopathy
+95761000000108,O/E - left eye background diabetic retinopathy
+95771000000101,O/E - right eye preproliferative diabetic retinopathy
+95781000000104,O/E - left eye preproliferative diabetic retinopathy
+95791000000102,O/E - right eye proliferative diabetic retinopathy
+95801000000103,O/E - left eye proliferative diabetic retinopathy
+96441000119101,Chronic kidney disease due to type 1 diabetes mellitus
+97331000119101,Macular edema and retinopathy due to type 2 diabetes mellitus
+97341000119105,Proliferative retinopathy with retinal edema due to type 2 diabetes mellitus
+99291000000108,Ischaemic ulcer diabetic foot
