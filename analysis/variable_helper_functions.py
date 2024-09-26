@@ -91,11 +91,7 @@ def matching_death_before(codelist, baseline_date, where=True):
         getattr(ons_deaths, column_name).is_in(codelist)
         for column_name in (["underlying_cause_of_death"]+[f"cause_of_death_{i:02d}" for i in range(1, 16)])
     ]
-    return(
-        ons_deaths.where()
-        .where(any_of(conditions))
-        .where(ons_deaths.date.is_on_or_before(baseline_date))
-    )
+    return any_of(conditions) & ons_deaths.date.is_before(baseline_date)
 
 
 ### HISTORY of ... in past ... days/months/years (including baseline_date)
@@ -271,8 +267,7 @@ def matching_death_between(codelist, baseline_date, end_date, where=True):
         getattr(ons_deaths, column_name).is_in(codelist)
         for column_name in (["underlying_cause_of_death"]+[f"cause_of_death_{i:02d}" for i in range(1, 16)])
     ]
-    return(any_of(conditions) & ons_deaths.date.is_on_or_between(baseline_date, end_date)
-    )
+    return any_of(conditions) & ons_deaths.date.is_on_or_between(baseline_date, end_date)
 
 ### CAUSES of DEATH without any date restrictions
 def cause_of_death_matches(codelist):
@@ -294,9 +289,9 @@ def most_recent_bmi(*, minimum_age_at_measurement, where=True):
         # This captures just explicitly recorded BMI observations rather than attempting
         # to calculate it from height and weight measurements. Investigation has shown
         # this to have no real benefit it terms of coverage or accuracy.
-        clinical_events.where(clinical_events.ctv3_code == CTV3Code("22K.."))
+        clinical_events.where(where)
+        .where(clinical_events.ctv3_code == CTV3Code("22K.."))
         .where(clinical_events.date >= age_threshold)
-        .where(where)
         .sort_by(clinical_events.date)
         .last_for_patient()
     )
