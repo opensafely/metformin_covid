@@ -13,12 +13,16 @@ actions:
 
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.arrow
+    needs: 
+    - study_dates
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
 
-  generate_dataset_csv.gz:
+  generate_dataset_csv:
     run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.csv.gz
+    needs: 
+    - study_dates
     outputs:
       highly_sensitive:
         dataset: output/dataset.csv.gz
