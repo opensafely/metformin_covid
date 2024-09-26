@@ -1,13 +1,7 @@
 ################################################################################
 # A custom made function to add columns period_week and period_month
 # Marking the study population in weekly/monthly intervals (1/0) based on covid_test_positive_date (baseline_date)
-# Based on and Credits to https://github.com/opensafely/pax-non-users/tree/2dbf044472efdcfeb86f8fc2c8eea222e7eefe32
 ################################################################################
-
-# Arguments:
-# data_extracted: data_frame with study population
-# study_dates: study_dates from lib/design/study-dates.json
-
 add_period_cuts <- function(data_extracted, study_dates){
   seq_dates_start_interval_week <-
     seq(study_dates$studystart_date, study_dates$studyend_date + 1, by = "1 week") # adding +1 to the end date ensures that the end date is included in the sequence

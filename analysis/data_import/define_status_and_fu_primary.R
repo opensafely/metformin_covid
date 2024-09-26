@@ -1,9 +1,6 @@
-######################################
-# This script contains one function used in data_process.R:
-# - add_status_and_fu_primary: adds colums status_primary and fu_primary to data
-# linda.nab@thedatalab.org 20220627
-######################################
-
+##########################################################################################
+# custom made function to add columns status_primary and fu_primary to data
+##########################################################################################
 library("lubridate")
 library("tidyverse")
 

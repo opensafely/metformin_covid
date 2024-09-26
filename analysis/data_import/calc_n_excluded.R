@@ -1,6 +1,5 @@
 ################################################################################
 # A custom made function to run the eligibility criteria
-# Based on and Credits to https://github.com/opensafely/pax-non-users/tree/2dbf044472efdcfeb86f8fc2c8eea222e7eefe32
 ################################################################################
 calc_n_excluded <- function(data_processed){
   n_before_exclusion_processing <-
