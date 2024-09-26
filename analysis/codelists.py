@@ -79,7 +79,7 @@ prediabetes_snomed = codelist_from_csv("codelists/opensafely-prediabetes-snomed.
 metformin_codes_dmd = codelist_from_csv("codelists/user-john-tazare-metformin-dmd.csv",column="code")
 
 ## metformin allergy
-metformin_allergy_dmd = codelist_from_csv("codelists/user-alainamstutz-metformin-intolerance-bristol.csv",column="code")
+metformin_allergy_snomed_clinical = codelist_from_csv("codelists/user-alainamstutz-metformin-intolerance-bristol.csv",column="code")
 
 ## moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5)
 ckd_snomed_clinical_45 = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-ckdatrisk1_cod.csv",column="code")

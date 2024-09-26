@@ -342,7 +342,7 @@ dataset.cov_bin_metfin_before_baseline = last_matching_med_dmd_between(metformin
 dataset.cov_date_metfin_before_baseline = last_matching_med_dmd_between(metformin_codes_dmd, (baseline_date - days(183)), baseline_date).date
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.cov_bin_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_dmd, baseline_date).exists_for_patient() 
+dataset.cov_bin_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, baseline_date).exists_for_patient() 
 
 ## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
 dataset.cov_bin_ckd_45 = (
