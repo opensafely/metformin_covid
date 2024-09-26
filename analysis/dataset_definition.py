@@ -644,19 +644,6 @@ tmp_out_date_covid19_sgss = (
 # First covid-19 event (hospital admission, pos test, clinical diagnosis), after baseline date
 dataset.out_date_covid19 = minimum_of(tmp_out_date_covid19_primary_care, tmp_out_date_covid19_sgss, out_date_covid19_hes, out_date_covid19_emergency)
 
-
-## Long COVID, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-out_bin_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
-dataset.out_bin_long_covid = out_bin_long_covid
-dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).date
-# Any viral fatigue code in primary care after baseline date
-out_bin_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
-dataset.out_bin_viral_fatigue = out_bin_viral_fatigue
-dataset.out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).date
-# combined
-dataset.out_bin_long_fatigue = out_bin_long_covid | out_bin_viral_fatigue
-
-
 ## Covid-related Death
 # dataset.out_death_date = ons_deaths.date # already defined as QA
 # covid-related death (stated anywhere on any of the 15 death certificate options) # https://github.com/opensafely/comparative-booster-spring2023/blob/main/analysis/codelists.py uses a different codelist: codelists/opensafely-covid-identification.csv
@@ -666,6 +653,20 @@ dataset.out_bin_death_cause_covid = case(
     when(tmp_out_bin_death_cause_covid).then(True),
     otherwise = False
 )
-dataset.out_date_death_cause_covid = case(
+out_date_death_cause_covid = case(
     when(tmp_out_bin_death_cause_covid).then(ons_deaths.date)
 )
+dataset.out_date_death_cause_covid = out_date_death_cause_covid
+### First covid-19 related hosp, emergency hosp, or death, after baseline date
+dataset.out_date_covid_hosp_death = minimum_of(out_date_death_cause_covid, out_date_covid19_hes, out_date_covid19_emergency)
+
+## Long COVID, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
+dataset.out_bin_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
+out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).date
+dataset.out_date_long_covid_first = out_date_long_covid_first
+# Any viral fatigue code in primary care after baseline date
+dataset.out_bin_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
+out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).date
+dataset.out_date_viral_fatigue_first = out_date_viral_fatigue_first
+# combined
+dataset.out_date_long_fatigue = minimum_of(out_date_long_covid_first, out_date_viral_fatigue_first)
