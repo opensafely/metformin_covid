@@ -82,7 +82,7 @@ baseline_date = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date)
 # INITIALISE the dataset, define the baseline date and event, and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=100)
+dataset.configure_dummy_data(population_size=1000)
 dataset.baseline_date = baseline_date
 dataset.define_population(patients.exists_for_patient())
 
@@ -223,14 +223,14 @@ dataset.tmp_cov_count_poccdm_ctv3 = count_matching_event_clinical_ctv3_before(di
 # Maximum HbA1c measure (in period before baseline_date) -> don't have helper function for this
 dataset.tmp_cov_num_max_hba1c_mmol_mol = (
   clinical_events.where(
-    clinical_events.ctv3_code.is_in(hba1c_new_codes))
+    clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(baseline_date))
     .numeric_value.maximum_for_patient()
 )
 # Date of latest maximum HbA1c measure
 dataset.tmp_cov_date_max_hba1c = ( 
   clinical_events.where(
-    clinical_events.ctv3_code.is_in(hba1c_new_codes))
+    clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(baseline_date)) # this line of code probably not needed again
     .where(clinical_events.numeric_value == dataset.tmp_cov_num_max_hba1c_mmol_mol)
     .sort_by(clinical_events.date)
@@ -267,7 +267,7 @@ tmp_cov_date_prediabetes = last_matching_event_clinical_snomed_before(prediabete
 # Date of preDM HbA1c measure in period before baseline_date in preDM range (mmol/mol): 42-47.9
 tmp_cov_date_predm_hba1c_mmol_mol = (
   clinical_events.where(
-    clinical_events.ctv3_code.is_in(hba1c_new_codes))
+    clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(baseline_date))
     .where((clinical_events.numeric_value>=42) & (clinical_events.numeric_value<=47.9))
     .sort_by(clinical_events.date)
@@ -282,7 +282,7 @@ tmp_cov_bin_prediabetes = last_matching_event_clinical_snomed_before(prediabetes
 # Any HbA1c preDM in primary care
 tmp_cov_bin_predm_hba1c_mmol_mol = (
   clinical_events.where(
-    clinical_events.ctv3_code.is_in(hba1c_new_codes))
+    clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(baseline_date))
     .where((clinical_events.numeric_value>=42) & (clinical_events.numeric_value<=47.9))
     .exists_for_patient()
@@ -504,7 +504,7 @@ dataset.cov_cat_bmi_groups = case(
 )
 
 ## HbA1c, most recent value, within previous 2 years
-dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_ctv3_between(hba1c_new_codes, baseline_date - days(2*366), baseline_date).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, baseline_date - days(2*366), baseline_date).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
 
 ## Total Cholesterol, most recent value, within previous 2 years
 dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(cholesterol_snomed, baseline_date - days(2*366), baseline_date).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 

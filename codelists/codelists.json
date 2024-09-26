@@ -126,11 +126,11 @@
       "downloaded_at": "2024-09-25 17:22:23.513535Z",
       "sha": "1ac45646e6612579a38b3eff64524c72d150c6f1"
     },
-    "user-alainamstutz-hba1c-bristol.csv": {
-      "id": "user/alainamstutz/hba1c-bristol/7482c0c7",
-      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/hba1c-bristol/7482c0c7/",
-      "downloaded_at": "2024-09-25 17:22:23.686321Z",
-      "sha": "cd4f06e53ae5eb4c8e16f8f0c0911a417aeba94a"
+    "opensafely-glycated-haemoglobin-hba1c-tests-numerical-value.csv": {
+      "id": "opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926",
+      "url": "https://www.opencodelists.org/codelist/opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926/",
+      "downloaded_at": "2024-09-26 16:11:29.013785Z",
+      "sha": "bc7e48efd370be65686755f0a843058f1ec767e0"
     },
     "opensafely-prediabetes-snomed.csv": {
       "id": "opensafely/prediabetes-snomed/6bdbb7dd",

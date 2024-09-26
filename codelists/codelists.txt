@@ -26,7 +26,7 @@ opensafely/insulin-medication/2020-04-26
 opensafely/antidiabetic-drugs/2020-07-16
 user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58
 
-user/alainamstutz/hba1c-bristol/7482c0c7
+opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926
 opensafely/prediabetes-snomed/6bdbb7dd
 
 user/john-tazare/metformin-dmd/48e43356
