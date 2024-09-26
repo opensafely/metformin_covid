@@ -39,9 +39,6 @@ import json
 import numpy as np 
 np.random.seed(1928374) # random seed
 
-## datetime function
-from datetime import date ## needed?
-
 #######################################################################################
 # DEFINE the dates: Import study dates defined in "study-dates.R" and exported to JSON
 #######################################################################################
@@ -184,72 +181,58 @@ dataset.cov_cat_stp = registered.practice_stp
 ## Type 1 Diabetes 
 # Latest date from primary+secondary, but also primary care date separately for diabetes algo)
 dataset.tmp_cov_date_t1dm_ctv3 = last_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, baseline_date).date
-cov_date_t1dm = minimum_of(
+dataset.cov_date_t1dm = minimum_of(
     (last_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, baseline_date).date),
     (last_matching_event_apc_before(diabetes_type1_icd10, baseline_date).admission_date)
 )
-dataset.cov_date_t1dm = cov_date_t1dm
 # Count codes (individually and together, for diabetes algo)
 dataset.tmp_cov_count_t1dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, baseline_date)
 dataset.tmp_cov_count_t1dm_hes = count_matching_event_apc_before(diabetes_type1_icd10, baseline_date)
-dataset.tmp_cov_count_t1dm = (
-  count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, baseline_date)
-  +
-  count_matching_event_apc_before(diabetes_type1_icd10, baseline_date)
-)
+dataset.tmp_cov_count_t1dm = dataset.tmp_cov_count_t1dm_ctv3 + dataset.tmp_cov_count_t1dm_hes
 
 ## Type 2 Diabetes
 # Latest date from primary+secondary, but also primary care date separately for diabetes algo)
 dataset.tmp_cov_date_t2dm_ctv3 = last_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, baseline_date).date
-cov_date_t2dm = minimum_of(
+dataset.cov_date_t2dm = minimum_of(
     (last_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, baseline_date).date),
     (last_matching_event_apc_before(diabetes_type2_icd10, baseline_date).admission_date)
 )
-dataset.cov_date_t2dm = cov_date_t2dm
 # Count codes (individually and together, for diabetes algo)
 dataset.tmp_cov_count_t2dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, baseline_date)
 dataset.tmp_cov_count_t2dm_hes = count_matching_event_apc_before(diabetes_type2_icd10, baseline_date)
-dataset.tmp_cov_count_t2dm = (
-    count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, baseline_date)
-    +
-    count_matching_event_apc_before(diabetes_type2_icd10, baseline_date)
-)
+dataset.tmp_cov_count_t2dm = dataset.tmp_cov_count_t2dm_ctv3 + dataset.tmp_cov_count_t2dm_hes
 
 ## Diabetes unspecified/other
 # Latest date
-cov_date_otherdm = last_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, baseline_date).date
-dataset.cov_date_otherdm = cov_date_otherdm
+dataset.cov_date_otherdm = last_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, baseline_date).date
 # Count codes
 dataset.tmp_cov_count_otherdm = count_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, baseline_date)
 
 ## Gestational diabetes
 # Latest date
-cov_date_gestationaldm = last_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, baseline_date).date
-dataset.cov_date_gestationaldm = cov_date_gestationaldm
+dataset.cov_date_gestationaldm = last_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, baseline_date).date
 
 ## Diabetes diagnostic codes
 # Latest date
-tmp_cov_date_poccdm = last_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, baseline_date).date
-dataset.tmp_cov_date_poccdm = tmp_cov_date_poccdm
+dataset.tmp_cov_date_poccdm = last_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, baseline_date).date
 # Count codes
 dataset.tmp_cov_count_poccdm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, baseline_date)
 
 ### Other variables needed to define diabetes
 ## HbA1c
 # Maximum HbA1c measure (in period before baseline_date) -> don't have helper function for this
-tmp_cov_num_max_hba1c_mmol_mol = (
+dataset.tmp_cov_num_max_hba1c_mmol_mol = (
   clinical_events.where(
     clinical_events.ctv3_code.is_in(hba1c_new_codes))
     .where(clinical_events.date.is_on_or_before(baseline_date))
     .numeric_value.maximum_for_patient()
 )
-dataset.tmp_cov_num_max_hba1c_mmol_mol = tmp_cov_num_max_hba1c_mmol_mol
 # Date of latest maximum HbA1c measure
 dataset.tmp_cov_date_max_hba1c = ( 
   clinical_events.where(
     clinical_events.ctv3_code.is_in(hba1c_new_codes))
     .where(clinical_events.date.is_on_or_before(baseline_date)) # this line of code probably not needed again
-    .where(clinical_events.numeric_value == tmp_cov_num_max_hba1c_mmol_mol)
+    .where(clinical_events.numeric_value == dataset.tmp_cov_num_max_hba1c_mmol_mol)
     .sort_by(clinical_events.date)
     .last_for_patient() # translates in cohortextractor to "on_most_recent_day_of_measurement=True"
     .date
@@ -257,28 +240,22 @@ dataset.tmp_cov_date_max_hba1c = (
 
 ## Diabetes drugs
 # Latest dates
-tmp_cov_date_insulin_snomed = last_matching_med_dmd_before(insulin_snomed_clinical, baseline_date).date
-dataset.tmp_cov_date_insulin_snomed = tmp_cov_date_insulin_snomed
-tmp_cov_date_antidiabetic_drugs_snomed = last_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, baseline_date).date
-dataset.tmp_cov_date_antidiabetic_drugs_snomed = tmp_cov_date_antidiabetic_drugs_snomed
-tmp_cov_date_nonmetform_drugs_snomed = last_matching_med_dmd_before(non_metformin_dmd, baseline_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
-dataset.tmp_cov_date_nonmetform_drugs_snomed = tmp_cov_date_nonmetform_drugs_snomed
+dataset.tmp_cov_date_insulin_snomed = last_matching_med_dmd_before(insulin_snomed_clinical, baseline_date).date
+dataset.tmp_cov_date_antidiabetic_drugs_snomed = last_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, baseline_date).date
+dataset.tmp_cov_date_nonmetform_drugs_snomed = last_matching_med_dmd_before(non_metformin_dmd, baseline_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify latest date (in period before baseline_date) that any diabetes medication was prescribed
-tmp_cov_date_diabetes_medication = maximum_of(
-    tmp_cov_date_insulin_snomed, 
-    tmp_cov_date_antidiabetic_drugs_snomed) # why excluding tmp_cov_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
-dataset.tmp_cov_date_diabetes_medication = tmp_cov_date_diabetes_medication
+dataset.tmp_cov_date_diabetes_medication = maximum_of(dataset.tmp_cov_date_insulin_snomed, dataset.tmp_cov_date_antidiabetic_drugs_snomed) # why excluding tmp_cov_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify latest date (in period before baseline_date) that any diabetes diagnosis codes were recorded
 dataset.tmp_cov_date_latest_diabetes_diag = maximum_of(
-         cov_date_t2dm, 
-         cov_date_t1dm,
-         cov_date_otherdm,
-         cov_date_gestationaldm,
-         tmp_cov_date_poccdm,
-         tmp_cov_date_diabetes_medication,
-         tmp_cov_date_nonmetform_drugs_snomed
+  dataset.cov_date_t2dm, 
+  dataset.cov_date_t1dm,
+  dataset.cov_date_otherdm,
+  dataset.cov_date_gestationaldm,
+  dataset.tmp_cov_date_poccdm,
+  dataset.tmp_cov_date_diabetes_medication,
+  dataset.tmp_cov_date_nonmetform_drugs_snomed
 )
 
 ### DIABETES end ---------
@@ -298,9 +275,7 @@ tmp_cov_date_predm_hba1c_mmol_mol = (
     .date
 )
 # Latest date (in period before baseline_date) that any prediabetes was diagnosed or HbA1c in preDM range
-dataset.cov_date_prediabetes = maximum_of(
-    tmp_cov_date_prediabetes, 
-    tmp_cov_date_predm_hba1c_mmol_mol) 
+dataset.cov_date_prediabetes = maximum_of(tmp_cov_date_prediabetes, tmp_cov_date_predm_hba1c_mmol_mol) 
 
 # Any preDM diagnosis in primary care
 tmp_cov_bin_prediabetes = last_matching_event_clinical_snomed_before(prediabetes_snomed, baseline_date).exists_for_patient()
@@ -519,13 +494,12 @@ bmi_measurement = most_recent_bmi(
     where=clinical_events.date.is_after(baseline_date - days(2 * 366)),
     minimum_age_at_measurement=16,
 )
-cov_num_bmi = bmi_measurement.numeric_value
-dataset.cov_num_bmi = cov_num_bmi
+dataset.cov_num_bmi = bmi_measurement.numeric_value
 dataset.cov_cat_bmi_groups = case(
-    when(cov_num_bmi < 18.5).then("Underweight"),
-    when((cov_num_bmi >= 18.5) & (cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
-    when((cov_num_bmi >= 25.0) & (cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
-    when((cov_num_bmi >= 30.0) & (cov_num_bmi < 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
+    when(dataset.cov_num_bmi < 18.5).then("Underweight"),
+    when((dataset.cov_num_bmi >= 18.5) & (dataset.cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
+    when((dataset.cov_num_bmi >= 25.0) & (dataset.cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
+    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi < 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
     otherwise = "missing", 
 )
 
@@ -539,18 +513,18 @@ dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(ch
 dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, baseline_date - days(2*366), baseline_date).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
 
 ## Number of consultations in year prior to pandemic (2019)
-# dataset.cov_num_consultation_rate = (
-#    appointments.where(
-#        appointments.status.is_in(["Arrived", "In Progress", "Finished", "Visit", "Waiting", "Patient Walked Out",]))
-#        .where(appointments.seen_date.is_on_or_between(studystart_date - days(366),studystart_date)) # the year before the pandemic
-#        .count_for_patient()
+#dataset.cov_num_consultation_rate = (
+#  appointments.where(
+#    appointments.status.is_in(["Arrived", "In Progress", "Finished", "Visit", "Waiting", "Patient Walked Out",]))
+#    .where(appointments.seen_date.is_on_or_between(studystart_date - days(366),studystart_date)) # the year before the pandemic
+#    .count_for_patient()
 #)
 
 ## Healthcare worker at the time they received a COVID-19 vaccination
 dataset.cov_bin_healthcare_worker = (
-    occupation_on_covid_vaccine_record.where(
-        occupation_on_covid_vaccine_record.is_healthcare_worker == True)
-        .exists_for_patient()
+  occupation_on_covid_vaccine_record.where(
+    occupation_on_covid_vaccine_record.is_healthcare_worker == True)
+    .exists_for_patient()
 )
 
 
@@ -589,18 +563,16 @@ dataset.out_date_dereg = case(when(tmp_not_dereg == False).then(tmp_dereg_date))
 
 # SARS-CoV-2, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 # First covid-19 related hospital admission, after baseline date
-out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, baseline_date, studyend_date).admission_date
-dataset.out_date_covid19_hes = out_date_covid19_hes
+dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, baseline_date, studyend_date).admission_date
 # First emergency attendance for covid, after baseline date
-out_date_covid19_emergency = first_matching_event_ec_snomed_between(covid_emergency, baseline_date, studyend_date).arrival_date
-dataset.out_date_covid19_emergency = out_date_covid19_emergency
+dataset.out_date_covid19_emergency = first_matching_event_ec_snomed_between(covid_emergency, baseline_date, studyend_date).arrival_date
 ## First hospitalisation or emergency attendance for covid, after baseline date
-dataset.out_date_covid_hosp = minimum_of(out_date_covid19_hes, out_date_covid19_emergency)
+dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid19_hes, dataset.out_date_covid19_emergency)
 
 # First COVID-19 code (diagnosis, positive test or sequelae) in primary care, after baseline date
-tmp_out_date_covid19_primary_care = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, baseline_date, studyend_date).date
+dataset.out_date_covid19_primary_care = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, baseline_date, studyend_date).date
 # First positive SARS-COV-2 PCR, after baseline date
-tmp_out_date_covid19_sgss = (
+dataset.out_date_covid19_sgss = (
   sgss_covid_all_tests.where(
     sgss_covid_all_tests.specimen_taken_date.is_on_or_between(baseline_date, studyend_date))
     .where(sgss_covid_all_tests.is_positive)
@@ -610,7 +582,7 @@ tmp_out_date_covid19_sgss = (
 )
 
 # First covid-19 event (hospital admission, pos test, clinical diagnosis), after baseline date
-dataset.out_date_covid19 = minimum_of(tmp_out_date_covid19_primary_care, tmp_out_date_covid19_sgss, out_date_covid19_hes, out_date_covid19_emergency)
+dataset.out_date_covid19 = minimum_of(dataset.out_date_covid19_primary_care, dataset.out_date_covid19_sgss, dataset.out_date_covid19_hes, dataset.out_date_covid19_emergency)
 
 ## Covid-related Death
 # dataset.out_death_date = ons_deaths.date # already defined as QA
@@ -621,20 +593,15 @@ dataset.out_bin_death_cause_covid = case(
     when(tmp_out_bin_death_cause_covid).then(True),
     otherwise = False
 )
-out_date_death_cause_covid = case(
-    when(tmp_out_bin_death_cause_covid).then(ons_deaths.date)
-)
-dataset.out_date_death_cause_covid = out_date_death_cause_covid
+dataset.out_date_death_cause_covid = case(when(tmp_out_bin_death_cause_covid).then(ons_deaths.date)) # double-check if used later or not
 ### First covid-19 related hosp, emergency hosp, or death, after baseline date
-dataset.out_date_covid_hosp_death = minimum_of(out_date_death_cause_covid, out_date_covid19_hes, out_date_covid19_emergency)
+dataset.out_date_covid_hosp_death = minimum_of(dataset.out_date_death_cause_covid, dataset.out_date_covid19_hes, dataset.out_date_covid19_emergency)
 
 ## Long COVID, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 dataset.out_bin_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
-out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).date
-dataset.out_date_long_covid_first = out_date_long_covid_first
+dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, baseline_date, studyend_date).date
 # Any viral fatigue code in primary care after baseline date
 dataset.out_bin_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).exists_for_patient()
-out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).date
-dataset.out_date_viral_fatigue_first = out_date_viral_fatigue_first
+dataset.out_date_viral_fatigue_first = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, baseline_date, studyend_date).date
 # combined
-dataset.out_date_long_fatigue = minimum_of(out_date_long_covid_first, out_date_viral_fatigue_first)
+dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid_first, dataset.out_date_viral_fatigue_first)
