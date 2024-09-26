@@ -1,7 +1,18 @@
 ################################################################################
+# This script does the following:
+# 1. Import/extract feather dataset from OpenSAFELY including basic type formatting of variables (extract_data())
+# 2. Process the data (process_data()): a) combine some categories, 
+#                                       b) apply the diabetes algorithm (diabetes_algo()), 
+#                                       c) apply primary endpoint window (28 days) and create final outcome and exposure/treatment variables (add_status_and_fu_primary()),
+#                                       d) add a treatment window period (grace period) that can be changed flexibly
+#                                       e) define patients in periods according to their baseline_date (add_period_cuts()). Not needed for now, needed for SeqTrial if feasible 
+# 3. Apply the data quality assurance and data completeness criteria (quality_assurance())
+# 4. Apply the eligibility criteria (calc_n_excluded())
+# 5. Summarize how many initiated treatment within applied grace period (calc_n_treated())
 #
-# Processing data
-#
+# Structure of this script based on https://github.com/opensafely/pax-non-users/tree/2dbf044472efdcfeb86f8fc2c8eea222e7eefe32/analysis
+# Special credit to https://github.com/LindaNab
+# Bristol diabetes algorithm based on and Credits to: https://github.com/opensafely/post-covid-diabetes/tree/main 
 ################################################################################
 
 ################################################################################
@@ -15,8 +26,8 @@ library('dplyr')
 library('tidyr')
 library('purrr')
 ## Import custom user functions
-source(here::here("analysis", "data_import", "process_data.R"))
 source(here::here("analysis", "data_import", "extract_data.R"))
+source(here::here("analysis", "data_import", "process_data.R"))
 source(here::here("analysis", "data_import", "quality_assurance.R"))
 source(here::here("analysis", "data_import", "calc_n_excluded.R"))
 source(here::here("analysis", "data_import", "calc_n_treated.R"))
@@ -32,7 +43,7 @@ fs::dir_create(here::here("output", "data_properties"))
 ################################################################################
 args <- commandArgs(trailingOnly=TRUE)
 study_dates <-
-    jsonlite::read_json(path = here::here("lib", "design", "study-dates.json")) %>%
+    jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
     map(as.Date)
 
 ################################################################################
@@ -44,10 +55,12 @@ data_extracted <- extract_data(input_filename)
 ################################################################################
 # 2 Process data
 ################################################################################
-data_processed_g10 <- process_data(data_extracted, study_dates, treat_window_days = 9) # grace period 10 dataset only
+data_processed_g10 <- process_data(data_extracted, study_dates, treat_window_days = 9) # grace period 10
 
+# add additional shorter grace periods besides the primary grace period 10 days (baseline_date + 9), 
+# just to explore and for later (if SeqTrial applied, by running a trial each day within grace period)
 data_processed <-
-  map(.x = list(6, 7, 8, 9), # add additional longer grace periods besides the primary grace period 10 days (baseline_date + 9)
+  map(.x = list(6, 7, 8, 9), 
       .f = ~ process_data(data_extracted, study_dates, treat_window_days = .x))
 names(data_processed) <- c("grace7", "grace8", "grace9", "grace10")
 
