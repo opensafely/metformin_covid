@@ -18,11 +18,20 @@ actions:
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
-
-  generate_dataset_csv:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.csv.gz
-    needs: 
-    - study_dates
+  
+  data_process:
+    run: r:latest analysis/data_process.R
+    needs:
+    - generate_dataset
     outputs:
       highly_sensitive:
-        dataset: output/dataset.csv.gz
+        rds: output/data/*.rds
+
+  feasibility:
+    run: r:latest analysis/feasibility.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        png: output/data_properties/*.png
+        html: output/data_properties/*.html

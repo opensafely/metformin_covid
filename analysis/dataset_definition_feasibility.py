@@ -72,7 +72,7 @@ dataset.cov_cat_ethnicity = (
 )
 
 #######################################################################################
-# COVID-19 variables: Only COVID diagnoses (clinical + tests) and 2 outcomes (COVID deaths and Long COVID)
+# COVID-19 variables: Only COVID diagnoses (clinical + tests) and 2 outcomes (COVID deaths and Long COVID) in case we need them too for feasibility
 #######################################################################################
 ## First COVID-19 diagnosis in primary care before feasibility end date 
 tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_before(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, feasibilityend_date).date
