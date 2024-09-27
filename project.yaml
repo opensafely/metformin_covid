@@ -5,8 +5,24 @@ expectations:
   population_size: 1000
 
 actions:
+  study_dates:
+    run: r:latest analysis/metadates.R
+    outputs:
+      highly_sensitive:
+        study_dates_json: output/study_dates.json
+
   generate_dataset:
+    run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.arrow
+    needs: 
+    - study_dates
+    outputs:
+      highly_sensitive:
+        dataset: output/dataset.arrow
+
+  generate_dataset_csv:
     run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.csv.gz
+    needs: 
+    - study_dates
     outputs:
       highly_sensitive:
         dataset: output/dataset.csv.gz
