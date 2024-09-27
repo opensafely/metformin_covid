@@ -12,7 +12,7 @@ actions:
         study_dates_json: output/study_dates.json
 
   generate_dataset:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.arrow
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_feasibility.py --output output/dataset.arrow
     needs: 
     - study_dates
     outputs:
