@@ -10,7 +10,8 @@ library('here')
 study_dates <-
   list(
     studystart_date = "2020-01-01", # start of pandemic
-    studyend_date = "2022-04-01" # end of mass testing
+    studyend_date = "2022-04-01", # end of mass testing
+    feasibilityend_date = "2023-12-31" # end date of feasibility study
   )
 
 jsonlite::write_json(study_dates, path = "output/study_dates.json", auto_unbox = TRUE, pretty=TRUE)
