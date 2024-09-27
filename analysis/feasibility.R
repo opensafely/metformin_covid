@@ -1,8 +1,6 @@
 ################################################################################
 # This script does the following:
-# 1. Import/extract feather dataset from OpenSAFELY including basic type formatting of variables (extract_data())
-# 2. Process the data (process_data()): a) combine some categories, 
-#                                       b) apply the diabetes algorithm (diabetes_algo()), 
+# 1. Assess key feasibility indicators re DM diagnoses, Metformin prescription and COVID diagnoses
 ################################################################################
 
 ################################################################################
