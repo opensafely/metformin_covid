@@ -1,0 +1,89 @@
+code,term
+1011861000000104,Ascitic fluid amylase level
+1024421000000100,Ascitic fluid lactate dehydrogenase level
+1024431000000103,Ascitic fluid glucose level
+1024441000000107,Ascitic fluid protein level
+116151000000105,Ascitic fluid lactate dehydrogenase level
+116161000000108,Ascitic fluid amylase level
+116171000000101,Ascitic fluid glucose level
+116181000000104,Ascitic fluid protein level
+120731000000107,Ascitic fluid lactate dehydrogenase level
+120741000000103,Ascitic fluid amylase level
+120751000000100,Ascitic fluid glucose level
+120761000000102,Ascitic fluid protein level
+145236005,Ascitic fluid examination
+145237001,Ascitic fluid examination - general
+145239003,Ascitic fluid sent for examination
+145240001,Ascitic fluid exam. normal
+145241002,Ascitic fluid exam. abnormal
+145242009,Ascitic fluid general examination NOS
+145243004,Ascitic fluid appearance
+145244005,Ascitic fluid clear
+145245006,Ascitic fluid cloudy
+145246007,Ascitic fluid blood-stained
+145247003,Ascitic fluid purulent
+145248008,Ascitic fluid appearance NOS
+145249000,Ascitic fluid microscopy
+145250000,Ascitic fluid microscopy: NAD
+145251001,Ascitic fluid: malignant cells
+145252008,Ascitic fluid: pus cells
+145253003,Ascitic fluid: blood cells
+145254009,Ascitic fluid: organisms
+145255005,Ascitic fluid microscopy NOS
+145256006,Ascitic fluid chemistry
+145257002,Ascitic fluid chemistry: NAD
+145258007,Ascitic fluid chemistry: abn.
+145259004,Ascitic fluid chemistry NOS
+145260009,Ascitic fluid exam. NOS
+150557006,Ascites tap
+168007006,Ascitic fluid examination
+168008001,General ascitic fluid examination
+168009009,Ascitic fluid sent for examination
+168010004,Ascitic fluid examination normal
+168011000,Ascitic fluid examination abnormal
+168012007,Ascitic fluid general examination NOS
+168013002,Ascitic fluid appearance
+168014008,Ascitic fluid clear
+168015009,Ascitic fluid cloudy
+168016005,Ascitic fluid blood-stained
+168017001,Ascitic fluid purulent
+168018006,Ascitic fluid appearance NOS
+168019003,Ascitic fluid microscopy
+168020009,Ascitic fluid microscopy: no abnormality detected
+168021008,Ascitic fluid: malignant cells
+168022001,Ascitic fluid: pus cells
+168023006,Ascitic fluid: blood cells
+168024000,Identification of microorganisms in ascitic fluid
+168025004,Ascitic fluid microscopy NOS
+168026003,Ascitic fluid chemistry test
+168027007,Ascitic fluid chemistry: no abnormality detected
+168028002,Abnormal ascitic fluid chemistry
+168029005,Ascitic fluid chemistry NOS
+168030000,Ascitic fluid examination NOS
+168368009,Ascitic fluid for organism (& C/S)
+178012008,Percutaneous drainage of ascites
+178014009,Drainage of ascites NEC
+216887001,"Accidental cut, puncture, perforation or hemorrhage during abdominal paracentesis"
+264974007,Peritoneal to venous drainage of ascites
+269954002,Ascitic fluid sent for organism evaluation
+274433001,Ascites tap
+275853004,Ascitic fluid sent for culture and sensitivity
+302455000,Drainage of ascites
+309201001,Ascitic fluid sample
+365663007,Finding of ascitic fluid appearance
+365830003,Finding of ascitic fluid chemistry
+413056005,Ascitic fluid lactate dehydrogenase measurement
+413057001,Ascitic fluid amylase measurement
+413059003,Ascitic fluid glucose measurement
+413060008,Ascitic fluid protein measurement
+431771004,Cytologic material obtained from ascitic fluid
+442039000,Measurement of albumin gradient between serum specimen and ascitic fluid specimen
+443121003,Finding related to evaluation of ascitic fluid
+443192000,Evaluation of ascitic fluid
+533781000000107,Drainage of ascites NEC
+535841000000105,Ascitic fluid examination NOS
+542041000000108,Ascitic fluid appearance NOS
+542051000000106,Ascitic fluid microscopy NOS
+542061000000109,Ascitic fluid chemistry NOS
+89305009,Abdominal paracentesis
+993241000000105,Ascitic fluid cell count
