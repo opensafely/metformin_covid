@@ -15,7 +15,7 @@ library('tidyr')
 library('purrr')
 library('forcats')
 library('ggplot2')
-library('gtsummary')
+library('gt')
 
 ## Import custom user functions
 source(here::here("analysis", "functions", "fn_extract_data.R"))
