@@ -110,5 +110,5 @@ n_t2dm_metfin_start_midpoint6 <- map_dfr(periods, fn_t2dm_metfin_start)
 ################################################################################
 # 3 Save output
 ################################################################################
-write.csv(n_t2dm_covid_metfin_start, file = here::here("output", "data_properties", "n_t2dm_covid_metfin_start_midpoint6.csv"))
-write.csv(n_t2dm_metfin_start, file = here::here("output", "data_properties", "n_t2dm_metfin_start_midpoint6.csv"))
+write.csv(n_t2dm_covid_metfin_start_midpoint6, file = here::here("output", "data_properties", "n_t2dm_covid_metfin_start_midpoint6.csv"))
+write.csv(n_t2dm_metfin_start_midpoint6, file = here::here("output", "data_properties", "n_t2dm_metfin_start_midpoint6.csv"))
