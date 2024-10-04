@@ -33,5 +33,4 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        png: output/data_properties/*.png
-        html: output/data_properties/*.html
+        csv: output/data_properties/*.csv
