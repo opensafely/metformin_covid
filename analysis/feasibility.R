@@ -40,15 +40,17 @@ data_processed <- read_rds(here::here("output", "data", "data_processed.rds"))
 # 2 Check feasibility
 ################################################################################
 ## 1. How many with a T2DM diagnosis start metformin within 5d, 7d, 10d, 30d, and 90d after (the first) pos. SARS-CoV-2 test
-# T2DM variable from diabetes algo
+# Use T2DM variable from diabetes algo
 grace_periods <- c(5, 7, 10, 30, 90) # grace periods in days (30 and 90 are probably not useful as grace period, but still of interest)
-fn_t2dm_covid_metfin_start <- function(grace_period) {
+
+## function with midpoint6 rounding
+fn_t2dm_covid_metfin_start_midpoint6 <- function(grace_periods) {
   data_processed %>%
     filter(!is.na(cov_date_t2dm)) %>%
     filter(!is.na(exp_date_metfin_first)) %>%
     filter(exp_date_metfin_first > cov_date_t2dm) %>%
     filter(!is.na(cov_date_covid19_first)) %>%
-    filter(exp_date_metfin_first <= (cov_date_covid19_first + days(grace_period))) %>%
+    filter(exp_date_metfin_first <= (cov_date_covid19_first + days(grace_periods))) %>%
     
     mutate(tb_T2DMdiag_metfin = as.numeric(difftime(exp_date_metfin_first, cov_date_t2dm, units = "days"))) %>%
     mutate(tb_COVIDdiag_metfin = as.numeric(difftime(exp_date_metfin_first, cov_date_covid19_first, units = "days"))) %>%
@@ -60,9 +62,32 @@ fn_t2dm_covid_metfin_start <- function(grace_period) {
       IQR_upper = quantile(tb_T2DMdiag_metfin, 0.75, na.rm = TRUE)
     ) %>%
     
-    mutate("grace period in days" = grace_period) # for identification
+    mutate("grace period in days" = grace_periods) # for identification
 }
-n_t2dm_covid_metfin_start_midpoint6 <- map_dfr(grace_periods, fn_t2dm_covid_metfin_start)
+n_t2dm_covid_metfin_start_midpoint6 <- map_dfr(grace_periods, fn_t2dm_covid_metfin_start_midpoint6)
+
+## function without midpoint6 rounding
+fn_t2dm_covid_metfin_start <- function(grace_periods) {
+  data_processed %>%
+    filter(!is.na(cov_date_t2dm)) %>%
+    filter(!is.na(exp_date_metfin_first)) %>%
+    filter(exp_date_metfin_first > cov_date_t2dm) %>%
+    filter(!is.na(cov_date_covid19_first)) %>%
+    filter(exp_date_metfin_first <= (cov_date_covid19_first + days(grace_periods))) %>%
+    
+    mutate(tb_T2DMdiag_metfin = as.numeric(difftime(exp_date_metfin_first, cov_date_t2dm, units = "days"))) %>%
+    mutate(tb_COVIDdiag_metfin = as.numeric(difftime(exp_date_metfin_first, cov_date_covid19_first, units = "days"))) %>%
+    
+    summarise(
+      n_start_metfin_aCOVID = n(),
+      median_tb_T2DMdiag_metfin = median(tb_T2DMdiag_metfin, na.rm = TRUE),
+      IQR_lower = quantile(tb_T2DMdiag_metfin, 0.25, na.rm = TRUE),
+      IQR_upper = quantile(tb_T2DMdiag_metfin, 0.75, na.rm = TRUE)
+    ) %>%
+    
+    mutate("grace period in days" = grace_periods) # for identification
+}
+n_t2dm_covid_metfin_start <- map_dfr(grace_periods, fn_t2dm_covid_metfin_start)
 
 # gt table
 # n_t2dm_covid_metfin_start_midpoint6 %>%
@@ -76,9 +101,11 @@ n_t2dm_covid_metfin_start_midpoint6 <- map_dfr(grace_periods, fn_t2dm_covid_metf
 
 
 ## 2. How many with a T2DM diagnosis start metformin thereafter (in monthly periods til max 6m) and median time to start?
-# T2DM variable from diabetes algo
+# Use T2DM variable from diabetes algo
 periods <- c(30, 60, 90, 120, 150, 180) # in days - but now, we are interested in e.g. monthly until max. 6-monthly intervals
-fn_t2dm_metfin_start <- function(periods){
+
+## function with midpoint6 rounding
+fn_t2dm_metfin_start_midpoint6 <- function(periods){
   data_processed %>%
     filter(!is.na(cov_date_t2dm)) %>%
     filter(!is.na(exp_date_metfin_first)) %>%
@@ -95,7 +122,27 @@ fn_t2dm_metfin_start <- function(periods){
       ) %>% 
     mutate("period in days" = periods)
 }
-n_t2dm_metfin_start_midpoint6 <- map_dfr(periods, fn_t2dm_metfin_start)
+n_t2dm_metfin_start_midpoint6 <- map_dfr(periods, fn_t2dm_metfin_start_midpoint6)
+
+## function without midpoint6 rounding
+fn_t2dm_metfin_start <- function(periods){
+  data_processed %>%
+    filter(!is.na(cov_date_t2dm)) %>%
+    filter(!is.na(exp_date_metfin_first)) %>%
+    filter(exp_date_metfin_first > cov_date_t2dm) %>%
+    filter(exp_date_metfin_first <= (cov_date_t2dm + days(periods))) %>%
+    
+    mutate(tb_T2DMdiag_metfin = as.numeric(difftime(exp_date_metfin_first, cov_date_t2dm, units = "days"))) %>%
+    
+    summarise(
+      n_start_metfin_aT2DM = n(),
+      median_tb_T2DMdiag_metfin = median(tb_T2DMdiag_metfin, na.rm = TRUE),
+      IQR_lower = quantile(tb_T2DMdiag_metfin, 0.25, na.rm = TRUE),  
+      IQR_upper = quantile(tb_T2DMdiag_metfin, 0.75, na.rm = TRUE)
+    ) %>% 
+    mutate("period in days" = periods)
+}
+n_t2dm_metfin_start <- map_dfr(periods, fn_t2dm_metfin_start)
 
 # gt table
 # n_t2dm_metfin_start_midpoint6 %>%
@@ -112,3 +159,5 @@ n_t2dm_metfin_start_midpoint6 <- map_dfr(periods, fn_t2dm_metfin_start)
 ################################################################################
 write.csv(n_t2dm_covid_metfin_start_midpoint6, file = here::here("output", "data_properties", "n_t2dm_covid_metfin_start_midpoint6.csv"))
 write.csv(n_t2dm_metfin_start_midpoint6, file = here::here("output", "data_properties", "n_t2dm_metfin_start_midpoint6.csv"))
+write.csv(n_t2dm_covid_metfin_start, file = here::here("output", "data_properties", "n_t2dm_covid_metfin_start.csv"))
+write.csv(n_t2dm_metfin_start, file = here::here("output", "data_properties", "n_t2dm_metfin_start.csv"))
