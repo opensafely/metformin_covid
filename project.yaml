@@ -12,17 +12,25 @@ actions:
         study_dates_json: output/study_dates.json
 
   generate_dataset:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.arrow
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_feasibility.py --output output/dataset.arrow
     needs: 
     - study_dates
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
-
-  generate_dataset_csv:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition.py --output output/dataset.csv.gz
-    needs: 
-    - study_dates
+  
+  data_process:
+    run: r:latest analysis/data_process.R
+    needs:
+    - generate_dataset
     outputs:
       highly_sensitive:
-        dataset: output/dataset.csv.gz
+        rds: output/data/*.rds
+
+  feasibility:
+    run: r:latest analysis/feasibility.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        csv: output/data_properties/*.csv
