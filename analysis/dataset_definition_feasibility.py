@@ -72,7 +72,7 @@ dataset.cov_cat_ethnicity = (
 )
 
 #######################################################################################
-# COVID-19 variables: Only COVID diagnoses (clinical + tests) and 2 outcomes (COVID deaths and Long COVID) in case we need them too for feasibility
+# COVID-19 variables: COVID diagnoses (clinical + tests) and covid-19 outcomes
 #######################################################################################
 ## First COVID-19 diagnosis in primary care before feasibility end date 
 tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_before(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, feasibilityend_date).date
@@ -86,9 +86,16 @@ tmp_covid19_sgss_date = (
 )
 dataset.cov_date_covid19_first = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date)
 
+### Outcomes
 ## COVID-related deaths (stated anywhere on any of the 15 death certificate options), based on https://github.com/opensafely/comparative-booster-spring2023/blob/main/analysis/codelists.py uses a different codelist: codelists/opensafely-covid-identification.csv
 tmp_out_bin_death_covid = matching_death_before(covid_codes_incl_clin_diag, feasibilityend_date)
 dataset.out_date_death_covid = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
+# First and last covid-19 related hospital admission, before feasibility end date
+dataset.out_date_covid19_hes_first = first_matching_event_apc_before(covid_codes_incl_clin_diag, feasibilityend_date).admission_date
+dataset.out_date_covid19_hes_last = last_matching_event_apc_before(covid_codes_incl_clin_diag, feasibilityend_date).admission_date
+# First and last emergency attendance for covid, before feasibility end date
+dataset.out_date_covid19_emergency_first = first_matching_event_ec_snomed_before(covid_emergency, feasibilityend_date).arrival_date
+dataset.out_date_covid19_emergency_last = last_matching_event_ec_snomed_before(covid_emergency, feasibilityend_date).arrival_date
 
 ## First Long COVID code in primary care, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_before(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, feasibilityend_date).date
