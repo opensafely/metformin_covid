@@ -242,6 +242,20 @@ def first_matching_event_apc_before(codelist, baseline_date, where=True):
         .first_for_patient()
     )
 
+## In EMERGENCY CARE
+def first_matching_event_ec_snomed_before(codelist, baseline_date, where=True):
+    conditions = [
+        getattr(emergency_care_attendances, column_name).is_in(codelist)
+        for column_name in ([f"diagnosis_{i:02d}" for i in range(1, 25)])
+    ]
+    return(
+        emergency_care_attendances.where(where)
+        .where(any_of(conditions))
+        .where(emergency_care_attendances.arrival_date.is_before(baseline_date))
+        .sort_by(emergency_care_attendances.arrival_date)
+        .first_for_patient()
+    )
+
 #######################################################################################
 ### Any future events (including baseline_date and study end_date)
 #######################################################################################
