@@ -104,6 +104,7 @@ tmp_covid19_sgss_date = (
   .first_for_patient()
   .specimen_taken_date
 )
+## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 emerg, or covid-19 death
 dataset.cov_date_covid19_first = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid19_hes_first,
                                             dataset.out_date_covid19_emergency_first, dataset.out_date_death_covid)
 
