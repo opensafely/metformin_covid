@@ -201,6 +201,45 @@ def count_matching_event_opa_before(codelist, baseline_date, where=True):
     )
 
 #######################################################################################
+### COUNT all events in between ... and ... (including baseline_date)
+#######################################################################################
+## In PRIMARY CARE
+# CTV3/Read
+def count_matching_event_clinical_ctv3_between(codelist, start_date, baseline_date, where=True):
+    return(
+        clinical_events.where(where)
+        .where(clinical_events.ctv3_code.is_in(codelist))
+        .where(clinical_events.date.is_on_or_between(start_date, baseline_date))
+        .count_for_patient()
+    )
+# Snomed
+def count_matching_event_clinical_snomed_between(codelist, start_date, baseline_date, where=True):
+    return(
+        clinical_events.where(where)
+        .where(clinical_events.snomedct_code.is_in(codelist))
+        .where(clinical_events.date.is_on_or_between(start_date, baseline_date))
+        .count_for_patient()
+    )
+
+## In SECONDARY CARE (Hospital Episodes)
+def count_matching_event_apc_between(codelist, start_date, baseline_date, where=True):
+    return(
+        apcs.where(where)
+        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
+        .where(apcs.admission_date.is_on_or_between(start_date, baseline_date))
+        .count_for_patient()
+    )
+
+## In OUTPATIENT CARE
+def count_matching_event_opa_between(codelist, start_date, baseline_date, where=True):
+    return(
+        opa_diag.where(where)
+        .where(opa_diag.primary_diagnosis_code.is_in(codelist) | opa_diag.secondary_diagnosis_code_1.is_in(codelist))
+        .where(opa_diag.appointment_date.is_on_or_between(start_date, baseline_date))
+        .count_for_patient()
+    )
+
+#######################################################################################
 ### ANY HISTORY of ... and give first ... (including baseline_date) 
 #######################################################################################
 ## In PRIMARY CARE
