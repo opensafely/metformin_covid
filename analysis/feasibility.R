@@ -66,21 +66,11 @@ fn_t2dm_midpoint6 <- function(years_in_days) {
     mutate(tb_T2DMdiag_metfin = case_when(exp_bin_treat == 1 ~ as.numeric(difftime(exp_date_metfin_first, cov_date_t2dm, units = "days")),
                                             TRUE ~ NA_real_)) %>% # time between T2DM and metformin start
     # among the above, define outcome status, binary and date
-    mutate(out_bin_severecovid = case_when(out_date_death_covid > landmark_date | 
-                                               out_date_covid19_hes_first > landmark_date | 
-                                               out_date_covid19_hes_last > landmark_date |
-                                               out_date_covid19_emergency_first > landmark_date |
-                                               out_date_covid19_emergency_last > landmark_date ~ 1,
+    mutate(out_bin_severecovid = case_when(out_date_severe_covid > landmark_date ~ 1,
                                              TRUE ~ NA_real_)) %>% # covid-related death or hospitalisation thereafter
     mutate(out_bin_longcovid = case_when(out_date_long_fatigue > landmark_date ~ 1,
                                                  TRUE ~ NA_real_)) %>% # long covid or viral fatigue code thereafter
-    mutate(out_date_severecovid = case_when(
-      out_bin_severecovid == 1 ~ pmin(out_date_death_covid, 
-                                out_date_covid19_hes_first, 
-                                out_date_covid19_hes_last, 
-                                out_date_covid19_emergency_first, 
-                                out_date_covid19_emergency_last, 
-                                na.rm = TRUE),
+    mutate(out_date_severecovid = case_when(out_bin_severecovid == 1 ~ out_date_severe_covid,
       TRUE ~ NA_Date_)) %>%
     mutate(out_date_longcovid = case_when(out_bin_longcovid == 1 ~ out_date_long_fatigue,
       TRUE ~ NA_Date_)) %>%
@@ -116,7 +106,7 @@ fn_t2dm_midpoint6 <- function(years_in_days) {
       IQR_upper_tb_landmark_longcovid = quantile(tb_landmark_longcovid, 0.75, na.rm = TRUE),
       
       n_severeCOVID_COVIDdiag_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid_diagnosed, na.rm = TRUE), threshold), # Perform redaction
-      n_LongCOVID_COVIDdiag_midpoint6 = fn_roundmid_any(sum(out_bin_longcovid_diagnosed, na.rm = TRUE) threshold), # Perform redaction
+      n_LongCOVID_COVIDdiag_midpoint6 = fn_roundmid_any(sum(out_bin_longcovid_diagnosed, na.rm = TRUE), threshold) # Perform redaction
     ) %>%
     
     mutate("years in days" = years_in_days) # for identification

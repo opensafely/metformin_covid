@@ -81,10 +81,12 @@ tmp_out_bin_death_covid = matching_death_before(covid_codes_incl_clin_diag, feas
 dataset.out_date_death_covid = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
 ## First and last covid-19 related hospital admission, before feasibility end date
 dataset.out_date_covid19_hes_first = first_matching_event_apc_before(covid_codes_incl_clin_diag, feasibilityend_date).admission_date
-dataset.out_date_covid19_hes_last = last_matching_event_apc_before(covid_codes_incl_clin_diag, feasibilityend_date).admission_date
+#dataset.out_date_covid19_hes_last = last_matching_event_apc_before(covid_codes_incl_clin_diag, feasibilityend_date).admission_date
 ## First and last covid-19 related emergency attendance, before feasibility end date
 dataset.out_date_covid19_emergency_first = first_matching_event_ec_snomed_before(covid_emergency, feasibilityend_date).arrival_date
-dataset.out_date_covid19_emergency_last = last_matching_event_ec_snomed_before(covid_emergency, feasibilityend_date).arrival_date
+#dataset.out_date_covid19_emergency_last = last_matching_event_ec_snomed_before(covid_emergency, feasibilityend_date).arrival_date
+# combined
+dataset.out_date_severe_covid = minimum_of(dataset.out_date_death_covid, dataset.out_date_covid19_hes_first, dataset.out_date_covid19_emergency_first)
 
 ## First Long COVID code in primary care, based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 dataset.out_date_long_covid_first = first_matching_event_clinical_snomed_before(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, feasibilityend_date).date
@@ -104,8 +106,7 @@ tmp_covid19_sgss_date = (
   .specimen_taken_date
 )
 ## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 emerg, or covid-19 death
-dataset.cov_date_covid19_first = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid19_hes_first,
-                                            dataset.out_date_covid19_emergency_first, dataset.out_date_death_covid)
+dataset.cov_date_covid19_first = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_severe_covid)
 
 
 #######################################################################################
