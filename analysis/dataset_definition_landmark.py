@@ -62,7 +62,7 @@ dataset.qa_bin_was_adult = (patients.age_on(landmark_date) >= 18) & (patients.ag
 dataset.qa_bin_was_alive = (((patients.date_of_death.is_null()) | (patients.date_of_death.is_after(landmark_date))) & 
         ((ons_deaths.date.is_null()) | (ons_deaths.date.is_after(landmark_date))))
 dataset.qa_bin_known_imd = addresses.for_patient_on(landmark_date).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(548), landmark_date).exists_for_patient() # only include if registered on landmark_date spanning back 18 months (i.e. only deregistered later than landmark_date or has no deregistration date, see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning). Calculated from 1 year = 365.25 days, taking into account leap years.
+dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(914), landmark_date).exists_for_patient() # only include if registered on landmark_date spanning back 30 months (i.e. only deregistered later than landmark_date or has no deregistration date, see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning). Calculated from 1 year = 365.25 days, taking into account leap years.
 
 ## Year of birth
 dataset.qa_num_birth_year = patients.date_of_birth
@@ -166,7 +166,7 @@ dataset.tmp_cov_date_max_hba1c = (
 
 ## Diabetes drugs
 # First dates
-dataset.tmp_cov_date_insulin_snomed = first_matching_med_dmd_before(insulin_snomed_clinical, landmark_date).date
+dataset.tmp_cov_date_insulin_snomed = first_matching_med_dmd_before(insulin_dmd, landmark_date).date
 dataset.tmp_cov_date_antidiabetic_drugs_snomed = first_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, landmark_date).date
 dataset.tmp_cov_date_nonmetform_drugs_snomed = first_matching_med_dmd_before(non_metformin_dmd, landmark_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
 
@@ -185,9 +185,6 @@ dataset.tmp_cov_date_first_diabetes_diag = minimum_of(
 )
 
 ## DIABETES algo variables end ------------------------
-
-## Any metformin use before baseline, i.e., extract first metformin use before landmark and establish true eligibility variable (i.e. before T2DM diagnosis) in R => assign tmp_
-dataset.tmp_elig_date_metfin_first = first_matching_med_dmd_before(metformin_codes_dmd, landmark_date).date 
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
 dataset.tmp_elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
@@ -211,11 +208,11 @@ dataset.tmp_elig_date_metfin_interaction = last_matching_med_dmd_before(metformi
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables
 #######################################################################################
-# First METFORMIN prescription, based on codelist https://www.opencodelists.org/codelist/user/john-tazare/metformin-dmd/48e43356/
-dataset.exp_date_metfin_first = first_matching_med_dmd_before(metformin_codes_dmd, landmark_date).date 
+## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) in R => assign tmp_ to this variable
+dataset.tmp_exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date # create exp_date_metfin_first and elig_bin_metfin_before_baseline from this tmp_ variable (-> in R)
 dataset.exp_count_metfin = (
   medications.where(
-    medications.dmd_code.is_in(metformin_codes_dmd))
+    medications.dmd_code.is_in(metformin_dmd))
     .where(medications.date.is_on_or_before(landmark_date))
     .count_for_patient()
 )
@@ -285,6 +282,16 @@ dataset.cov_bin_carehome_status = case(
     otherwise = False
 )
 
+## Any sulfonylurea use before landmark_date (could also be a combo with metformin)
+dataset.cov_date_sulfo = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
+dataset.cov_date_dpp4 = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
+dataset.cov_date_tzd = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
+dataset.cov_date_sglt2 = last_matching_med_dmd_before(sglt2_dmd, landmark_date).date 
+dataset.cov_date_glp1 = last_matching_med_dmd_before(glp1_dmd, landmark_date).date 
+dataset.cov_date_megli = last_matching_med_dmd_before(meglitinides_dmd, landmark_date).date 
+dataset.cov_date_agi = last_matching_med_dmd_before(agi_dmd, landmark_date).date 
+dataset.cov_date_insulin = last_matching_med_dmd_before(insulin_dmd, landmark_date).date
+
 ## Obesity, on or before landmark_date
 dataset.cov_bin_obesity = (
     last_matching_event_clinical_snomed_before(bmi_obesity_snomed_clinical, landmark_date).exists_for_patient() |
@@ -342,8 +349,7 @@ dataset.cov_bin_cancer = (
 ## Hypertension, on or before landmark_date
 dataset.cov_bin_hypertension = (
     last_matching_event_clinical_snomed_before(hypertension_snomed_clinical, landmark_date).exists_for_patient() |
-    last_matching_event_apc_before(hypertension_icd10, landmark_date).exists_for_patient() | 
-    last_matching_med_dmd_before(hypertension_drugs_dmd, landmark_date).exists_for_patient() # not sure this is a good idea..
+    last_matching_event_apc_before(hypertension_icd10, landmark_date).exists_for_patient()
 )
 
 ## Depression, on or before landmark_date
