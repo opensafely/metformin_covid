@@ -22,12 +22,24 @@ source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance.R"))
+source(here::here("analysis", "functions", "fn_completeness_criteria.R"))
+source(here::here("analysis", "functions", "eligibility.R"))
 
 ################################################################################
 # 0.1 Create directories for output
 ################################################################################
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_properties"))
+
+################################################################################
+# 0.2 Import command-line arguments
+################################################################################
+args <- commandArgs(trailingOnly=TRUE)
+study_dates <-
+  jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
+  map(as.Date)
+landmark_date = as.Date(study_dates$landmark_date)
+mid2018_date = as.Date(study_dates$mid2018_date)
 
 ################################################################################
 # 1 Import data
@@ -122,60 +134,35 @@ data_processed <- data_processed %>%
   filter((cov_cat_sex == "Female" | is.na(cov_cat_sex)) | (cov_cat_sex == "Male" & (qa_bin_hrt == FALSE)) | (cov_cat_sex == "Male" & (qa_bin_cocp == FALSE))) %>%
   filter((cov_cat_sex == "Male" | is.na(cov_cat_sex)) | (cov_cat_sex == "Female" & (qa_bin_prostate_cancer == FALSE)))
 
-
 ################################################################################
 # 4 Apply eligibility criteria
 ################################################################################
-n_excluded <- calc_n_excluded(data_processed$grace10)
-
-data_processed_g10 <- data_processed_g10 %>%
-  # completeness criteria
-  filter(qa_bin_was_alive == TRUE & (qa_date_of_death > baseline_date | is.na(qa_date_of_death))) %>% # additional condition since "qa_bin_was_alive == TRUE" may not cover all (e.g. pos test came out after death)
+# 4a. Completeness criteria
+n_completeness_excluded <- fn_completeness_criteria(data_processed)
+data_processed <- data_processed %>%
+  filter(qa_bin_was_alive == TRUE & (qa_date_of_death > landmark_date | is.na(qa_date_of_death))) %>% # additional condition since "qa_bin_was_alive == TRUE" may not cover all (e.g. pos test came out after death)
   filter(qa_bin_is_female_or_male == TRUE) %>%
   filter(qa_bin_known_imd == TRUE) %>%
   filter(!is.na(cov_cat_region)) %>%
-  filter(qa_bin_was_registered == TRUE) %>%
-  # inclusion criteria
-  filter(qa_bin_was_adult == TRUE) %>%
-  filter(cov_bin_t2dm == TRUE) %>%
-  filter(!is.na(baseline_date)) %>%
-  # exclusion criteria
-  filter(cov_bin_hosp_baseline == FALSE) %>% # FALSE includes missing in a ehrQL logical
-  filter(cov_bin_metfin_before_baseline == FALSE) %>%
-  filter(cov_bin_metfin_allergy == FALSE) %>%
-  filter(cov_bin_ckd_45 == FALSE) %>%
-  filter(cov_bin_liver_cirrhosis == FALSE) %>%
-  filter(cov_bin_metfin_interaction == FALSE) %>%
-  filter(cov_bin_long_covid == FALSE)
+  filter(qa_bin_was_registered == TRUE)
 
-data_processed <-
-  map(.x = data_processed,
-      .f = ~ .x %>%
-        # completeness criteria
-        filter(qa_bin_was_alive == TRUE & (qa_date_of_death > baseline_date | is.na(qa_date_of_death))) %>% # additional condition since "qa_bin_was_alive == TRUE" may not cover all (e.g. pos test came out after death)
-        filter(qa_bin_is_female_or_male == TRUE) %>%
-        filter(qa_bin_known_imd == TRUE) %>%
-        filter(!is.na(cov_cat_region)) %>%
-        filter(qa_bin_was_registered == TRUE) %>%
-        # inclusion criteria
-        filter(qa_bin_was_adult == TRUE) %>%
-        filter(cov_bin_t2dm == TRUE) %>%
-        filter(!is.na(baseline_date)) %>%
-        # exclusion criteria
-        filter(cov_bin_hosp_baseline == FALSE) %>% # FALSE includes missing in a ehrQL logical
-        filter(cov_bin_metfin_before_baseline == FALSE) %>%
-        filter(cov_bin_metfin_allergy == FALSE) %>%
-        filter(cov_bin_ckd_45 == FALSE) %>%
-        filter(cov_bin_liver_cirrhosis == FALSE) %>%
-        filter(cov_bin_metfin_interaction == FALSE) %>%
-        filter(cov_bin_long_covid == FALSE)
-  )
-
-
+# 4b. Eligibility criteria
+# Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => use function with loop that can be mapped to other windows
+years_in_days <- c(0, 366, 731, 1096, 1461, 1827) # define study window (mid_years until 2013)
+n_elig_excluded <- fn_elig_criteria(data_processed, study_dates, years_in_days = 0) # for flow chart
+# apply flow chart function to all windows
+n_elig_excluded_all_windows <-
+  map(.x = list(0, 366, 731, 1096, 1461, 1827),
+      .f = ~ fn_elig_criteria(data_processed, study_dates, years_in_days = .x))
+names(n_elig_excluded_all_windows) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
+# apply eligibility criteria to define final dataset; for now, only for primary window (mid2018-mid2019 -> years_in_days = 0) 
+data_processed <- fn_apply_elig_criteria(data_processed, study_dates, years_in_days = 0)
 
 ################################################################################
-# 4 Apply eligibility criteria
+# 5 Assign treatment/exposure
 ################################################################################
+
+
 
 ################################################################################
 # Save output
