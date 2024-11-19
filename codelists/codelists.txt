@@ -29,7 +29,7 @@ user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58
 opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926
 opensafely/prediabetes-snomed/6bdbb7dd
 
-user/john-tazare/metformin-dmd/48e43356
+user/alex-walker/metformin-dmd/258f2054
 
 user/alainamstutz/metformin-intolerance-bristol/5af86d52
 
@@ -44,8 +44,6 @@ user/alex-walker/post-viral-syndrome/70708fd6
 
 
 
-
-
 opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver/071038cf
 opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver-and-associated-conditions-icd-10/00e40554
 opensafely/procedure-ascitic-drainage/39388836
@@ -54,6 +52,14 @@ opensafely/smoking-clear/2020-04-29
 user/alainamstutz/ever-smoking-bristol/00731978
 
 primis-covid19-vacc-uptake/longres/v1
+
+user/alex-walker/sulfonylureas-dmd/6e0ab9fd
+user/alex-walker/dpp-4-inhibitors-dmd/57ae06be
+user/alex-walker/pioglitazone-dmd/3bebd393
+user/alex-walker/sglt-2-inhibitors-dmd/2029a068
+user/alainamstutz/glp1-bristol-dmd/7c628abb
+user/alainamstutz/meglitinides-bristol-dmd/79afcac5
+user/alainamstutz/alpha-glucosidase-inhibitors-bristol-dmd/4790e45b
 
 user/elsie_horne/bmi_obesity_snomed/0764e9b4
 user/elsie_horne/bmi_obesity_icd10/6e55767e
@@ -136,43 +142,3 @@ bristol/hdl-cholesterol/64775990
 
 
 opensafely/covid-identification/2020-06-03
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-opensafely/direct-acting-oral-anticoagulants-doac/2020-10-05
-opensafely/aplastic-anaemia/2020-04-24
-opensafely/asplenia/2020-06-02
-opensafely/asthma-diagnosis/2020-04-15
-opensafely/asthma-inhaler-salbutamol-medication/2020-04-15
-opensafely/asthma-inhaler-steroid-medication/2020-04-15
-opensafely/cancer-excluding-lung-and-haematological/2020-04-15
-opensafely/chronic-cardiac-disease/2020-04-08
-opensafely/chronic-liver-disease/2020-06-02
-opensafely/chronic-respiratory-disease/2020-04-10
-opensafely/dementia/2020-04-22
-
-opensafely/haematological-cancer/2020-04-15
-opensafely/hiv/2020-07-13
-opensafely/lung-cancer/2020-04-15
-opensafely/other-neurological-conditions/2020-06-02
-opensafely/permanent-immunosuppression/2020-06-02
-opensafely/asthma-oral-prednisolone-medication/2020-04-27
-opensafely/ra-sle-psoriasis/2020-04-14
-opensafely/sickle-cell-disease/2020-04-14
-opensafely/solid-organ-transplantation/2020-04-10
-opensafely/temporary-immunosuppression/2020-04-24
-opensafely/stroke-updated/2020-06-02
-opensafely/warfarin/2020-10-05
