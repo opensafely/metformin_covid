@@ -223,7 +223,7 @@ dataset.exp_count_metfin = (
 #######################################################################################
 
 ## Sex
-dataset.cov_cat_sex = patients.sex.is_in(["female", "male"])
+dataset.cov_cat_sex = patients.sex
 
 ## Age at landmark_date
 dataset.cov_num_age = patients.age_on(landmark_date)
@@ -282,7 +282,7 @@ dataset.cov_bin_carehome_status = case(
     otherwise = False
 )
 
-## Any sulfonylurea use before landmark_date (could also be a combo with metformin)
+## Any other antidiabetic drug use before landmark_date (could also be a combo with metformin)
 dataset.cov_date_sulfo = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
 dataset.cov_date_dpp4 = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
 dataset.cov_date_tzd = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
