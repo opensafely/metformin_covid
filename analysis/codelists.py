@@ -68,7 +68,7 @@ diabetes_diagnostic_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-n
 # HbA1c
 hba1c_snomed = codelist_from_csv("codelists/opensafely-glycated-haemoglobin-hba1c-tests-numerical-value.csv",column="code")
 # Antidiabetic drugs
-insulin_snomed_clinical = codelist_from_csv("codelists/opensafely-insulin-medication.csv",column="id")
+insulin_dmd = codelist_from_csv("codelists/opensafely-insulin-medication.csv",column="id")
 antidiabetic_drugs_snomed_clinical = codelist_from_csv("codelists/opensafely-antidiabetic-drugs.csv",column="id")
 non_metformin_dmd = codelist_from_csv("codelists/user-r_denholm-non-metformin-antidiabetic-drugs_bristol.csv",column="id")
 
@@ -76,7 +76,7 @@ non_metformin_dmd = codelist_from_csv("codelists/user-r_denholm-non-metformin-an
 prediabetes_snomed = codelist_from_csv("codelists/opensafely-prediabetes-snomed.csv",column="code")
 
 ## metformin
-metformin_codes_dmd = codelist_from_csv("codelists/user-john-tazare-metformin-dmd.csv",column="code")
+metformin_dmd = codelist_from_csv("codelists/user-alex-walker-metformin-dmd.csv",column="code")
 
 ## metformin allergy
 metformin_allergy_snomed_clinical = codelist_from_csv("codelists/user-alainamstutz-metformin-intolerance-bristol.csv",column="code")
@@ -115,6 +115,15 @@ ever_smoking = codelist_from_csv("codelists/user-alainamstutz-ever-smoking-brist
 
 # Patients in long-stay nursing and residential care
 carehome = codelist_from_csv("codelists/primis-covid19-vacc-uptake-longres.csv",column="code")
+
+# other antidiabetics
+sulfonylurea_dmd = codelist_from_csv("codelists/user-alex-walker-sulfonylureas-dmd.csv",column="code")
+dpp4_dmd = codelist_from_csv("codelists/user-alex-walker-dpp-4-inhibitors-dmd.csv",column="code")
+tzd_dmd = codelist_from_csv("codelists/user-alex-walker-pioglitazone-dmd.csv",column="code")
+sglt2_dmd = codelist_from_csv("codelists/user-alex-walker-sglt-2-inhibitors-dmd.csv",column="code")
+glp1_dmd = codelist_from_csv("codelists/user-alainamstutz-glp1-bristol-dmd.csv",column="code")
+meglitinides_dmd = codelist_from_csv("codelists/user-alainamstutz-meglitinides-bristol-dmd.csv",column="code")
+agi_dmd = codelist_from_csv("codelists/user-alainamstutz-alpha-glucosidase-inhibitors-bristol-dmd.csv",column="code")
 
 # obesity
 bmi_obesity_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_snomed.csv",column="code")
