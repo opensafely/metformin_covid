@@ -21,9 +21,9 @@ library('ggplot2')
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
-source(here::here("analysis", "functions", "fn_quality_assurance.R"))
-source(here::here("analysis", "functions", "fn_completeness_criteria.R"))
-source(here::here("analysis", "functions", "eligibility.R"))
+source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
+source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
+source(here::here("analysis", "functions", "eligibility_midpoint6.R"))
 
 ################################################################################
 # 0.1 Create directories for output
@@ -38,8 +38,11 @@ args <- commandArgs(trailingOnly=TRUE)
 study_dates <-
   jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
   map(as.Date)
-landmark_date = as.Date(study_dates$landmark_date)
-mid2018_date = as.Date(study_dates$mid2018_date)
+
+################################################################################
+# 0.3 Define redaction threshold
+################################################################################
+threshold <- 6
 
 ################################################################################
 # 1 Import data
@@ -124,7 +127,7 @@ data_processed <- fn_diabetes_algorithm(data_extracted)
 ################################################################################
 # 3 Apply quality criteria
 ################################################################################
-n_qa_excluded <- fn_quality_assurance(data_processed) # 
+n_qa_excluded_midpoint6 <- fn_quality_assurance_midpoint6(data_processed) # 
 data_processed <- data_processed %>%
   filter(!is.na(qa_num_birth_year)) %>%
   filter(is.na(qa_date_of_death) | (qa_num_birth_year <= year(qa_date_of_death))) %>%
@@ -138,9 +141,9 @@ data_processed <- data_processed %>%
 # 4 Apply eligibility criteria
 ################################################################################
 # 4a. Completeness criteria
-n_completeness_excluded <- fn_completeness_criteria(data_processed)
+n_completeness_excluded_midpoint6 <- fn_completeness_criteria_midpoint6(data_processed)
 data_processed <- data_processed %>%
-  filter(qa_bin_was_alive == TRUE & (qa_date_of_death > landmark_date | is.na(qa_date_of_death))) %>% # additional condition since "qa_bin_was_alive == TRUE" may not cover all (e.g. pos test came out after death)
+  filter(qa_bin_was_alive == TRUE) %>%
   filter(qa_bin_is_female_or_male == TRUE) %>%
   filter(qa_bin_known_imd == TRUE) %>%
   filter(!is.na(cov_cat_region)) %>%
@@ -148,19 +151,34 @@ data_processed <- data_processed %>%
 
 # 4b. Eligibility criteria
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => use function with loop that can be mapped to other windows
-years_in_days <- c(0, 366, 731, 1096, 1461, 1827) # define study window (mid_years until 2013)
-n_elig_excluded <- fn_elig_criteria(data_processed, study_dates, years_in_days = 0) # for flow chart
-# apply flow chart function to all windows
-n_elig_excluded_all_windows <-
-  map(.x = list(0, 366, 731, 1096, 1461, 1827),
-      .f = ~ fn_elig_criteria(data_processed, study_dates, years_in_days = .x))
-names(n_elig_excluded_all_windows) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
+# years_in_days <- c(0, 366, 731, 1096, 1461, 1827) # define study window (mid_years until 2013)
+
+# assign eligibility flow chart 
+n_elig_excluded_midpoint6 <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
+# assign eligibility flow chart function to all windows
+n_elig_excluded_all_windows_midpoint6 <-
+  map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
+      .f = ~ fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = .x))
+names(n_elig_excluded_all_windows_midpoint6) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
+
 # apply eligibility criteria to define final dataset; for now, only for primary window (mid2018-mid2019 -> years_in_days = 0) 
 data_processed <- fn_apply_elig_criteria(data_processed, study_dates, years_in_days = 0)
+# apply eligibility criteria function to all windows
+# data_processed_all_windows <-
+#   map(.x = list(0, 366, 731, 1096, 1461, 1827),
+#       .f = ~ fn_apply_elig_criteria(data_processed, study_dates, years_in_days = .x))
+# names(data_processed_all_windows) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
 
 ################################################################################
-# 5 Assign treatment/exposure
+# 5 Assign treatment/exposure 
 ################################################################################
+# assign treatment/exposure; for now, only for primary window (mid2018-mid2019 -> data_processed), but can extend/map to the other windows
+data_processed <- data_processed %>% 
+  mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$landmark_date ~ 1, # 1 if started/treated/exposed
+                                   is.na(exp_date_metfin_first) ~ 0, # 0 if not started/treated/exposed until landmark
+                                   TRUE ~ NA_real_)) %>% 
+  mutate(tb_T2DMdiag_metfin = case_when(exp_bin_treat == 1 ~ as.numeric(difftime(exp_date_metfin_first, elig_date_t2dm, units = "days")),
+                                        TRUE ~ NA_real_))
 
 
 

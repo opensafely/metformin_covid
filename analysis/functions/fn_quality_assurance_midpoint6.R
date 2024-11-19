@@ -1,7 +1,7 @@
 ################################################################################
 # A custom made function to run the quality assurance criteria
 ################################################################################
-fn_quality_assurance <- function(data_processed){
+fn_quality_assurance_midpoint6 <- function(data_processed){
   n_before_qa_processing <-
     data_processed %>%
     nrow()
@@ -47,14 +47,18 @@ fn_quality_assurance <- function(data_processed){
     filter((cov_cat_sex == "Male" | is.na(cov_cat_sex)) | (cov_cat_sex == "Female" & (qa_bin_prostate_cancer == FALSE))) %>%
     nrow()
   
-  out <- tibble(n_before_qa_processing,
-                n_yob_missing,
-                n_yob_after_yod,
-                n_yob_beforeNHS_aftertoday,
-                n_dob_invalid,
-                n_preg_men,
-                n_hrt_men,
-                n_prost_women,
-                n_after_qa_processing
-  )
+  # Output incl. redaction
+  out_midpoint6 <- tibble(
+      n_before_qa_processing_midpoint6 = fn_roundmid_any(n_before_qa_processing, threshold),
+      n_yob_missing_midpoint6 = fn_roundmid_any(n_yob_missing, threshold),
+      n_yob_after_yod_midpoint6 = fn_roundmid_any(n_yob_after_yod, threshold),
+      n_yob_beforeNHS_aftertoday_midpoint6 = fn_roundmid_any(n_yob_beforeNHS_aftertoday, threshold),
+      n_dob_invalid_midpoint6 = fn_roundmid_any(n_dob_invalid, threshold),
+      n_preg_men_midpoint6 = fn_roundmid_any(n_preg_men, threshold),
+      n_hrt_men_midpoint6d = fn_roundmid_any(n_hrt_men, threshold),
+      n_prost_women_midpoint6 = fn_roundmid_any(n_prost_women, threshold),
+      n_after_qa_processing_midpoint6 = fn_roundmid_any(n_after_qa_processing, threshold),
+    )
+
+  return(out_midpoint6)
 }
