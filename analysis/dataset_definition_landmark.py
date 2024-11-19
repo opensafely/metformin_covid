@@ -49,7 +49,7 @@ landmark_date = study_dates["landmark_date"]
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=5000)
+dataset.configure_dummy_data(population_size=10000)
 dataset.define_population(patients.exists_for_patient())
 
 
@@ -187,29 +187,29 @@ dataset.tmp_cov_date_first_diabetes_diag = minimum_of(
 ## DIABETES algo variables end ------------------------
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.tmp_elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
+dataset.elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 
 ## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
-dataset.tmp_elig_date_ckd_45 = minimum_of(
+dataset.elig_date_ckd_45 = minimum_of(
     first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
     first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
 )
 
 ## Advance decompensated liver cirrhosis, on or before baseline
-dataset.tmp_elig_date_liver_cirrhosis = minimum_of(
+dataset.elig_date_liver_cirrhosis = minimum_of(
     first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
     first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
 )
 
 ## Use of the following medications in the last 14 days (drug-drug interaction with metformin)
-dataset.tmp_elig_date_metfin_interaction = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
+dataset.elig_date_metfin_interaction = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
 
 
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables
 #######################################################################################
-## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) in R => assign tmp_ to this variable
-dataset.tmp_exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date # create exp_date_metfin_first and elig_bin_metfin_before_baseline from this tmp_ variable (-> in R)
+## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) 
+dataset.exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date
 dataset.exp_count_metfin = (
   medications.where(
     medications.dmd_code.is_in(metformin_dmd))
