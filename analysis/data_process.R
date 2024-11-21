@@ -1,8 +1,13 @@
 ################################################################################
-# This script does the following:
-# 1. Import/extract feather dataset from OpenSAFELY including basic type formatting of variables (extract_data())
-# 2. Process the data
-# 3. Save the processed data
+## This script does the following:
+# 1. Import/extract feather dataset from OpenSAFELY 
+# 2. Basic type formatting of variables -> fn_extract_data.R()
+# 3. Process some covariates and apply the diabetes algorithm -> fn_diabetes_algorithm()
+# 4. Evaluate/apply the quality criteria -> fn_quality_assurance_midpoint6()
+# 5. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
+# 6. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6() | fn_apply_elig_criteria()
+# (for now: just to double-check: Assign treatment and main outcome)
+## Save the output: data_processed and the 1-row tables for the flow chart
 ################################################################################
 
 ################################################################################
@@ -48,10 +53,14 @@ threshold <- 6
 # 1 Import data
 ################################################################################
 input_filename <- "dataset.arrow"
+
+################################################################################
+# 2 Reformat the imported data
+################################################################################
 data_extracted <- fn_extract_data(input_filename)
 
 ################################################################################
-# 2 Process the data, and apply diabetes algorithm
+# 3 Process the data and apply diabetes algorithm
 ################################################################################
 data_extracted <- data_extracted %>%
   mutate(
@@ -125,7 +134,7 @@ data_extracted <- data_extracted %>%
 data_processed <- fn_diabetes_algorithm(data_extracted)
 
 ################################################################################
-# 3 Apply quality criteria
+# 4 Apply the quality criteria
 ################################################################################
 n_qa_excluded_midpoint6 <- fn_quality_assurance_midpoint6(data_processed) # 
 data_processed <- data_processed %>%
@@ -138,9 +147,8 @@ data_processed <- data_processed %>%
   filter((cov_cat_sex == "Male" | is.na(cov_cat_sex)) | (cov_cat_sex == "Female" & (qa_bin_prostate_cancer == FALSE)))
 
 ################################################################################
-# 4 Apply eligibility criteria
+# 5 Apply the completeness criteria
 ################################################################################
-# 4a. Completeness criteria
 n_completeness_excluded_midpoint6 <- fn_completeness_criteria_midpoint6(data_processed)
 data_processed <- data_processed %>%
   filter(qa_bin_was_alive == TRUE) %>%
@@ -149,40 +157,70 @@ data_processed <- data_processed %>%
   filter(!is.na(cov_cat_region)) %>%
   filter(qa_bin_was_registered == TRUE)
 
-# 4b. Eligibility criteria
+################################################################################
+# 6 Apply the eligibility criteria
+################################################################################
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => use function with loop that can be mapped to other windows
 # years_in_days <- c(0, 366, 731, 1096, 1461, 1827) # define study window (mid_years until 2013)
-
 # assign eligibility flow chart 
-n_elig_excluded_midpoint6 <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
+# n_elig_excluded_midpoint6 <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
 # assign eligibility flow chart function to all windows
 n_elig_excluded_all_windows_midpoint6 <-
   map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
       .f = ~ fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = .x))
-names(n_elig_excluded_all_windows_midpoint6) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
+names(n_elig_excluded_all_windows_midpoint6) <- c("elig_mid2018_midpoint6", "elig_mid2017_midpoint6", "elig_mid2016_midpoint6", "elig_mid2015_midpoint6", "elig_mid2014_midpoint6", "elig_mid2013_midpoint6")
 
 # apply eligibility criteria to define final dataset; for now, only for primary window (mid2018-mid2019 -> years_in_days = 0) 
-data_processed <- fn_apply_elig_criteria(data_processed, study_dates, years_in_days = 0)
+# data_processed <- fn_apply_elig_criteria(data_processed, study_dates, years_in_days = 0)
 # apply eligibility criteria function to all windows
-# data_processed_all_windows <-
-#   map(.x = list(0, 366, 731, 1096, 1461, 1827),
-#       .f = ~ fn_apply_elig_criteria(data_processed, study_dates, years_in_days = .x))
-# names(data_processed_all_windows) <- c("mid2018", "mid2017", "mid2016", "mid2015", "mid2014", "mid2013")
+data_processed_all_windows <-
+  map(.x = list(0, 366, 731, 1096, 1461, 1827),
+      .f = ~ fn_apply_elig_criteria(data_processed, study_dates, years_in_days = .x))
+names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
 
 ################################################################################
-# 5 Assign treatment/exposure 
+# 7 Double-check feasibility: Assign treatment/exposure and main outcome
 ################################################################################
-# assign treatment/exposure; for now, only for primary window (mid2018-mid2019 -> data_processed), but can extend/map to the other windows
-data_processed <- data_processed %>% 
-  mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$landmark_date ~ 1, # 1 if started/treated/exposed
-                                   is.na(exp_date_metfin_first) ~ 0, # 0 if not started/treated/exposed until landmark
-                                   TRUE ~ NA_real_)) %>% 
-  mutate(tb_T2DMdiag_metfin = case_when(exp_bin_treat == 1 ~ as.numeric(difftime(exp_date_metfin_first, elig_date_t2dm, units = "days")),
-                                        TRUE ~ NA_real_))
-
-
+# assign treatment/exposure
+n_metfin_severecovid_midpoint6 <- map(
+  .x = data_processed_all_windows,
+  .f = ~ .x %>% 
+    mutate(exp_bin_treat = case_when(
+      exp_date_metfin_first <= study_dates$landmark_date ~ 1, # 1 if started/treated/exposed
+      is.na(exp_date_metfin_first) ~ 0,                     # 0 if not started/treated/exposed until landmark
+      TRUE ~ NA_real_)) %>% 
+    mutate(out_bin_severecovid = case_when(
+      out_date_covid19_severe > study_dates$landmark_date ~ 1, # 1 if severe covid outcome
+      is.na(out_date_covid19_severe) ~ 0,                     # 0 if no severe covid outcome
+      TRUE ~ NA_real_)) %>% 
+    summarise(
+      n_metfin_by_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold), 
+      n_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold))
+)
+names(n_metfin_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
 
 ################################################################################
-# Save output
+# 8 Save output
 ################################################################################
+# the data
 write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
+# flow chart quality assurance
+write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
+# flow chart completeness criteria
+write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
+# flow chart eligibility criteria
+purrr::walk2(
+  .x = n_elig_excluded_all_windows_midpoint6, 
+  .y = paste0(names(n_elig_excluded_all_windows_midpoint6), ".csv"),
+  .f = ~ write.csv(.x, 
+                   file = here::here("output", "data_properties", .y), 
+                   row.names = FALSE)
+)
+# Just to double-check re feasibility: Assign treatment/exposure and main outcome to above data frames going back 6 years
+purrr::walk2(
+  .x = n_metfin_severecovid_midpoint6, 
+  .y = paste0(names(n_metfin_severecovid_midpoint6), ".csv"),
+  .f = ~ write.csv(.x, 
+                   file = here::here("output", "data_properties", .y), 
+                   row.names = FALSE)
+)
