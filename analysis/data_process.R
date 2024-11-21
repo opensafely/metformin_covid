@@ -29,6 +29,9 @@ source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
 source(here::here("analysis", "functions", "eligibility_midpoint6.R"))
+source(here::here("analysis", "metadates.R"))
+# Convert the meta-dates into Date objects
+study_dates <- lapply(study_dates, function(x) as.Date(x))
 
 ################################################################################
 # 0.1 Create directories for output
@@ -39,10 +42,10 @@ fs::dir_create(here::here("output", "data_properties"))
 ################################################################################
 # 0.2 Import command-line arguments
 ################################################################################
-args <- commandArgs(trailingOnly=TRUE)
-study_dates <-
-  jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
-  map(as.Date)
+# args <- commandArgs(trailingOnly=TRUE)
+# study_dates <-
+#   jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
+#   map(as.Date)
 
 ################################################################################
 # 0.3 Define redaction threshold
