@@ -39,8 +39,10 @@ fs::dir_create(here::here("output", "data_properties"))
 ################################################################################
 # 0.2 Import command-line arguments and dates # to be adapted at a later stage
 ################################################################################
-# args <- commandArgs(trailingOnly=TRUE)
-study_dates <- jsonlite::fromJSON("output/study_dates.json")
+args <- commandArgs(trailingOnly=TRUE)
+study_dates <-
+    jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
+    map(as.Date)
 
 ################################################################################
 # 0.3 Define redaction threshold
