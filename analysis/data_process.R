@@ -3,9 +3,9 @@
 # 1. Import/extract feather dataset from OpenSAFELY 
 # 2. Basic type formatting of variables -> fn_extract_data.R()
 # 3. Process some covariates and apply the diabetes algorithm -> fn_diabetes_algorithm()
-# 4. Evaluate/apply the quality criteria -> fn_quality_assurance_midpoint6()
+# 4. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
 # 5. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
-# 6. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6() | fn_apply_elig_criteria()
+# 6. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
 # (for now: just to double-check: Assign treatment and main outcome)
 ## Save the output: data_processed and the 1-row tables for the flow chart
 ################################################################################
@@ -22,16 +22,13 @@ library('tidyr')
 library('purrr')
 library('forcats')
 library('ggplot2')
-## Import custom user functions
+## Import custom user functions and meta-dates
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
-source(here::here("analysis", "functions", "eligibility_midpoint6.R"))
-source(here::here("analysis", "metadates.R"))
-# Convert the meta-dates into Date objects
-study_dates <- lapply(study_dates, function(x) as.Date(x))
+source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 
 ################################################################################
 # 0.1 Create directories for output
@@ -40,12 +37,10 @@ fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_properties"))
 
 ################################################################################
-# 0.2 Import command-line arguments
+# 0.2 Import command-line arguments and dates # to be adapted at a later stage
 ################################################################################
 # args <- commandArgs(trailingOnly=TRUE)
-# study_dates <-
-#   jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
-#   map(as.Date)
+study_dates <- jsonlite::fromJSON("output/study_dates.json")
 
 ################################################################################
 # 0.3 Define redaction threshold
@@ -126,59 +121,50 @@ data_extracted <- data_extracted %>%
     ## remove TC < 1.75 or > 20
     ## remove HDL < 0.4 or > 5
     ## remove ratios < 1 or > 50
-    tmp_cov_num_cholesterol = replace(tmp_cov_num_cholesterol, tmp_cov_num_cholesterol < 1.75 | tmp_cov_num_cholesterol > 20, NA),
-    tmp_cov_num_hdl_cholesterol = replace(tmp_cov_num_hdl_cholesterol, tmp_cov_num_hdl_cholesterol < 0.4 | tmp_cov_num_hdl_cholesterol > 5, NA),
+    tmp_cov_num_cholesterol = replace(tmp_cov_num_cholesterol, tmp_cov_num_cholesterol < 1.75 | tmp_cov_num_cholesterol > 20, NA_real_),
+    tmp_cov_num_hdl_cholesterol = replace(tmp_cov_num_hdl_cholesterol, tmp_cov_num_hdl_cholesterol < 0.4 | tmp_cov_num_hdl_cholesterol > 5, NA_real_),
     cov_num_tc_hdl_ratio = tmp_cov_num_cholesterol / tmp_cov_num_hdl_cholesterol,
-    cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA),
-  
+    cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
     )
 
 # apply diabetes algorithm and delete all helper variables (tmp & step) at the end
 data_processed <- fn_diabetes_algorithm(data_extracted)
 
 ################################################################################
-# 4 Apply the quality criteria
+# 4 Apply the quality assurance criteria
 ################################################################################
-n_qa_excluded_midpoint6 <- fn_quality_assurance_midpoint6(data_processed) # 
-data_processed <- data_processed %>%
-  filter(!is.na(qa_num_birth_year)) %>%
-  filter(is.na(qa_date_of_death) | (qa_num_birth_year <= year(qa_date_of_death))) %>%
-  filter(qa_num_birth_year >= 1793 & qa_num_birth_year <= year(Sys.Date())) %>%
-  filter((qa_date_of_death > as.Date("1900-01-01")) | (qa_date_of_death < Sys.Date()) | is.na(qa_date_of_death)) %>%
-  filter((cov_cat_sex == "Female" | is.na(cov_cat_sex)) | (cov_cat_sex == "Male" & (qa_bin_pregnancy == FALSE))) %>% # FALSE includes missing
-  filter((cov_cat_sex == "Female" | is.na(cov_cat_sex)) | (cov_cat_sex == "Male" & (qa_bin_hrt == FALSE)) | (cov_cat_sex == "Male" & (qa_bin_cocp == FALSE))) %>%
-  filter((cov_cat_sex == "Male" | is.na(cov_cat_sex)) | (cov_cat_sex == "Female" & (qa_bin_prostate_cancer == FALSE)))
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
 
 ################################################################################
 # 5 Apply the completeness criteria
 ################################################################################
-n_completeness_excluded_midpoint6 <- fn_completeness_criteria_midpoint6(data_processed)
-data_processed <- data_processed %>%
-  filter(qa_bin_was_alive == TRUE) %>%
-  filter(qa_bin_is_female_or_male == TRUE) %>%
-  filter(qa_bin_known_imd == TRUE) %>%
-  filter(!is.na(cov_cat_region)) %>%
-  filter(qa_bin_was_registered == TRUE)
+completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+data_processed <- completeness$data_processed
 
 ################################################################################
 # 6 Apply the eligibility criteria
 ################################################################################
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => use function with loop that can be mapped to other windows
-# years_in_days <- c(0, 366, 731, 1096, 1461, 1827) # define study window (mid_years until 2013)
-# assign eligibility flow chart 
-# n_elig_excluded_midpoint6 <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
-# assign eligibility flow chart function to all windows
-n_elig_excluded_all_windows_midpoint6 <-
+
+# eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
+# n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
+# data_processed <- eligibility$data_processed
+
+# for feasibility check, apply the eligibility window for incident T2DM until mid2013
+data_processed_feasibility <- data_processed # since input and output are both data_processed, the loop would otherwise take the output of previous loop as input
+# count
+n_elig_excluded_all_windows_midpoint6 <- 
   map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
-      .f = ~ fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = .x))
+      .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$n_elig_excluded_midpoint6)
 names(n_elig_excluded_all_windows_midpoint6) <- c("elig_mid2018_midpoint6", "elig_mid2017_midpoint6", "elig_mid2016_midpoint6", "elig_mid2015_midpoint6", "elig_mid2014_midpoint6", "elig_mid2013_midpoint6")
 
-# apply eligibility criteria to define final dataset; for now, only for primary window (mid2018-mid2019 -> years_in_days = 0) 
-# data_processed <- fn_apply_elig_criteria(data_processed, study_dates, years_in_days = 0)
-# apply eligibility criteria function to all windows
+# apply eligibility criteria
 data_processed_all_windows <-
   map(.x = list(0, 366, 731, 1096, 1461, 1827),
-      .f = ~ fn_apply_elig_criteria(data_processed, study_dates, years_in_days = .x))
+      .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$data_processed)
 names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
 
 ################################################################################

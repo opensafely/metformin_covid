@@ -49,7 +49,7 @@ landmark_date = study_dates["landmark_date"]
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=10000)
+dataset.configure_dummy_data(population_size=5000)
 dataset.define_population(patients.exists_for_patient())
 
 
@@ -59,10 +59,9 @@ dataset.define_population(patients.exists_for_patient())
 # population variables for dataset definition 
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
 dataset.qa_bin_was_adult = (patients.age_on(landmark_date) >= 18) & (patients.age_on(landmark_date) <= 110) 
-dataset.qa_bin_was_alive = (((patients.date_of_death.is_null()) | (patients.date_of_death.is_after(landmark_date))) & 
-        ((ons_deaths.date.is_null()) | (ons_deaths.date.is_after(landmark_date))))
+dataset.qa_bin_was_alive = patients.is_alive_on(landmark_date)
 dataset.qa_bin_known_imd = addresses.for_patient_on(landmark_date).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(914), landmark_date).exists_for_patient() # only include if registered on landmark_date spanning back 30 months (i.e. only deregistered later than landmark_date or has no deregistration date, see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning). Calculated from 1 year = 365.25 days, taking into account leap years.
+dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(366), landmark_date).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Year of birth
 dataset.qa_num_birth_year = patients.date_of_birth

@@ -43,27 +43,27 @@ fn_diabetes_algorithm <- function(data_extracted){
 
     # Step 5. Aged <35yrs (or <30 yrs for SAs and AFCS) at first diagnostic code? denominator for step 5: no to step 4
     mutate(step_5 = ifelse(step_4 == "No" &
-                             tmp_age_under_35_30_1st_diag == "Yes", "Yes", ### includes NA and many codes (incl. gestational DM, but excluded in Step 1): elig_date_t2dm, elig_date_t1dm, elig_date_otherdm, elig_date_gestationaldm, tmp_elig_date_poccdm, tmp_elig_date_diabetes_medication, tmp_elig_date_nonmetform_drugs_snomed
+                             tmp_age_under_35_30_1st_diag == "Yes", "Yes", ### includes many codes (incl. gestational DM, but excluded in Step 1): elig_date_t2dm, elig_date_t1dm, elig_date_otherdm, elig_date_gestationaldm, tmp_elig_date_poccdm, tmp_elig_date_diabetes_medication, tmp_elig_date_nonmetform_drugs_snomed
                            ifelse(step_4 == "No" &
                                     tmp_age_under_35_30_1st_diag == "No", "No", NA))) %>%
     mutate(step_5 = ifelse(step_5 == "No" |
-                             is.na(step_5) & step_4 == "No", "No", "Yes")) %>% # => step_5 will never be NA
+                             is.na(step_5) & step_4 == "No", "No", "Yes")) %>% # => step_5 will never be NA, as an extra security step. However, these two lines are not really needed; "tmp_age_under_35_30_1st_diag" cannot be NA.
 
     # Step 6. Type 1 and type 2 codes present? denominator for step 6: no to step 5
     mutate(step_6 = ifelse(step_5 == "No" &
                              !is.na(elig_date_t1dm) &
-                             !is.na(elig_date_t2dm), "Yes", # step_6 == Yes does not contain any missing in elig_date_t1dm & _t2dm
+                             !is.na(elig_date_t2dm), "Yes", # step_6 == Yes does not contain any NA
                            ifelse(step_5 == "No" &
                                     (is.na(elig_date_t1dm) |
                                        is.na(elig_date_t2dm)), "No", NA))) %>% # NA will never be fulfilled
 
-    # Step 6a. Type 1 only reported in primary care. denominator for step 6a: "yes" to step 6 ("adapted") ###
+    # Step 6a. Type 1 only reported in primary care? denominator for step 6a: yes to step 6
     mutate(step_6a = ifelse(step_6 == "Yes" &
                               !is.na(tmp_elig_date_t1dm_ctv3) &
                               is.na(tmp_elig_date_t2dm_ctv3), "Yes",
                             ifelse(step_6 == "Yes", "No", NA))) %>% # NA will never be fulfilled
 
-    # Step 6b. Type 2 only reported in primary care. denominator for step 6b: no to step 6"a" ("adapted") ###
+    # Step 6b. Type 2 only reported in primary care? denominator for step 6b: no to step 6a
     mutate(step_6b = ifelse(step_6a == "No" &
                               is.na(tmp_elig_date_t1dm_ctv3) &
                               !is.na(tmp_elig_date_t2dm_ctv3), "Yes",
@@ -71,7 +71,7 @@ fn_diabetes_algorithm <- function(data_extracted){
 
     # Step 6c. Number of type 1 codes>number of type 2 codes? denominator for step 6c: no to step 6b
     mutate(step_6c = ifelse(step_6b == "No" &
-                              tmp_elig_count_t1dm > tmp_elig_count_t2dm, "Yes",
+                              tmp_elig_count_t1dm > tmp_elig_count_t2dm, "Yes", # count variable cannot be NA, according to ehrQL: count_for_patient() "Note this will be 0 rather than NULL if the patient has no rows at all in the frame." https://docs.opensafely.org/ehrql/reference/language/#PatientFrame.count_for_patient
                             ifelse(step_6b == "No" &
                                      tmp_elig_count_t1dm <= tmp_elig_count_t2dm, "No", NA))) %>% # NA will never be fulfilled
 
@@ -85,9 +85,9 @@ fn_diabetes_algorithm <- function(data_extracted){
     mutate(step_6e = ifelse(step_6d == "No" &
                               elig_date_t2dm > elig_date_t1dm, "Yes",
                             ifelse(step_6d == "No" &
-                                     elig_date_t2dm < elig_date_t1dm, "No", NA))) %>% ### NA will not be fulfilled except if elig_date_t2dm = elig_date_t1dm
+                                     elig_date_t2dm <= elig_date_t1dm, "No", NA))) %>% ### NA will not be fulfilled. Type 1 overrules Type 2 in case of same date.
 
-    # Step 7. Diabetes medication or >5 process of care codes or HbA1c>=6.5? denominator for step 7: no to step 6
+    # Step 7. Diabetes medication or >5 process of care codes or HbA1c >= 6.5 (47.5 mmol/mol)? denominator for step 7: no to step 6
     mutate(step_7 = ifelse(step_6 == "No" & # includes missing in elig_date_t1dm or elig_date_t2dm in step_6
                              ((!is.na(tmp_elig_date_diabetes_medication)) |
                                 (tmp_elig_num_max_hba1c_mmol_mol >= 47.5) |
@@ -152,7 +152,7 @@ fn_diabetes_algorithm <- function(data_extracted){
     # replace NAs with None (no diabetes)
     mutate_at(vars(elig_cat_diabetes), ~replace_na(., "None")) %>%
 
-    # Define incident diabetes date variables needed for cox analysis
+    # Define incident diabetes date variables
     # Uses diabetes category from algorithm above and date of first diabetes related code
 
     # remove original diabetes variables to avoid duplication
