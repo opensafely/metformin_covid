@@ -401,11 +401,11 @@ dataset.cov_bin_diabetescomp = (
     last_matching_event_apc_before(diabetescomp_icd10, landmark_date).exists_for_patient()
 )
 
-## Any HbA1c measurement, on or before landmark_date ## does not make sense for landmark set up (stick to HbA1c level at diagnosis and at landmark)
+## Any HbA1c measurement, on or before landmark_date ## does not make sense for landmark set up (stick to HbA1c level)
 #dataset.cov_bin_hba1c_measurement = last_matching_event_clinical_snomed_before(hba1c_measurement_snomed, landmark_date).exists_for_patient()
 
-## Any OGTT done, on or before landmark_date
-dataset.cov_bin_ogtt_measurement = last_matching_event_clinical_snomed_before(ogtt_measurement_snomed, landmark_date).exists_for_patient()
+## Any OGTT done, on or before landmark_date ## does not make sense for landmark set up (stick to HbA1c level)
+#dataset.cov_bin_ogtt_measurement = last_matching_event_clinical_snomed_before(ogtt_measurement_snomed, landmark_date).exists_for_patient()
 
 ## BMI, most recent value, within previous 2 years, on or before landmark_date
 bmi_measurement = most_recent_bmi(
