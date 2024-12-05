@@ -59,10 +59,9 @@ dataset.define_population(patients.exists_for_patient())
 # population variables for dataset definition 
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
 dataset.qa_bin_was_adult = (patients.age_on(landmark_date) >= 18) & (patients.age_on(landmark_date) <= 110) 
-dataset.qa_bin_was_alive = (((patients.date_of_death.is_null()) | (patients.date_of_death.is_after(landmark_date))) & 
-        ((ons_deaths.date.is_null()) | (ons_deaths.date.is_after(landmark_date))))
+dataset.qa_bin_was_alive = patients.is_alive_on(landmark_date)
 dataset.qa_bin_known_imd = addresses.for_patient_on(landmark_date).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(914), landmark_date).exists_for_patient() # only include if registered on landmark_date spanning back 30 months (i.e. only deregistered later than landmark_date or has no deregistration date, see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning). Calculated from 1 year = 365.25 days, taking into account leap years.
+dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(366), landmark_date).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Year of birth
 dataset.qa_num_birth_year = patients.date_of_birth
@@ -106,59 +105,59 @@ dataset.qa_bin_prostate_cancer = case(
 
 ## Type 1 Diabetes 
 # First date from primary+secondary, but also primary care date separately for diabetes algo
-dataset.tmp_cov_date_t1dm_ctv3 = first_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, landmark_date).date
-dataset.cov_date_t1dm = minimum_of(
+dataset.tmp_elig_date_t1dm_ctv3 = first_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, landmark_date).date
+dataset.elig_date_t1dm = minimum_of(
     (first_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, landmark_date).date),
     (first_matching_event_apc_before(diabetes_type1_icd10, landmark_date).admission_date)
 )
 # Count codes (individually and together, for diabetes algo)
-dataset.tmp_cov_count_t1dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, landmark_date)
-dataset.tmp_cov_count_t1dm_hes = count_matching_event_apc_before(diabetes_type1_icd10, landmark_date)
-dataset.tmp_cov_count_t1dm = dataset.tmp_cov_count_t1dm_ctv3 + dataset.tmp_cov_count_t1dm_hes
+dataset.tmp_elig_count_t1dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, landmark_date)
+dataset.tmp_elig_count_t1dm_hes = count_matching_event_apc_before(diabetes_type1_icd10, landmark_date)
+dataset.tmp_elig_count_t1dm = dataset.tmp_elig_count_t1dm_ctv3 + dataset.tmp_elig_count_t1dm_hes
 
 ## Type 2 Diabetes
 # First date from primary+secondary, but also primary care date separately for diabetes algo)
-dataset.tmp_cov_date_t2dm_ctv3 = first_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, landmark_date).date
-dataset.cov_date_t2dm = minimum_of(
+dataset.tmp_elig_date_t2dm_ctv3 = first_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, landmark_date).date
+dataset.elig_date_t2dm = minimum_of(
     (first_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, landmark_date).date),
     (first_matching_event_apc_before(diabetes_type2_icd10, landmark_date).admission_date)
 )
 # Count codes (individually and together, for diabetes algo)
-dataset.tmp_cov_count_t2dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, landmark_date)
-dataset.tmp_cov_count_t2dm_hes = count_matching_event_apc_before(diabetes_type2_icd10, landmark_date)
-dataset.tmp_cov_count_t2dm = dataset.tmp_cov_count_t2dm_ctv3 + dataset.tmp_cov_count_t2dm_hes
+dataset.tmp_elig_count_t2dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, landmark_date)
+dataset.tmp_elig_count_t2dm_hes = count_matching_event_apc_before(diabetes_type2_icd10, landmark_date)
+dataset.tmp_elig_count_t2dm = dataset.tmp_elig_count_t2dm_ctv3 + dataset.tmp_elig_count_t2dm_hes
 
 ## Diabetes unspecified/other
 # First date
-dataset.cov_date_otherdm = first_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, landmark_date).date
+dataset.elig_date_otherdm = first_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, landmark_date).date
 # Count codes
-dataset.tmp_cov_count_otherdm = count_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, landmark_date)
+dataset.tmp_elig_count_otherdm = count_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, landmark_date)
 
 ## Gestational diabetes
 # First date
-dataset.cov_date_gestationaldm = first_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, landmark_date).date
+dataset.elig_date_gestationaldm = first_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, landmark_date).date
 
 ## Diabetes diagnostic codes
 # First date
-dataset.tmp_cov_date_poccdm = first_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, landmark_date).date
+dataset.tmp_elig_date_poccdm = first_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, landmark_date).date
 # Count codes
-dataset.tmp_cov_count_poccdm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, landmark_date)
+dataset.tmp_elig_count_poccdm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_diagnostic_ctv3_clinical, landmark_date)
 
 ### Other variables needed to define diabetes
 ## HbA1c
 # Maximum HbA1c measure (in the same period)
-dataset.tmp_cov_num_max_hba1c_mmol_mol = (
+dataset.tmp_elig_num_max_hba1c_mmol_mol = (
   clinical_events.where(
     clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(landmark_date))
     .numeric_value.maximum_for_patient()
 )
 # Date of first maximum HbA1c measure
-dataset.tmp_cov_date_max_hba1c = ( 
+dataset.tmp_elig_date_max_hba1c = ( 
   clinical_events.where(
     clinical_events.snomedct_code.is_in(hba1c_snomed))
     .where(clinical_events.date.is_on_or_before(landmark_date)) # this line of code probably not needed again
-    .where(clinical_events.numeric_value == dataset.tmp_cov_num_max_hba1c_mmol_mol)
+    .where(clinical_events.numeric_value == dataset.tmp_elig_num_max_hba1c_mmol_mol)
     .sort_by(clinical_events.date)
     .first_for_patient() 
     .date
@@ -166,50 +165,50 @@ dataset.tmp_cov_date_max_hba1c = (
 
 ## Diabetes drugs
 # First dates
-dataset.tmp_cov_date_insulin_snomed = first_matching_med_dmd_before(insulin_dmd, landmark_date).date
-dataset.tmp_cov_date_antidiabetic_drugs_snomed = first_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, landmark_date).date
-dataset.tmp_cov_date_nonmetform_drugs_snomed = first_matching_med_dmd_before(non_metformin_dmd, landmark_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_insulin_snomed = first_matching_med_dmd_before(insulin_dmd, landmark_date).date
+dataset.tmp_elig_date_antidiabetic_drugs_snomed = first_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, landmark_date).date
+dataset.tmp_elig_date_nonmetform_drugs_snomed = first_matching_med_dmd_before(non_metformin_dmd, landmark_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes medication was prescribed
-dataset.tmp_cov_date_diabetes_medication = minimum_of(dataset.tmp_cov_date_insulin_snomed, dataset.tmp_cov_date_antidiabetic_drugs_snomed) # why excluding tmp_cov_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_diabetes_medication = minimum_of(dataset.tmp_elig_date_insulin_snomed, dataset.tmp_elig_date_antidiabetic_drugs_snomed) # why excluding tmp_elig_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes diagnosis codes were recorded
-dataset.tmp_cov_date_first_diabetes_diag = minimum_of(
-  dataset.cov_date_t2dm, 
-  dataset.cov_date_t1dm,
-  dataset.cov_date_otherdm,
-  dataset.cov_date_gestationaldm,
-  dataset.tmp_cov_date_poccdm,
-  dataset.tmp_cov_date_diabetes_medication,
-  dataset.tmp_cov_date_nonmetform_drugs_snomed
+dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
+  dataset.elig_date_t2dm, 
+  dataset.elig_date_t1dm,
+  dataset.elig_date_otherdm,
+  dataset.elig_date_gestationaldm,
+  dataset.tmp_elig_date_poccdm,
+  dataset.tmp_elig_date_diabetes_medication,
+  dataset.tmp_elig_date_nonmetform_drugs_snomed
 )
 
 ## DIABETES algo variables end ------------------------
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.tmp_elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
+dataset.elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 
 ## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
-dataset.tmp_elig_date_ckd_45 = minimum_of(
+dataset.elig_date_ckd_45 = minimum_of(
     first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
     first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
 )
 
 ## Advance decompensated liver cirrhosis, on or before baseline
-dataset.tmp_elig_date_liver_cirrhosis = minimum_of(
+dataset.elig_date_liver_cirrhosis = minimum_of(
     first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
     first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
 )
 
 ## Use of the following medications in the last 14 days (drug-drug interaction with metformin)
-dataset.tmp_elig_date_metfin_interaction = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
+dataset.elig_date_metfin_interaction = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
 
 
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables
 #######################################################################################
-## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) in R => assign tmp_ to this variable
-dataset.tmp_exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date # create exp_date_metfin_first and elig_bin_metfin_before_baseline from this tmp_ variable (-> in R)
+## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) 
+dataset.exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date
 dataset.exp_count_metfin = (
   medications.where(
     medications.dmd_code.is_in(metformin_dmd))
@@ -223,7 +222,7 @@ dataset.exp_count_metfin = (
 #######################################################################################
 
 ## Sex
-dataset.cov_cat_sex = patients.sex.is_in(["female", "male"])
+dataset.cov_cat_sex = patients.sex
 
 ## Age at landmark_date
 dataset.cov_num_age = patients.age_on(landmark_date)
@@ -282,7 +281,7 @@ dataset.cov_bin_carehome_status = case(
     otherwise = False
 )
 
-## Any sulfonylurea use before landmark_date (could also be a combo with metformin)
+## Any other antidiabetic drug use before landmark_date (could also be a combo with metformin)
 dataset.cov_date_sulfo = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
 dataset.cov_date_dpp4 = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
 dataset.cov_date_tzd = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
