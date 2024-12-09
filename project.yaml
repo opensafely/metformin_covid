@@ -26,11 +26,5 @@ actions:
     outputs:
       highly_sensitive:
         rds: output/data/*.rds
-
-  feasibility:
-    run: r:latest analysis/feasibility.R
-    needs:
-    - data_process
-    outputs:
       moderately_sensitive:
         csv: output/data_properties/*.csv

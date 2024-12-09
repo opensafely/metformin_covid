@@ -605,6 +605,186 @@
       "url": "https://www.opencodelists.org/codelist/opensafely/covid-identification/2020-06-03/",
       "downloaded_at": "2024-09-25 17:22:38.274109Z",
       "sha": "124db6929439379b7dacd55ba26ae4f2ed9370bc"
+    },
+    "opensafely-symptoms-breathlessness-new.csv": {
+      "id": "opensafely/symptoms-breathlessness-new/2b952474",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-breathlessness-new/2b952474/",
+      "downloaded_at": "2024-12-09 11:02:23.455324Z",
+      "sha": "9824aaf688e7c392fcd0a206455a825b83c02968"
+    },
+    "opensafely-symptoms-cough.csv": {
+      "id": "opensafely/symptoms-cough/79763e09",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-cough/79763e09/",
+      "downloaded_at": "2024-12-09 11:02:23.633757Z",
+      "sha": "ee217fc498ee4c85319c69468e2832cc7c7e6a84"
+    },
+    "opensafely-symptoms-chest-pain-unexplained.csv": {
+      "id": "opensafely/symptoms-chest-pain-unexplained/7c28fdff",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-chest-pain-unexplained/7c28fdff/",
+      "downloaded_at": "2024-12-09 11:02:23.834537Z",
+      "sha": "b88af3ec2df01b710399a7f6bbff1f35fe047338"
+    },
+    "opensafely-symptoms-chest-tightness.csv": {
+      "id": "opensafely/symptoms-chest-tightness/4757579f",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-chest-tightness/4757579f/",
+      "downloaded_at": "2024-12-09 11:02:24.000106Z",
+      "sha": "75d4b41555d8ff127be6e616847664a6cce3899b"
+    },
+    "opensafely-symptoms-palpitations.csv": {
+      "id": "opensafely/symptoms-palpitations/4a0a1795",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-palpitations/4a0a1795/",
+      "downloaded_at": "2024-12-09 11:02:24.166163Z",
+      "sha": "726970de338222719ceb4476e8b54fc20b7809c2"
+    },
+    "opensafely-symptoms-fatigue.csv": {
+      "id": "opensafely/symptoms-fatigue/17eb312b",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-fatigue/17eb312b/",
+      "downloaded_at": "2024-12-09 11:02:24.327330Z",
+      "sha": "99aa42bc486cee831c042ae5cbc6964f8a33785d"
+    },
+    "opensafely-symptoms-fever.csv": {
+      "id": "opensafely/symptoms-fever/4cbcd78b",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-fever/4cbcd78b/",
+      "downloaded_at": "2024-12-09 11:02:24.468228Z",
+      "sha": "81b3e2d3566f2ba9e3d707feaf7c0a23fe3c3f08"
+    },
+    "opensafely-symptoms-pain.csv": {
+      "id": "opensafely/symptoms-pain/71385a33",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-pain/71385a33/",
+      "downloaded_at": "2024-12-09 11:02:25.195779Z",
+      "sha": "f10644780459fc727569c6217778f122f7d4a0dc"
+    },
+    "opensafely-symptoms-cognitive-impairment.csv": {
+      "id": "opensafely/symptoms-cognitive-impairment/018e7dec",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-cognitive-impairment/018e7dec/",
+      "downloaded_at": "2024-12-09 11:02:25.490921Z",
+      "sha": "baafdef136265fe93bf5c7baaa50b25eb69b52d7"
+    },
+    "opensafely-symptoms-headache.csv": {
+      "id": "opensafely/symptoms-headache/62400541",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-headache/62400541/",
+      "downloaded_at": "2024-12-09 11:02:25.662457Z",
+      "sha": "c7196f119cfc8c6e2fa7bdd5a0c38498b3fb9c86"
+    },
+    "opensafely-symptoms-sleep-disturbance.csv": {
+      "id": "opensafely/symptoms-sleep-disturbance/3968208e",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-sleep-disturbance/3968208e/",
+      "downloaded_at": "2024-12-09 11:02:25.850514Z",
+      "sha": "d4d5dea37769a5e94b995c10a65bdea3dc439eb2"
+    },
+    "opensafely-symptoms-peripheral-neuropathy.csv": {
+      "id": "opensafely/symptoms-peripheral-neuropathy/2058ad59",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-peripheral-neuropathy/2058ad59/",
+      "downloaded_at": "2024-12-09 11:02:26.111395Z",
+      "sha": "622bd1925955054893206c36976478362edd9637"
+    },
+    "opensafely-symptoms-dizzy.csv": {
+      "id": "opensafely/symptoms-dizzy/07493a24",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-dizzy/07493a24/",
+      "downloaded_at": "2024-12-09 11:02:26.317196Z",
+      "sha": "df08921eef136ef5e824ef75eae3fdc822c6d51c"
+    },
+    "opensafely-symptoms-delirium.csv": {
+      "id": "opensafely/symptoms-delirium/6e39c6ee",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-delirium/6e39c6ee/",
+      "downloaded_at": "2024-12-09 11:02:26.485481Z",
+      "sha": "07de589bd96261882aa346a90f47106bcdbc496f"
+    },
+    "opensafely-symptoms-mobility-impairment.csv": {
+      "id": "opensafely/symptoms-mobility-impairment/7bb786bc",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-mobility-impairment/7bb786bc/",
+      "downloaded_at": "2024-12-09 11:02:26.678224Z",
+      "sha": "65a5fa6d2486bf5bfe6a3299494d3dc2bb173dae"
+    },
+    "opensafely-symptoms-visual-disturbance.csv": {
+      "id": "opensafely/symptoms-visual-disturbance/1711aba2",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-visual-disturbance/1711aba2/",
+      "downloaded_at": "2024-12-09 11:02:26.999624Z",
+      "sha": "db49384bd9706741cea84679f193786d24388272"
+    },
+    "opensafely-symptoms-abdominal-pain.csv": {
+      "id": "opensafely/symptoms-abdominal-pain/344e73f1",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-abdominal-pain/344e73f1/",
+      "downloaded_at": "2024-12-09 11:02:27.381176Z",
+      "sha": "38b7ee80c476cecd38a785bf2d5973ac3140b8e8"
+    },
+    "opensafely-symptoms-nausea-and-vomiting.csv": {
+      "id": "opensafely/symptoms-nausea-and-vomiting/30211ed7",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-nausea-and-vomiting/30211ed7/",
+      "downloaded_at": "2024-12-09 11:02:27.567717Z",
+      "sha": "9a3f2a00170c6c42abf220c188688ddf11eed042"
+    },
+    "opensafely-symptoms-diarrhoea.csv": {
+      "id": "opensafely/symptoms-diarrhoea/7b4f7876",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-diarrhoea/7b4f7876/",
+      "downloaded_at": "2024-12-09 11:02:27.721335Z",
+      "sha": "803ea81e531b1404afbf85aaae3245321acf3d22"
+    },
+    "opensafely-symptoms-weight-loss-and-reduced-appetite.csv": {
+      "id": "opensafely/symptoms-weight-loss-and-reduced-appetite/7e02386c",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-weight-loss-and-reduced-appetite/7e02386c/",
+      "downloaded_at": "2024-12-09 11:02:27.900374Z",
+      "sha": "207b4d1258062ce4eb453566de45bd8eb4e1cd84"
+    },
+    "opensafely-symptoms-tinnitus.csv": {
+      "id": "opensafely/symptoms-tinnitus/4be35202",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-tinnitus/4be35202/",
+      "downloaded_at": "2024-12-09 11:02:28.059891Z",
+      "sha": "f88eeb2c28a751e7caad865ff0c92b5e2b89508d"
+    },
+    "opensafely-symptoms-earache.csv": {
+      "id": "opensafely/symptoms-earache/32d3decd",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-earache/32d3decd/",
+      "downloaded_at": "2024-12-09 11:02:28.226839Z",
+      "sha": "d76bd8040216c4b0ac15b147821b0726a2660c45"
+    },
+    "opensafely-symptoms-sore-throat.csv": {
+      "id": "opensafely/symptoms-sore-throat/679c1c30",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-sore-throat/679c1c30/",
+      "downloaded_at": "2024-12-09 11:02:28.395939Z",
+      "sha": "6975e3a17754e2ab44c1b22f0ca483906e963cef"
+    },
+    "opensafely-symptoms-loss-of-taste-or-smell.csv": {
+      "id": "opensafely/symptoms-loss-of-taste-or-smell/19c46b98",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-loss-of-taste-or-smell/19c46b98/",
+      "downloaded_at": "2024-12-09 11:02:28.576328Z",
+      "sha": "3774b67736d2703635d1cf250359255af4028ec3"
+    },
+    "opensafely-symptoms-nasal-congestion.csv": {
+      "id": "opensafely/symptoms-nasal-congestion/357d35c6",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-nasal-congestion/357d35c6/",
+      "downloaded_at": "2024-12-09 11:02:28.732995Z",
+      "sha": "c6c29b9812864f46b53bfaff5295480d8cbea042"
+    },
+    "opensafely-symptoms-hair-loss.csv": {
+      "id": "opensafely/symptoms-hair-loss/1da5ed63",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-hair-loss/1da5ed63/",
+      "downloaded_at": "2024-12-09 11:02:28.917264Z",
+      "sha": "ce89eea25fae675fd4150e66be6ff41991d423e5"
+    },
+    "opensafely-symptoms-rashes.csv": {
+      "id": "opensafely/symptoms-rashes/4d5de726",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-rashes/4d5de726/",
+      "downloaded_at": "2024-12-09 11:02:29.136986Z",
+      "sha": "aa15cf45c138c0729a46b12e877a0eee80562202"
+    },
+    "opensafely-symptoms-anxiety.csv": {
+      "id": "opensafely/symptoms-anxiety/3ae2b5b2",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-anxiety/3ae2b5b2/",
+      "downloaded_at": "2024-12-09 11:02:29.337306Z",
+      "sha": "95b32fc0e5089bd1acad2fb0f8acb7c49ca9ba37"
+    },
+    "opensafely-symptoms-depression.csv": {
+      "id": "opensafely/symptoms-depression/4048359e",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-depression/4048359e/",
+      "downloaded_at": "2024-12-09 11:02:29.503056Z",
+      "sha": "68e09f7bf79ad117b48897fcbaa96d8d0ced2d96"
+    },
+    "opensafely-symptoms-ptsd.csv": {
+      "id": "opensafely/symptoms-ptsd/64f2c537",
+      "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-ptsd/64f2c537/",
+      "downloaded_at": "2024-12-09 11:02:29.673966Z",
+      "sha": "2645b0a6b31a4094ceaf8c1c82e3158fb921abbc"
     }
   }
 }

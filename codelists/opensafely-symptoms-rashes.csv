@@ -1,0 +1,321 @@
+code,term
+10137002,Epidermal burn of chin
+105963001,"Noninfectious, erythematous, papular AND/OR squamous disease"
+1083521000119104,Dermatitis of bilateral external auditory canals
+1088651000119102,Dermatitis of left external auditory canal
+1091261000119105,Dermatitis of right external auditory canal
+109771000,Erythema of mucous membrane of mouth
+109772007,Erythema of mucous membrane of oral vestibule
+110231000000108,Perioral dermatitis
+110342004,Gingival erythema
+111716006,Epidermal burn of trunk
+111718007,Burn erythema of multiple sites of wrist AND/OR hand
+112071000000101,Periorbital erythema
+112625008,Cutaneous eruption
+113151000000100,Periorbital erythema
+123571000119104,Erythema multiforme minor
+123700004,Pustular eczema
+123702007,Scaling eczema
+123703002,Excoriated eczema
+125115006,Acute erythema
+125116007,Chronic erythema
+125117003,Idiopathic erythema
+125118008,Exfoliative erythema
+126486000,Erythema of mucous membrane
+135888007,On examination erythematous rash
+139684003,(Rash) or (C/O a rash)
+139914006,O/E - rash present
+141614005,O/E - discoid rash
+141801007,O/E - a rash
+14411002,"Desquamation, function"
+14664006,Epidermal burn of hand
+14912003,Vesiculobullous rash
+155174003,Dermatitis of eyelid
+156327009,Seborrhoeic dermatitis of scalp
+156328004,Seborrhoeic dermatitis
+156329007,Seborrheic dermatitis of scalp
+156358005,Dermatitis &/or eczemas NOS
+156360007,Erythematous disorder
+156362004,(Erythema multiforme) or (necrolysis: [antibiotic] or [toxic]) or (Stevens-Johnson syndrome)
+156363009,(Erythema nodosum) or (nodular vasculitis)
+156368000,(Erythematous conditions NOS) or (granulome annulare)
+158230006,[D]Rash and other nonspecific skin eruption
+158234002,[D]Rash and other nonspecific skin eruption NOS
+15981008,Increased desquamation
+162415008,Complaining of a rash
+162687000,O/E - rash present (& [allergic] or [itchy])
+16333002,Epidermal burn of male genitalia
+164427005,On examination - discoid rash
+164623002,On examination - a rash
+16921000,"Other specified erythematous condition, NEC"
+1806006,Eruption
+182782007,Dermatitis
+18363004,Nodular AND/OR diffuse dermatitis
+186504007,Viral disease characterized by exanthem
+186584009,Viral: (other exanthemata NOS) or (non specific rash)
+193917006,Dermatitis of eyelid
+199571000000101,Periocular dermatitis
+200761006,(Dermatitis/dermatoses) or (other skin and subcutaneous tissue inflammatory conditions)
+200762004,Erythematosquamous dermatosis
+200763009,Seborrhoeic dermatitis of scalp
+200764003,Seborrhoeic dermatitis (& capitis)
+200768000,Erythematosquamous dermatosis NOS
+200884006,Dermatitis NOS
+200919006,(Erythema multiforme) or (toxic epidermal necrolysis)
+200920000,Annular erythema
+200926006,Non-bullous erythema multiforme
+200927002,Other specified erythema multiforme
+200928007,Erythema multiforme NOS
+200929004,(Erythema nodosum) or (nodular vasculitis)
+200934000,Perioral dermatitis
+200945002,Other specified erythematous conditions
+200950008,Other exfoliative erythema
+200953005,(Other erythematous conditions NOS) or (granuloma annulare)
+200954004,Erythematous conditions NOS
+201237005,Seborrhea faciei
+201342000,(Other skin and subcut tissue disease NOS) or (skin lesion)
+201359005,[X]Other seborrheic dermatitis
+201370003,[X]Other specified dermatitis
+201379002,[X]Urticaria and erythema
+201381000,[X]Other erythema multiforme
+201383002,[X]Other specified erythematous conditions
+201384008,[X]Erythema in other diseases classified elsewhere
+20311006,Burn erythema of multiple sites of trunk
+20490007,Epidermal burn of lower leg
+204919003,Erythematous pinta plaque
+206860008,[D]Rash and other nonspecific skin eruption
+206863005,[D]Rash on genitals
+206864004,[D]Rash and other nonspecific skin eruption NOS
+20945009,Burn erythema of face AND/OR head
+215311000000103,Periocular dermatitis
+22972008,"Erythema multiforme, dermal type"
+238538009,Eczema
+238539001,Hand eczema
+238566001,Flexural seborrheic dermatitis
+238592008,Chronic superficial scaly dermatitis
+238751002,Perioral dermatitis
+238818000,Non-bullous erythema multiforme
+238819008,Bullous erythema multiforme
+238991008,Seborrheic eczema-like eruption
+240683000,Erythematous pinta plaque
+24152003,Nodular dermatitis
+247441003,Erythema
+247464001,Blistering eruption
+247466004,Herpetiform eruption
+247470007,Morbilliform eruption
+247471006,Maculopapular eruption
+254175006,Bullous eruption of hand
+260046006,Dry skin dermatitis
+26435006,Acute dermatitis
+264529005,Gyrate erythema
+267183006,(Rash) or (C/O a rash)
+267847004,Dermatitis &/or eczemas NOS
+267848009,(Erythema multiforme) or (necrolysis: [antibiotic] or [toxic]) or (Stevens-Johnson syndrome)
+267850001,(Erythematous conditions NOS) or (granulome annulare)
+268911002,On examination - rash present
+27006004,Vasculitic rash
+271756005,Macular eruption
+271757001,Papular eruption
+271759003,Bullous eruption
+271767006,Peeling of skin
+271807003,Eruption of skin
+271813007,Petechiae
+27346001,Epidermal burn of ankle
+275448003,Perianal dermatitis
+277172003,Erythematous ear canal
+27720003,Dermatitis factitia
+277240009,Erythema over maxillary sinus
+277243006,Erythema over frontal sinus
+278706008,Dermatitis of eyelid
+279333002,Pruritic disorder
+284078000,Purpuric rash
+289482006,Eruption of vulva
+289485008,Erythema of vulva
+289857000,Eruption of female perineum
+289860007,Erythema of female perineum
+290070001,Red breast
+290095000,Red nipple
+29418006,Epidermal burn of palm
+301444002,Pruritic rash
+301447009,Multimorphic rash
+304386008,On examination - itchy rash
+306933004,Erythema over mastoid
+30704002,Butterfly rash
+309473001,[D]Morbilliform rash
+31922003,Chronic generalized exfoliative dermatitis
+32861005,Erythema nodosum
+33824005,"Burn erythema of face, head AND/OR neck"
+33826007,Epidermal burn of elbow
+34554001,Epidermal burn of axilla
+34936007,Chronic dermatitis
+35501005,Epidermal burn of breast
+366986007,O/E - erythematous rash
+36715001,Erythema multiforme
+367211009,O/E - erythematous rash
+367516003,Pruritus of skin
+38966005,Epidermal burn of neck
+390881000000104,[X]Other specified dermatitis
+390961000000102,[X]Erythema in other diseases classified elsewhere
+392788007,O/E - scalp rash
+393742008,O/E - scalp rash
+39422006,"Interface dermatitis, lichenoid type"
+395122007,On examination - scalp rash
+396350005,Generalized exfoliative dermatitis
+397741002,Papular eruption of chin
+398591002,Centripetal rash
+398600002,Centrifugal rash
+399914006,Erythema annulare centrifugum
+399992009,Erythroderma
+400990009,Blanching rash
+400991008,Non-blanching rash
+401731000000105,[X]Other seborrhoeic dermatitis
+402202008,Acute seborrheic dermatitis
+402203003,Acute generalized seborrheic dermatitis
+402204009,Chronic seborrheic dermatitis
+402205005,Erythrodermic seborrheic dermatitis
+402206006,Pityriasiform seborrheic dermatitis
+402209004,Perianal seborrheic dermatitis
+402210009,Facial seborrheic dermatitis
+402229003,Acute atopic dermatitis of hand
+402230008,Chronic atopic dermatitis of hand
+402232000,Acute hand eczema
+402233005,Chronic hand eczema
+402236002,Vulval eczema
+402300003,Erythroderma of unknown etiology
+402345004,Desquamation of skin following febrile illness
+402347007,Desquamation secondary to acute systemic illness
+402603005,Diffuse inflammatory erythema
+402698005,Dermatitis of external ear
+403211002,Papular form erythema multiforme
+403212009,Vesicobullous form erythema multiforme
+403367007,Perioral dermatitis with periocular dermatitis
+403441003,Erythema multiforme-induced ulceration of lips
+40986008,Epidermal burn of foot
+409881000000101,[X]Other specified erythematous conditions
+412740002,Periorbital erythema
+420356000,Persistent erythema of skin
+421512008,Nonspecific exanthematous viral infection
+423716004,Petechiae of skin
+424223007,Grade of skin rash
+425267003,Periocular dermatitis
+427404005,Dermatitis of external auditory canal
+42879007,Burn erythema of two OR more fingers including thumb
+43116000,Eczema
+432701000000100,[D]Rash and other nonspecific skin eruption NOS
+43635001,Epidermal burn of scapular region
+438891000000101,[X]Other erythema multiforme
+442279002,Rash of genitalia
+444827008,Erythema of skin
+446932005,Inflammation of perioral skin fold
+4538007,Papulovesicular rash
+45491002,Generalized exfoliative dermatitis
+46156007,Burn erythema of chest wall
+462821000000106,[X]Urticaria and erythema
+46801000000100,Blanching rash
+47725002,Maculopapular rash
+479111000000107,[D]Rash and other nonspecific skin eruption NOS
+48055004,Pustular rash
+48596006,Scurfiness of scalp
+49523001,Epidermal burn of multiple sites of upper limb
+49615009,Burn erythema of abdominal wall
+496441000000103,[D]Rash and other nonspecific skin eruption
+496461000000102,[D]Rash on genitals
+4979002,Dermatitis
+502681000000101,[D]Morbilliform rash
+50495000,Morbilliform rash
+50563003,Seborrheic dermatitis
+50765007,Abnormal desquamation
+51979000,Localized desquamation
+52425001,Epidermal burn of female genitalia
+53107009,Subacute dermatitis
+53788007,Vesicular rash
+54674008,Burn erythema of forehead AND/OR cheek
+54792008,Erythematosquamous dermatosis
+55012006,Acute eczema
+56710004,Epidermal burn of wrist
+56940005,Palmar erythema
+58340008,Epidermal burn of nose
+58398000,Interface dermatitis
+584601000000104,Erythematosquamous dermatosis NOS
+58921009,Diffuse dermatitis
+590801000000107,Other specified erythematous conditions
+601111000000101,Dermatitis NOS
+62242007,Epidermal burn of upper limb
+62952004,Epidermal burn of knee
+638821000000102,Erythema multiforme NOS
+63910001,Chronic lip fold dermatitis
+64144002,Pruritic rash
+65467000,Epidermal burn of forearm
+655071000000104,Other specified erythema multiforme
+674651000000100,Other exfoliative erythema
+68503004,Pyotraumatic dermatitis
+68628004,Epidermal burn of toe
+68805003,Granulomatous rosacea
+69025008,Epidermal burn of thumb
+692621000000106,Erythematous conditions NOS
+69429006,Burn erythema of two OR more fingers not including thumb
+69688007,Chronic erythema nodosum
+700127007,Rash of vulva
+70250009,Epidermal burn of lower limb
+703938007,Inflammatory dermatosis
+70432004,Epidermal burn of upper arm
+707314000,Erythema multiforme co-occurrent with ulcer of oral mucous membrane
+70759006,Pyoderma
+70819003,Erythema
+70831001,Papular rash
+711435001,Chronic erythema nodosum migrans
+721542002,Acute blistering eruption of skin
+721543007,Acute desquamating eruption of skin
+723010005,Acute eruption of skin
+723011009,Acute purpuric eruption of skin
+723012002,Acute maculopapular eruption of skin
+723013007,Acute papular eruption of skin
+723014001,Acute exudative skin eruption
+7231009,Bullous dermatosis
+723166008,Acute erythematous eruption of skin
+724830002,Dermatitis of anogenital region
+724877007,Localized eruption of skin
+725119006,Generalized rash
+72568002,"Interface dermatitis, vacuolar type"
+72768000,Erythematous plaque
+72882005,Epidermal burn of shoulder
+73442001,Stevens-Johnson syndrome
+73658009,"Erythema multiforme, epidermal type"
+737171005,Dermatitis of male genitalia
+74207008,Acute vesicular dermatitis
+75221000000100,Non-blanching rash
+756631000000108,Erythema annulare centrifugum
+76097009,Erythema nodosum migrans
+762375006,Erythema multiforme due to viral disease
+7765006,Epidermal burn of scalp
+77830003,Epidermal burn of multiple sites
+78202006,Epidermal burn of lip
+782910009,Seborrhea-like dermatitis with psoriasiform elements
+7867008,Pruritus hiemalis
+78934009,Pruritus of skin
+79491000000104,Non-blanching rash
+79893008,Vesicular eruption
+80821000,"Burn erythema of single finger, not thumb"
+81094005,Epidermal burn of thigh
+81542001,Erythema annulare centrifugum
+816994007,Erythema of skin of nose
+827044000,Eruption of scalp
+827045004,Eruption of mouth
+827160004,Erythematous rash
+83751000000105,Blanching rash
+846742005,Eruption of skin present
+857002,Erythema simplex
+86563000,"Erythema multiforme, mixed dermal-epidermal type"
+86735004,Erythematous condition
+884341000000109,Vulval rash
+891001000000109,Vulval rash
+89390009,Epidermal burn of multiple sites of lower limb
+89757007,Macular rash
+9063003,Epidermal burn of back
+90911007,Erythematous plaques of pinta
+91146006,Epidermal burn of back of hand
+91487003,Diaper rash
+9269007,Epidermal burn of ear
+93423006,Dermatitis of eyelid
+95328003,Vesicular skin eruptions of the temporal region
+961007,"Erythema nodosum, acute form"

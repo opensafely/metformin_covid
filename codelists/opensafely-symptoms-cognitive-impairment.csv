@@ -1,0 +1,592 @@
+code,term
+100881000000108,GDS level 2 - very mild cognitive decline
+100891000000105,GDS level 3 - mild cognitive decline
+100901000000106,GDS level 4 - moderate cognitive decline
+100911000000108,GDS level 5 - moderately severe cognitive decline
+100921000000102,GDS level 6 - severe cognitive decline
+100931000000100,GDS level 7 - very severe cognitive decline
+101292002,PDS TWIN QUAT CONCENTRATE
+101394004,POLYOTIC CONCENTRATE SOLUBLE POWDER
+102161000119102,Relationship problems with family members due to mental condition
+102891000,Age-related cognitive decline
+102942005,Intelligence quotient low
+1034871000000101,Response to memory test for months of year in reverse
+1034881000000104,Memory: months of year in reverse 
+1034901000000101,Memory: months of year in reverse successful
+1034911000000104,Memory: months of year in reverse successful 
+1034921000000105,Memory: months of year in reverse unsuccessful
+1034931000000107,Memory: months of year in reverse unsuccessful 
+1036821000000108,Mild cognitive impairment review invitation
+1036831000000105,Mild cognitive impairment review invitation 
+1036841000000101,Mild cognitive impairment review invitation first letter
+1036851000000103,Mild cognitive impairment review first letter 
+1036861000000100,Mild cognitive impairment review invitation second letter
+1036871000000107,Mild cognitive impairment review invitation second letter 
+1036881000000109,Mild cognitive impairment review invitation third letter
+1036891000000106,Mild cognitive impairment review invitation third letter 
+1036901000000107,Mild cognitive impairment review declined
+1036911000000109,Mild cognitive impairment review declined 
+1047041000000108,Mild cognitive impairment review
+104779000,Leukocyte esterase measurement
+1050691000000108,Mild cognitive impairment review
+1052381000000103,Mild cognitive impairment annual review
+106022001,Finding of cognitive perceptual pattern
+106136008,Memory finding
+106137004,Intelligence finding
+1068951000000102,Difficulty remembering places
+1069191000000104,Does not remember routines
+1069211000000100,Does not shift attention
+1069441000000100,Does remember places
+1069971000000101,Difficulty dividing attention
+1070821000000108,Difficulty remembering past events
+1070831000000105,Difficulty remembering people
+1070841000000101,Difficulty remembering routines
+1070891000000106,Difficulty shifting attention
+1070981000000102,Difficulty sustaining attention
+1071621000000102,Does not divide attention
+1072501000000101,Does not remember past events
+1072511000000104,Does not remember people
+1072521000000105,Does not remember places
+1072651000000101,Does not sustain attention
+1073291000000101,Does divide attention
+1074151000000101,Does remember past events
+1074161000000103,Does remember people
+1074171000000105,Does remember routines
+1074211000000108,Does shift attention
+1074291000000104,Does sustain attention
+1074861000000106,Unable to divide attention
+1075681000000104,Unable to remember past events
+1075691000000102,Unable to remember people
+1075701000000102,Unable to remember places
+1075711000000100,Unable to remember routines
+1075771000000105,Unable to shift attention
+1075881000000103,Unable to sustain attention
+1084541000000103,Mental health advice and support intervention
+1085821000000106,Mental health problem
+109478007,Kohlschutter's syndrome
+109841000000108,Interagency mental health care coordination
+109898005,Indication for modification of patient cognitive status
+110352000,Minimal cognitive impairment
+110359009,Intellectual disability
+110360004,Intellectual frailty of aging
+111481000000100,Poor visual sequential memory
+112077003,Spatial disorientation
+116340000,Disturbance of cognitive learning
+117931000000104,Poor visual sequential memory
+118191004,Cognitive perceptual finding
+118550005,Number concentration (property)
+118556004,Substance concentration (property)
+118594004,Quantity concentration (property)
+13108000,"Memory, function"
+137287009,Monumental mason
+139484009,Memory disturbance (& amnesia (& symptom))
+139928000,O/E - mentally confused
+139940000,O/E - mental state
+140788004,Nervous system &/or mental state
+140816001,O/E - disorientated
+140826008,Mild cognitive disorder
+140829001,Nervous syst/mental state NOS
+141601000119107,Cognitive changes due to organic disorder
+142261000119100,Cognitive deficit in attention
+142271000119106,Cognitive deficit in communication skills
+142281000119109,Cognitive deficit in visuospatial function
+142291000119107,Cognitive deficit in psychomotor function
+142688004,Memory: own age
+142689007,Memory: own age not known
+142690003,Memory: own age known
+142691004,Memory: present time
+142692006,Memory: present time not known
+142693001,Memory: present time known
+142694007,Memory: present place
+142695008,Memory: present place not knwn
+142696009,Memory: present place known
+142697000,Memory: present year
+142698005,Memory: present year not known
+142699002,Memory: present year known
+142700001,Memory: own DOB
+142701002,Memory: own DOB not known
+142702009,Memory: own DOB known
+142703004,Memory: present month
+142704005,Memory: present month not knwn
+142705006,Memory: present month known
+142706007,Memory: important event
+142707003,Memory: important event not kn
+142708008,Memory: important event known
+142709000,Memory: important person
+142710005,Memory: import.person not knwn
+142711009,Memory: important person known
+142712002,Memory: count down
+142714001,Memory: count down successful
+142715000,Memory: count down unsuccess.
+145040006,Mild cognitive disorder
+147911009,Mental state
+154843007,Mental health disorder
+154952004,Attention deficit hyperactivity disorder
+154961004,Memory disturbance: [mild]
+158178004,[D]Amnesia (retrograde)
+159939006,Monumental mason
+16039007,Hysterical amnesia
+162199006,Memory disturbance (& amnesia (& symptom))
+162200009,Temporary loss of memory
+162702000,On examination - mentally confused
+162715009,On examination - mental state
+16314421000119103,Steroid-modified tinea infection of groin
+163608000,On examination - disorientated
+163619002,Mild cognitive disorder
+163622000,Nervous syst/mental state NOS
+163801000000107,Specialist mental health assessment
+165277000,Assessment: [mental disability] or [memory] or [dementia]
+165279002,Response to memory test for own age
+165280004,Memory: own age not known
+165281000,Memory: own age known
+165282007,Response to memory test for present time
+165283002,Memory: present time not known
+165284008,Memory: present time known
+165285009,Response to memory test for present place
+165286005,Memory: present place not known
+165287001,Memory: present place known
+165288006,Response to memory test for present year
+165289003,Memory: present year not known
+165290007,Memory: present year known
+165291006,Response to memory test for own date of birth
+165292004,Memory: own date of birth not known
+165293009,Memory: own date of birth known
+165294003,Response to memory test for present month
+165295002,Memory: present month not known
+165296001,Memory: present month known
+165297005,Response to memory test for important event
+165298000,Memory: important event not known
+165299008,Memory: important event known
+165300000,Response to memory test for important person
+165301001,Memory: important person not known
+165302008,Memory: important person known
+165303003,Response to memory test for counting down
+165304009,Memory: count down successful
+165305005,Memory: count down unsuccessful
+170231000000104,Referral to memory clinic
+174891000000105,Referral to memory clinic
+17842005,Confabulation
+18301000000102,Mental health assessment status
+18427003,Mental status determination
+1855002,Developmental academic disorder
+186541000000102,Memory observations
+186561000000101,Disturbance of memory for order of events
+186771000000100,Disorientated in time
+189981000000108,Memory observations
+190001000000109,Disturbance of memory for order of events
+190211000000104,Disorientated in time
+191716000,Dissociative amnesia
+192071009,Mild memory disturbance
+192072002,Organic memory impairment
+192129005,Attention deficit hyperactivity disorder
+192158008,[X]Mental and behavioral disorders
+192195008,Mild cognitive disorder
+192420000,Dissociative amnesia
+192557008,[X] (Unspecified mental retardation) or (mental deficiency [& subnormality] NOS)
+192593005,[X]Disturbance of activity and attention
+1943009,Right-left disorientation
+195202003,Transient global amnesia
+19657006,Disorientated in time
+196661000000103,Attention and listening assessment
+196891000000105,Attention delay
+198439001,Menopausal concentration lack
+202291000000107,Referral for mental health assessment
+206784007,[D]Amnesia (retrograde)
+206789002,[D]Anterograde amnesia
+206799007,"[X]Disorientation, unspecified"
+207606006,[X]Other amnesia
+207607002,[X]Other and unspecified symptoms and signs involving cognitive functions and awareness
+207613006,"[X]Disorientation, unspecified"
+20991000175106,Education for memory impairment
+223444001,Recommendation to seek attention
+225036005,Distortion of memory
+225037001,Minor memory lapses
+225038006,Memory lapses
+225040001,Localized dissociative amnesia
+225443005,Recovery of memory
+22558005,Iodide transport defect
+225654005,Temperamental
+228150001,Mental health impairment
+228156007,Intellectual functioning disability
+228544000,Cognitive intervention strategies
+228550005,Attention training
+228551009,Memory retraining
+228553007,Cognitive therapy
+229676007,Language-related cognitive disorder
+229713001,Attention deficit disorder
+229717000,Attention deficit hyperactivity disorder
+230736007,Transient global amnesia
+231447009,Mild cognitive disorder
+231448004,Age-associated memory impairment
+233667003,Rutland ciliary disorientation syndrome
+238435009,Steroid-modified tinea infection
+242421000000102,Consent for mental health assessment refused
+246536003,Cognitive seizure
+247572002,"Intellect, function"
+247573007,Intellectual ability
+247579006,Underestimates intellectual ability
+247580009,Intellectual faculties
+247586003,Long-term memory performance
+247587007,Long-term memory within normal limits
+247588002,Poor long-term memory
+247589005,Short-term memory performance
+247590001,Short-term memory within normal limits
+247592009,Poor short-term memory
+247602005,Memory function normal
+247605007,Sharpened memory for remote events
+247606008,Amnesia
+247607004,Amnesia for day to day facts
+247608009,Unable to remember today's date
+247609001,Unable to remember name of reigning monarch
+247610006,Unable to remember name of current prime minister
+247611005,Amnesia for important personal information
+247613008,Unable to remember own age
+247618004,Memory assessment finding
+247759001,Attention
+247760006,Ability to concentrate
+247761005,Reduced concentration
+247762003,Reduced concentration span
+247764002,Easily distracted
+247765001,Pays fleeting attention
+247766000,Pays attention to own choice of activity
+247769007,Well controlled integrated attention
+247781006,Excessive feelings of mental efficiency
+248021000,Attention seeking behavior
+248233002,Mental alertness
+248236005,Mentally vague
+24936000,Emotionally detached
+250416001,"Urobilinogen concentration, test strip measurement"
+25124003,Selective inattention
+254128006,Tricho-thiodystrophy
+26329005,Poor concentration
+268792003,Memory disturbance: [mild]
+269032002,Nervous system &/or mental state
+271596009,Mental distress
+271782001,Drowsy
+272051008,Memory assessment
+273643004,Neurobehavioral cognitive status examination
+274645001,"Disorientation, unspecified"
+274648004,[X]Other/unsp symp & signs invol cognit function & awareness
+274659008,Semicoma
+275277000,Post-traumatic amnesia
+275278005,Difficulty in remembering dates
+276294005,Isolated memory skills
+277304005,Pure tone audiometry using attention raising techniques
+280996003,Attention deficit without hyperactivity
+282409001,Nominated concentrations
+283878007,Impairment of registration
+283882009,Finding of memory performance
+283885006,Verbal short-term memory performance
+283890009,Semantic memory performance
+283904009,Memory form
+283910009,Explicit memory
+283912001,Implicit memory
+283914000,Verbal memory observable
+283923002,Tactile memory
+283925009,Topographical memory
+283927001,Procedural memory
+283933005,Verbal memory for names
+283934004,Verbal memory for objects
+283993007,Use of memory retrieval aids
+283994001,Semantic memory
+283995000,Verbal memory for events
+285188007,Unable to remember own date of birth
+285191007,Unable to remember day of the week
+285194004,Unable to remember month of year
+285197006,Unable to remember current year
+285213001,Memory aided by use of lists
+285214007,Memory aided by use of labels
+285215008,Memory aided by use of diary
+285219002,Unable to remember motor skills
+285221007,Unable to remember new motor skills
+285223005,Unable to remember old motor skills
+285225003,Unable to remember objects
+285228001,Unable to remember faces
+285230004,Unable to remember sounds
+285231000,Mental function
+285244005,Cognitive style
+288005,Cognitive function finding
+288770006,Unable to direct attention
+288771005,Does direct attention
+288772003,Does not direct attention
+288773008,Difficulty directing attention
+2899008,Thought block
+302262007,Memory skills training
+303116000,Memory function
+304637004,Cognitive restructuring
+304729001,Fuld object memory evaluation
+304767003,Rust inventory of schizotypal cognitions
+305346005,Admission to psychogeriatric day hospital
+305403008,Admission to psychogeriatric department
+305870003,Seen by psychogeriatric service
+305909002,Seen in psychogeriatric day hospital
+306138007,Referral to psychogeriatric service
+306204008,Referral to psychogeriatric day hospital
+307413004,Transient memory loss
+308922006,Mental symptom
+309801000000104,Seen in memory clinic
+309811000000102,Seen in memory clinic 
+309821000000108,Seen in memory clinic 
+309832006,Intellectual concepts and systems
+309961006,Psychogeriatric department
+310121005,Psychogeriatric service
+311465003,Cognitive functions
+311507007,Executive cognitive functions
+311514009,Microcog - assessment of cognitive function
+311518007,"Sustained attention, function"
+311519004,"Divided attention, function"
+311529006,Verbal memory encoding
+311530001,Verbal memory storage
+311532009,Immediate verbal memory
+311533004,Delayed verbal memory
+311553000,"Episodic memory, function"
+311554006,"Prospective memory, function"
+311718005,"Cognitive discrimination, function"
+31177006,"Attention deficit hyperactivity disorder, combined type"
+311884008,External memory aids training
+312008005,Cognitive function: distractibility
+312009002,Cognitive function: initiation
+312010007,Cognitive function: goal setting
+312011006,Cognitive function: planning
+312012004,Cognitive function: awareness
+312013009,"Intellectual awareness, function"
+312016001,"Metacognition, function"
+316768001,[X]Attention to other artificial openings of digestive tract
+316770005,[X]Attention to other artificial openings
+31748000,Abnormal mental state
+323331000000106,Anxiety about loss of memory
+331631000000101,Mental health - National Public Health Classification
+33254005,Uncompensated short term memory deficit
+342431000000106,Numeracy level: can do simple mental arithmetic
+346845006,Potassium citrate 12g/10mL concentrated mixture
+348121000000102,Diverting attention
+348131000000100,Redirecting attention
+34977006,Intellectual aphasia
+35253001,"Attention deficit hyperactivity disorder, predominantly inattentive type"
+360147003,Attention - action
+363871006,Mental state
+363883008,Cognitive function feature
+363885001,Characteristic of intellect
+363887009,Memory observable
+363888004,Memory performance
+36456004,Mental state finding
+365342001,Finding of cognitive style
+365656007,"Finding of urobilinogen concentration, dipstick"
+365814006,Finding of intellectual ability
+365826001,Finding of intellectual faculties
+365859003,Finding of short-term memory performance
+365869009,Finding of verbal short-term memory performance
+365888002,Finding of long-term memory performance
+365890001,Finding of semantic memory performance
+365905000,Finding of use of memory retrieval aids
+365906004,Finding of memory for own age
+365907008,Finding of memory for present time
+365908003,Finding of memory for present place
+365909006,Finding of memory for present year
+365911002,Finding of memory for own date of birth
+365912009,Finding of memory for present month
+365913004,Finding of memory for important event
+365914005,Finding of memory for important person
+365915006,Finding of memory for counting down
+365917003,Finding of memory form
+365918008,Finding of semantic memory
+365919000,Finding of verbal memory
+365933000,Finding of mental alertness
+366963000,Transient global amnesia
+366970000,Reduced concentration
+367187006,Transient global amnesia
+367194009,Reduced concentration
+371092001,Cognitive safety issue
+373930000,Cognitive function finding
+38369006,At risk for cognitive impairment
+385888009,"History taking, mental health"
+385893007,Mental health treatment
+386522008,Overactivity/inattention behavior management
+386805003,Mild cognitive disorder
+386806002,Impaired cognition
+386807006,Memory impairment
+389334000,Reduced concentration span
+390067004,Reduced concentration span
+391029008,Mental health healthcare resource groups
+391281002,Mental health assessment
+392257007,Neurological mental status determination
+392770004,Mentally vague
+393724003,Mentally vague
+39538002,"Disorientation to person, time and place"
+395568000,Poor concentration
+395614001,Poor concentration
+395658001,Poor concentration
+398179001,Expiratory concentration
+398281007,Expiratory concentration
+399371000000101,[X]Attention to other artificial openings of digestive tract
+401441000000106,[X]Other and unspecified symptoms and signs involving cognitive functions and awareness
+40299004,Pigmentary degeneration
+404906000,Post-operative confusion
+405017007,"Ability to identify person, place, and time"
+405503005,Staff member inattention
+406506008,Attention deficit hyperactivity disorder
+407630006,Global Deterioration Scale level 2 - very mild cognitive decline
+407631005,Global Deterioration Scale level 3 - mild cognitive decline
+407632003,Global Deterioration Scale level 4 - moderate cognitive decline
+407633008,Global Deterioration Scale level 5 - moderately severe cognitive decline
+407634002,Global Deterioration Scale level 6 - severe cognitive decline
+407635001,Global Deterioration Scale level 7 - very severe cognitive decline
+408899008,Memory loss care
+408900003,Memory loss care education
+408901004,Memory loss care management
+408902006,Memory loss care assessment
+410232000,Mental health treatment assessment
+410233005,Mental health treatment education
+410234004,Management of mental health treatment
+41171000000106,Mild cognitive disorder
+413088002,Poor visual sequential memory
+413307004,Mental health problem
+413384008,Ability to perform cognitive activity
+415276009,Referral to memory clinic
+416106008,Disturbance of memory for order of events
+418107008,Unconscious
+419111000000102,[X] (Unspecified mental retardation) or (mental deficiency [& subnormality] NOS)
+419284004,Altered mental status
+419621000000101,[X]Other/unspecified symptoms & signs involving cognitive functions & awareness
+419723007,Mentally dull
+421351004,Concentrated extract
+42176003,Amnesia for recent events
+425248002,Scattered attention
+42584006,Attention deficit hyperactivity disorder
+42813001,Medico-legal mental status determination
+431432003,Anxiety about loss of memory
+432806004,Seen in memory clinic
+433081000,Organic amnesia of language
+433082007,Transient altered mental status
+439166003,Risk of elopement for cognitvely impaired subject
+440040005,Number of elopements for cognitively impaired subject
+440384002,Safe wandering behavior of cognitively impaired subject
+440567007,Level of mental discomfort
+441081008,Able to do simple mental arithmetic
+442761000000102,[X]Mental and behavioural disorders
+442944005,Induction of amnesia
+443265004,Cognitive disorder
+444613000,Adult attention deficit hyperactivity disorder
+463081005,"Patient monitoring system module, data memory"
+463270002,Memory assistive training device
+463443006,Memory-alloy patella fixation grip
+464511000000105,[X]Disturbance of activity and attention
+466155001,Attention assistive training device
+468031000000103,"[X]Disorientation, unspecified"
+46991000,Absent minded
+471261000000103,[X]Attention to other artificial openings
+480201000000101,[X]Other amnesia
+480341000000105,"[X]Disorientation, unspecified"
+48167000,Amnesia
+49458002,"Destruction by neurolytic agent of trigeminal nerve, mental"
+495901000000102,[D]Amnesia (retrograde)
+495941000000104,[D]Anterograde amnesia
+516401000000106,Attention deficit hyperactivity disorder monitoring invitation first letter
+516891000000101,Attention deficit hyperactivity disorder monitoring invitation second letter
+516901000000100,Attention deficit hyperactivity disorder monitoring invitation second letter 
+516911000000103,Attention deficit hyperactivity disorder monitoring invitation third letter
+516921000000109,Attention deficit hyperactivity disorder monitoring invitation third letter 
+51921000,Retrograde amnesia
+52965005,"Intellectual insight, function"
+532241000000100,Nervous system/mental state NOS
+55152005,Neurological mental status determination
+60032008,Unable to concentrate
+6149008,Amnesia for remote events
+62260007,Pretibial pigmental patches due to diabetes mellitus
+62476001,Disorientated
+62766000,Disorientation for person
+64419002,Immunologic cell
+65135009,Knight's move in thought
+66797003,Disorientation as to self
+6769007,"Attention, function"
+683531000000104,"Disorientation, unspecified"
+69063000,"Recent memory, function"
+69262000,"Immediate memory, function"
+698689005,"Attention deficit hyperactivity disorder, predominantly inattentive type in remission"
+698691002,Cognitive disorder in remission
+698692009,"Attention deficit hyperactivity disorder, predominantly hyperactive impulsive type in remission"
+699184009,Perry syndrome
+700603009,Psycho-cognitive electromagnetic stimulator
+701166006,Memory-alloy orthopedic fixation plate
+702815001,"Attention deficit hyperactivity disorder, inattentive presentation (restrictive)"
+702942001,Concentration
+702955000,Moderate cognitive impairment
+702956004,Severe cognitive impairment
+704426000,Impairment of mental alertness
+705442001,Cognitive skill-training assistive device
+707290007,No abnormality detected by mental health assessment
+707511000000108,Attention deficit hyperactivity disorder monitoring invitation first letter
+709073001,Neurocognitive disorder
+710071000000106,Attention deficit hyperactivity disorder annual review
+710081000000108,Attention deficit hyperactivity disorder annual review 
+710125008,Promotion of use of memory skills
+713112001,Provision of memory device
+716635007,Cognitive communication disorder
+720821000000105,Mental health
+72440003,Disorientated in place
+736314008,Dissociative neurological symptom disorder co-occurrent with cognitive symptoms
+74511003,Suction and cleaning of endotracheal tube
+7461003,"Attention deficit hyperactivity disorder, predominantly hyperactive impulsive type"
+74732009,Mental disorder
+76039005,Disturbance of attention
+762298000,Cognitive impairment due to toxicity of substance
+770751003,"Severe motor and intellectual disabilities, sensorineural deafness, dystonia syndrome"
+771417007,Cognitive dysfunction following surgical procedure
+77287004,Borderline intellectual disability
+777011000000109,Mental health assessment 
+78241000119105,Suspected mental condition not found
+78461004,Memory impairment
+78521000000105,Mild cognitive disorder
+80216008,Impaired cognition
+808311000000102,Poor short-term memory
+81964002,"Remote memory, function"
+823961000000102,Referral to memory assessment service
+82742001,"Concentration, function"
+836301008,Amnestic mild cognitive disorder
+838001000000108,Provision of written information about mental health
+84209002,Psychogenic amnesia
+85701000000105,GDS level 6 - severe cognitive decline
+857911000000109,Optimal cognitive function
+859281000000104,Multidisciplinary mental health case management
+85970000,Posttraumatic amnesia
+86110000,Rumination - thoughts
+86238001,Clinical psychologic mental status determination
+86765009,Mild intellectual disability
+868751000000100,Referral to memory clinic declined
+868761000000102,Referral to memory clinic declined 
+870991000000101,National Health Service Health Check raising awareness about dementia and memory clinics
+87343002,Prinzmetal angina
+88822006,Anterograde amnesia
+888271000000101,Mild cognitive impairment
+888281000000104,Mild cognitive impairment 
+888291000000102,Moderate cognitive impairment
+888301000000103,Moderate cognitive impairment 
+888311000000101,Severe cognitive impairment
+888321000000107,Severe cognitive impairment 
+888901000000102,Initial memory assessment
+888911000000100,Initial memory assessment 
+889811000000103,"Attention deficit hyperactivity disorder, inattentive presentation (restrictive)"
+89051002,Temporary amnesia
+89458003,Stupor
+918271000000105,Impaired cognition
+92261000000106,Referral to mental health early intervention service
+931031000000104,Progressive intellectual and neurological deterioration
+931041000000108,Progressive Intellectual and Neurological Deterioration 
+932281000000102,Disorder of attention
+933271000000106,"Relevant past medical, surgical and mental health history"
+933891000000109,Prison mental health inreach case notes
+938471000000100,Disorder of attention
+948201000000105,Mental health prison inreach team fax received
+948211000000107,Mental health prison inreach team telephone encounter
+955351000000105,Cognitive communication disorder
+95924005,Victim of mental abuse
+96021000000109,GDS level 2 - very mild cognitive decline
+96031000000106,GDS level 3 - mild cognitive decline
+96041000000102,GDS level 4 - moderate cognitive decline
+96051000000104,GDS level 5 - moderately severe cognitive decline
+96061000000101,GDS level 7 - very severe cognitive decline
+965471000000104,Referral for mental health assessment
+965711000000101,Cognitive communication disorder
+974941000000107,Use of cognitive modality for occupational performance
+986951000000109,Current View Provisional Problem Description item 14 - difficulties sitting still or concentrating
+990531000000107,Memory impairment
