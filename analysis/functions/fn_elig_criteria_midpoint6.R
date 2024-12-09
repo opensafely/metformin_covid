@@ -11,7 +11,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     mutate(
       # Exclusion 1: no T2DM diagnosis or out of window
       no_t2dm_or_outofwindow = is.na(elig_date_t2dm) | 
-        (elig_date_t2dm >= landmark_date - days(183) & elig_date_t2dm < landmark_date) | 
+        #(elig_date_t2dm >= landmark_date - days(183) & elig_date_t2dm < landmark_date) | # allow for T2DM diagnoses in 6m before landmark!
         (elig_date_t2dm < mid2018_date - days(years_in_days)),
       # Exclusion 2: metformin use prior to T2DM diagnosis
       prior_metfin = exp_date_metfin_first < elig_date_t2dm,
