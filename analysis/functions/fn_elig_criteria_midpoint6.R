@@ -16,26 +16,26 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       # Exclusion 2: metformin use prior to T2DM diagnosis
       prior_metfin = exp_date_metfin_first < elig_date_t2dm,
       # Exclusion 3: metformin allergy prior to T2DM diagnosis
-      prior_metfin_allergy = elig_date_metfin_allergy < elig_date_t2dm,
+      prior_metfin_allergy = elig_date_metfin_allergy <= elig_date_t2dm,
       # Exclusion 4: CKD 4/5 prior to T2DM diagnosis
-      prior_ckd45 = elig_date_ckd_45 < elig_date_t2dm,
+      prior_ckd45 = elig_date_ckd_45 <= elig_date_t2dm,
       # Exclusion 5: liver cirrhosis prior to T2DM diagnosis
-      prior_cirrhosis = elig_date_liver_cirrhosis < elig_date_t2dm,
+      prior_cirrhosis = elig_date_liver_cirrhosis <= elig_date_t2dm,
       # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before T2DM diagnosis
-      prior_interaction = (elig_date_metfin_interaction < elig_date_t2dm) & (elig_date_metfin_interaction > elig_date_t2dm - days(14))
+      prior_interaction = (elig_date_metfin_interaction <= elig_date_t2dm) & (elig_date_metfin_interaction >= elig_date_t2dm - days(14))
     )
   
   # Re-Apply the time-updated eligibility criteria again at landmark
   data_processed <- data_processed %>%
     mutate(
       # Exclusion 3: metformin allergy prior to landmark
-      prior_metfin_allergy_landmark = elig_date_metfin_allergy < landmark_date,
+      prior_metfin_allergy_landmark = elig_date_metfin_allergy <= landmark_date,
       # Exclusion 4: CKD 4/5 prior to landmark
-      prior_ckd45_landmark = elig_date_ckd_45 < landmark_date,
+      prior_ckd45_landmark = elig_date_ckd_45 <= landmark_date,
       # Exclusion 5: liver cirrhosis prior to landmark
-      prior_cirrhosis_landmark = elig_date_liver_cirrhosis < landmark_date,
+      prior_cirrhosis_landmark = elig_date_liver_cirrhosis <= landmark_date,
       # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window prior to landmark
-      prior_interaction_landmark = (elig_date_metfin_interaction < landmark_date) & (elig_date_metfin_interaction > landmark_date - days(14))
+      prior_interaction_landmark = (elig_date_metfin_interaction <= landmark_date) & (elig_date_metfin_interaction >= landmark_date - days(14))
     )
   
   # Count the criteria
