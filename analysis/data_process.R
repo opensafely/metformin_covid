@@ -201,7 +201,17 @@ n_exp_severecovid_midpoint6 <- map(
     exp_bin_insulin = case_when(cov_date_insulin >= study_dates$landmark_date - days(183) ~ 1,
                                 TRUE ~ 0)) %>%
     # investigate combo antidiabetic
-    mutate(exp_bin_treat_only_metfin = case_when(exp_bin_treat == 1 # mono therapy (CAVE: double-check codelist!)
+    mutate(exp_bin_treat_nothing = case_when(exp_bin_treat == 0 # no antidiabetic medication at all at landmark
+                                                 & exp_bin_sulfo == 0
+                                                 & exp_bin_dpp4 == 0
+                                                 & exp_bin_tzd == 0
+                                                 & exp_bin_sglt2 == 0
+                                                 & exp_bin_glp1 == 0
+                                                 & exp_bin_megli == 0
+                                                 & exp_bin_agi == 0
+                                                 & exp_bin_insulin == 0 ~ 1,
+                                                 TRUE ~ 0),
+    exp_bin_treat_only_metfin = case_when(exp_bin_treat == 1 # mono therapy metformin only (CAVE: double-check codelist!)
                                                  & exp_bin_sulfo == 0
                                                  & exp_bin_dpp4 == 0
                                                  & exp_bin_tzd == 0
@@ -276,6 +286,7 @@ n_exp_severecovid_midpoint6 <- map(
       n_exp_bin_megli_midpoint6 = fn_roundmid_any(sum(exp_bin_megli, na.rm = TRUE), threshold),
       n_exp_bin_agi_midpoint6 = fn_roundmid_any(sum(exp_bin_agi, na.rm = TRUE), threshold),
       n_exp_bin_insulin_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin, na.rm = TRUE), threshold),
+      n_exp_bin_treat_nothing_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing, na.rm = TRUE), threshold),
       n_exp_bin_treat_only_metfin_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_only_metfin, na.rm = TRUE), threshold),
       n_exp_bin_treat_metfin_sulfo_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_sulfo, na.rm = TRUE), threshold),
       n_exp_bin_treat_metfin_dpp4_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_dpp4, na.rm = TRUE), threshold),
