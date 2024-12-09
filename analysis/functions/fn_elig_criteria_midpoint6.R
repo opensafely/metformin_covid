@@ -25,6 +25,19 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       prior_interaction = (elig_date_metfin_interaction < elig_date_t2dm) & (elig_date_metfin_interaction > elig_date_t2dm - days(14))
     )
   
+  # Re-Apply the time-updated eligibility criteria again at landmark
+  data_processed <- data_processed %>%
+    mutate(
+      # Exclusion 3: metformin allergy prior to landmark
+      prior_metfin_allergy_landmark = elig_date_metfin_allergy < landmark_date,
+      # Exclusion 4: CKD 4/5 prior to landmark
+      prior_ckd45_landmark = elig_date_ckd_45 < landmark_date,
+      # Exclusion 5: liver cirrhosis prior to landmark
+      prior_cirrhosis_landmark = elig_date_liver_cirrhosis < landmark_date,
+      # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window prior to landmark
+      prior_interaction_landmark = (elig_date_metfin_interaction < landmark_date) & (elig_date_metfin_interaction > landmark_date - days(14))
+    )
+  
   # Count the criteria
   count <- data_processed %>%
     summarise(
@@ -33,7 +46,11 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_metfin_allergy = sum(prior_metfin_allergy, na.rm = TRUE),
       n_prior_ckd45 = sum(prior_ckd45, na.rm = TRUE),
       n_prior_cirrhosis = sum(prior_cirrhosis, na.rm = TRUE),
-      n_prior_interaction = sum(prior_interaction, na.rm = TRUE)
+      n_prior_interaction = sum(prior_interaction, na.rm = TRUE),
+      n_prior_metfin_allergy_landmark = sum(prior_metfin_allergy_landmark, na.rm = TRUE),
+      n_prior_ckd45_landmark = sum(prior_ckd45_landmark, na.rm = TRUE),
+      n_prior_cirrhosis_landmark = sum(prior_cirrhosis_landmark, na.rm = TRUE),
+      n_prior_interaction_landmark = sum(prior_interaction_landmark, na.rm = TRUE)
     )
   
   # Filter
@@ -44,7 +61,11 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       (!prior_metfin_allergy | is.na(prior_metfin_allergy)),
       (!prior_ckd45 | is.na(prior_ckd45)),
       (!prior_cirrhosis | is.na(prior_cirrhosis)),
-      (!prior_interaction | is.na(prior_interaction))
+      (!prior_interaction | is.na(prior_interaction)),
+      (!prior_metfin_allergy_landmark | is.na(prior_metfin_allergy_landmark)),
+      (!prior_ckd45_landmark | is.na(prior_ckd45_landmark)),
+      (!prior_cirrhosis_landmark | is.na(prior_cirrhosis_landmark)),
+      (!prior_interaction_landmark | is.na(prior_interaction_landmark))
     )
   
   n_after_exclusion_processing <- nrow(data_filtered)
@@ -58,6 +79,10 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold),
     n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold),
     n_prior_interaction_midpoint6 = fn_roundmid_any(count$n_prior_interaction, threshold),
+    n_prior_metfin_allergy_landmark_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy_landmark, threshold),
+    n_prior_ckd45_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ckd45_landmark, threshold),
+    n_prior_cirrhosis_landmark_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis_landmark, threshold),
+    n_prior_interaction_landmark_midpoint6 = fn_roundmid_any(count$n_prior_interaction_landmark, threshold),
     n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
   )
   

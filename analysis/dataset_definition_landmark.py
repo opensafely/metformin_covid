@@ -188,6 +188,9 @@ dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
 
 ## DIABETES algo variables end ------------------------
 
+## Last metformin prescription before landmark
+dataset.exp_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, landmark_date).date # exp instead of elig, to be consistent with exposure terminology (see below)
+
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
 dataset.elig_date_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 

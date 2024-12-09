@@ -40,7 +40,7 @@ fs::dir_create(here::here("output", "data_properties"))
 # 0.2 Import command-line arguments and dates # to be adapted at a later stage
 ################################################################################
 args <- commandArgs(trailingOnly=TRUE)
-#study_dates <-
+# study_dates <-
 #    jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
 #    map(as.Date)
 source(here::here("analysis", "metadates.R"))
@@ -154,7 +154,7 @@ data_processed <- completeness$data_processed
 ################################################################################
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => use function with loop that can be mapped to other windows
 
-# eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart
+# eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0) # for flow chart, CAVE: midpoint is rounding, i.e., do not consider abs numbers to double-check code
 # n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 # data_processed <- eligibility$data_processed
 
@@ -176,22 +176,116 @@ names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid
 # 7 Double-check feasibility: Assign treatment/exposure and main outcome
 ################################################################################
 # assign treatment/exposure
-n_metfin_severecovid_midpoint6 <- map(
+n_exp_severecovid_midpoint6 <- map(
   .x = data_processed_all_windows,
   .f = ~ .x %>% 
-    mutate(exp_bin_treat = case_when(
-      exp_date_metfin_first <= study_dates$landmark_date ~ 1, # 1 if started/treated/exposed
-      is.na(exp_date_metfin_first) ~ 0,                     # 0 if not started/treated/exposed until landmark
-      TRUE ~ NA_real_)) %>% 
-    mutate(out_bin_severecovid = case_when(
-      out_date_covid19_severe > study_dates$landmark_date ~ 1, # 1 if severe covid outcome
-      is.na(out_date_covid19_severe) ~ 0,                     # 0 if no severe covid outcome
-      TRUE ~ NA_real_)) %>% 
+    # main exposure
+    mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$landmark_date 
+                                     & exp_date_metfin_last >= study_dates$landmark_date - days(183) ~ 1, # 1 if started/treated/exposed and still on it
+                                     TRUE ~ 0)) %>% # 0 if not started/treated/exposed until landmark or not on it anymore
+    # investigate if on other antidiabetic just before landmark
+    mutate(exp_bin_sulfo = case_when(cov_date_sulfo >= study_dates$landmark_date - days(183) ~ 1,
+                                     TRUE ~ 0),
+    exp_bin_dpp4 = case_when(cov_date_dpp4 >= study_dates$landmark_date - days(183) ~ 1,
+                             TRUE ~ 0),
+    exp_bin_tzd = case_when(cov_date_tzd >= study_dates$landmark_date - days(183) ~ 1,
+                            TRUE ~ 0),
+    exp_bin_sglt2 = case_when(cov_date_sglt2 >= study_dates$landmark_date - days(183) ~ 1,
+                              TRUE ~ 0),
+    exp_bin_glp1 = case_when(cov_date_glp1 >= study_dates$landmark_date - days(183) ~ 1,
+                             TRUE ~ 0),
+    exp_bin_megli = case_when(cov_date_megli >= study_dates$landmark_date - days(183) ~ 1,
+                              TRUE ~ 0),
+    exp_bin_agi = case_when(cov_date_agi >= study_dates$landmark_date - days(183) ~ 1,
+                            TRUE ~ 0),
+    exp_bin_insulin = case_when(cov_date_insulin >= study_dates$landmark_date - days(183) ~ 1,
+                                TRUE ~ 0)) %>%
+    # investigate combo antidiabetic
+    mutate(exp_bin_treat_only_metfin = case_when(exp_bin_treat == 1 # mono therapy (CAVE: double-check codelist!)
+                                                 & exp_bin_sulfo == 0
+                                                 & exp_bin_dpp4 == 0
+                                                 & exp_bin_tzd == 0
+                                                 & exp_bin_sglt2 == 0
+                                                 & exp_bin_glp1 == 0
+                                                 & exp_bin_megli == 0
+                                                 & exp_bin_agi == 0
+                                                 & exp_bin_insulin == 0 ~ 1,
+                                                 TRUE ~ 0),
+    exp_bin_treat_metfin_sulfo = case_when(exp_bin_treat == 1 
+                                           & exp_bin_sulfo == 1 # most common, e.g. glucovance (glibenclamide + metformin)
+                                           & exp_bin_dpp4 == 0
+                                           & exp_bin_tzd == 0
+                                           & exp_bin_sglt2 == 0
+                                           & exp_bin_glp1 == 0
+                                           & exp_bin_megli == 0
+                                           & exp_bin_agi == 0
+                                           & exp_bin_insulin == 0 ~ 1,
+                                           TRUE ~ 0),
+    exp_bin_treat_metfin_dpp4 = case_when(exp_bin_treat == 1 
+                                          & exp_bin_sulfo == 0 
+                                          & exp_bin_dpp4 == 1 # most common, e.g. janumet (sitagliptin + metformin) or kombiglyze XR (saxagliptin + metformin) or jentadueto (linagliptin + metformin)
+                                          & exp_bin_tzd == 0
+                                          & exp_bin_sglt2 == 0
+                                          & exp_bin_glp1 == 0
+                                          & exp_bin_megli == 0
+                                          & exp_bin_agi == 0
+                                          & exp_bin_insulin == 0 ~ 1,
+                                          TRUE ~ 0),
+    exp_bin_treat_metfin_tzd = case_when(exp_bin_treat == 1 
+                                         & exp_bin_sulfo == 0 
+                                         & exp_bin_dpp4 == 0 
+                                         & exp_bin_tzd == 1 # most common, e.g. actoplusmet (pioglitazone + metformin)
+                                         & exp_bin_sglt2 == 0
+                                         & exp_bin_glp1 == 0
+                                         & exp_bin_megli == 0
+                                         & exp_bin_agi == 0
+                                         & exp_bin_insulin == 0 ~ 1,
+                                         TRUE ~ 0),
+    exp_bin_treat_metfin_sglt2 = case_when(exp_bin_treat == 1 
+                                           & exp_bin_sulfo == 0 
+                                           & exp_bin_dpp4 == 0 
+                                           & exp_bin_tzd == 0 
+                                           & exp_bin_sglt2 == 1 # most common, e.g. invokamet (canaglifozin + metformin) or xigduo XR (dapaglifozin + metformin)
+                                           & exp_bin_glp1 == 0
+                                           & exp_bin_megli == 0
+                                           & exp_bin_agi == 0
+                                           & exp_bin_insulin == 0 ~ 1,
+                                           TRUE ~ 0),
+    exp_bin_treat_metfin_insulin = case_when(exp_bin_treat == 1 
+                                         & exp_bin_sulfo == 0 
+                                         & exp_bin_dpp4 == 0 
+                                         & exp_bin_tzd == 0
+                                         & exp_bin_sglt2 == 0
+                                         & exp_bin_glp1 == 0
+                                         & exp_bin_megli == 0
+                                         & exp_bin_agi == 0
+                                         & exp_bin_insulin == 1 ~ 1, # with insulin
+                                         TRUE ~ 0)) %>%
+    # add primary outcome
+    mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$landmark_date ~ 1, # 1 if severe covid outcome
+                                           TRUE ~ 0)) %>%                     # 0 if no severe covid outcome
+    
+    # summarise everything
     summarise(
-      n_metfin_by_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold), 
-      n_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold))
-)
-names(n_metfin_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
+      n_exp_bin_treat_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold), 
+      n_exp_bin_sulfo_midpoint6 = fn_roundmid_any(sum(exp_bin_sulfo, na.rm = TRUE), threshold),
+      n_exp_bin_dpp4_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4, na.rm = TRUE), threshold),
+      n_exp_bin_tzd_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd, na.rm = TRUE), threshold),
+      n_exp_bin_sglt2_midpoint6 = fn_roundmid_any(sum(exp_bin_sglt2, na.rm = TRUE), threshold),
+      n_exp_bin_glp1_midpoint6 = fn_roundmid_any(sum(exp_bin_glp1, na.rm = TRUE), threshold),
+      n_exp_bin_megli_midpoint6 = fn_roundmid_any(sum(exp_bin_megli, na.rm = TRUE), threshold),
+      n_exp_bin_agi_midpoint6 = fn_roundmid_any(sum(exp_bin_agi, na.rm = TRUE), threshold),
+      n_exp_bin_insulin_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin, na.rm = TRUE), threshold),
+      n_exp_bin_treat_only_metfin_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_only_metfin, na.rm = TRUE), threshold),
+      n_exp_bin_treat_metfin_sulfo_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_sulfo, na.rm = TRUE), threshold),
+      n_exp_bin_treat_metfin_dpp4_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_dpp4, na.rm = TRUE), threshold),
+      n_exp_bin_treat_metfin_tzd_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_tzd, na.rm = TRUE), threshold),
+      n_exp_bin_treat_metfin_sglt2_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_sglt2, na.rm = TRUE), threshold),
+      n_exp_bin_treat_metfin_insulin_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_metfin_insulin, na.rm = TRUE), threshold),
+      n_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold)
+      )
+  )
+names(n_exp_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
 
 ################################################################################
 # 8 Save output
@@ -212,8 +306,8 @@ purrr::walk2(
 )
 # Just to double-check re feasibility: Assign treatment/exposure and main outcome to above data frames going back 6 years
 purrr::walk2(
-  .x = n_metfin_severecovid_midpoint6, 
-  .y = paste0(names(n_metfin_severecovid_midpoint6), ".csv"),
+  .x = n_exp_severecovid_midpoint6, 
+  .y = paste0(names(n_exp_severecovid_midpoint6), ".csv"),
   .f = ~ write.csv(.x, 
                    file = here::here("output", "data_properties", .y), 
                    row.names = FALSE)
