@@ -133,9 +133,12 @@ dataset.elig_date_otherdm = first_matching_event_clinical_ctv3_before(diabetes_o
 # Count codes
 dataset.tmp_elig_count_otherdm = count_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, landmark_date)
 
-## Gestational diabetes
-# First date
-dataset.elig_date_gestationaldm = first_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, landmark_date).date
+## Gestational diabetes ## Comment 10/12/2024: Search in both primary and secondary
+# First date from primary+secondary
+dataset.elig_date_gestationaldm = minimum_of(
+    (first_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, landmark_date).date),
+    (first_matching_event_apc_before(diabetes_gestational_icd10, landmark_date).admission_date)
+)
 
 ## Diabetes diagnostic codes
 # First date
@@ -186,18 +189,18 @@ dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
 ## DIABETES algo variables end ------------------------
 
 ## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.elig_date_metfin_allergy = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
+dataset.elig_date_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 
 ## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
 dataset.elig_date_ckd_45 = minimum_of(
-    first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
-    first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
+    last_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
+    last_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
 )
 
 ## Advance decompensated liver cirrhosis, on or before baseline
 dataset.elig_date_liver_cirrhosis = minimum_of(
-    first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
-    first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
+    last_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
+    last_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
 )
 
 ## Use of the following medications in the last 14 days (drug-drug interaction with metformin)
@@ -218,7 +221,7 @@ dataset.exp_count_metfin = (
 
 
 #######################################################################################
-# Table 5) Potential confounders
+# Table 5) Demographics, covariates and potential confounders
 #######################################################################################
 
 ## Sex

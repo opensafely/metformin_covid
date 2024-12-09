@@ -59,6 +59,7 @@ diabetes_type2_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-type-2
 diabetes_other_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-other-or-nonspecific-diabetes.csv",column="code")
 # Gestational diabetes
 diabetes_gestational_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-gestational-diabetes.csv",column="code")
+diabetes_gestational_icd10 = codelist_from_csv("codelists/user-alainamstutz-gestational-diabetes-icd10-bristol.csv",column="code")
 # Type 1 diabetes secondary care
 diabetes_type1_icd10 = codelist_from_csv("codelists/opensafely-type-1-diabetes-secondary-care.csv",column="icd10_code")
 # Type 2 diabetes secondary care
