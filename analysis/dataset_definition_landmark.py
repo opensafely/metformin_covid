@@ -83,7 +83,7 @@ dataset.qa_bin_hrt = medications.where(medications.dmd_code.is_in(hrt_dmd)).exis
 prostate_cancer_snomed = clinical_events.where(clinical_events.snomedct_code.is_in(prostate_cancer_snomed_clinical)).exists_for_patient()
 
 ### HES APC
-prostate_cancer_hes = apcs.where(apcs.all_diagnoses.is_in(prostate_cancer_icd10)).exists_for_patient()
+prostate_cancer_hes = apcs.where(apcs.all_diagnoses.contains_any_of(prostate_cancer_icd10)).exists_for_patient()
 
 ### ONS (stated anywhere on death certificate)
 prostate_cancer_death = cause_of_death_matches(prostate_cancer_icd10)
