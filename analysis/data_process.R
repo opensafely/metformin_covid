@@ -161,6 +161,11 @@ data_processed <- completeness$data_processed
 # for feasibility check, apply the eligibility window for incident T2DM until mid2013
 data_processed_feasibility <- data_processed # since input and output are both data_processed, the loop would otherwise take the output of previous loop as input
 # count
+n_elig_excluded_all_windows <- 
+  map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
+      .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$n_elig_excluded)
+names(n_elig_excluded_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
+# count_midpoint6
 n_elig_excluded_all_windows_midpoint6 <- 
   map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
       .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$n_elig_excluded_midpoint6)

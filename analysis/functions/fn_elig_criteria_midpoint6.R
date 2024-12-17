@@ -14,34 +14,41 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         #(elig_date_t2dm >= landmark_date - days(183) & elig_date_t2dm < landmark_date) | # allow for T2DM diagnoses in 6m before landmark!
         (elig_date_t2dm < mid2018_date - days(years_in_days)),
       # Exclusion 2: metformin use prior to T2DM diagnosis
-      prior_metfin = exp_date_metfin_first < elig_date_t2dm,
-      # Exclusion 3: metformin allergy prior to T2DM diagnosis
-      prior_metfin_allergy = elig_date_metfin_allergy <= elig_date_t2dm,
-      # Exclusion 4: CKD 4/5 prior to T2DM diagnosis
-      prior_ckd45 = elig_date_ckd_45 <= elig_date_t2dm,
-      # Exclusion 5: liver cirrhosis prior to T2DM diagnosis
-      prior_cirrhosis = elig_date_liver_cirrhosis <= elig_date_t2dm,
-      # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before T2DM diagnosis
-      prior_interaction = (elig_date_metfin_interaction <= elig_date_t2dm) & (elig_date_metfin_interaction >= elig_date_t2dm - days(14))
+      prior_metfin = exp_date_metfin_first < elig_date_t2dm, # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      # Exclusion 3: metformin allergy prior to or on T2DM diagnosis
+      prior_metfin_allergy = elig_date_metfin_allergy_first <= elig_date_t2dm, # count those diagnosed with allergy on day of diagnosis
+      # Exclusion 4: CKD 4/5 prior to or on T2DM diagnosis
+      prior_ckd45 = elig_date_ckd_45_first <= elig_date_t2dm, # count those diagnosed with ckd on day of diagnosis
+      # Exclusion 5: liver cirrhosis prior to or on T2DM diagnosis
+      prior_cirrhosis = elig_date_liver_cirrhosis_first <= elig_date_t2dm, # count those diagnosed with cirrhosis on day of diagnosis
+      # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before or on T2DM diagnosis day
+      prior_interaction = (elig_date_metfin_interaction_first <= elig_date_t2dm) & (elig_date_metfin_interaction_first >= elig_date_t2dm - days(14))
     )
   
-  # Re-Apply the time-updated eligibility criteria again at landmark
+  # Re-Apply the time-updated eligibility criteria again at landmark (now: use _last variables, see codebook!)
   data_processed <- data_processed %>%
     mutate(
-      # Exclusion 3: metformin allergy prior to landmark
-      prior_metfin_allergy_landmark = elig_date_metfin_allergy <= landmark_date,
-      # Exclusion 4: CKD 4/5 prior to landmark
-      prior_ckd45_landmark = elig_date_ckd_45 <= landmark_date,
-      # Exclusion 5: liver cirrhosis prior to landmark
-      prior_cirrhosis_landmark = elig_date_liver_cirrhosis <= landmark_date,
-      # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window prior to landmark
-      prior_interaction_landmark = (elig_date_metfin_interaction <= landmark_date) & (elig_date_metfin_interaction >= landmark_date - days(14))
+      # Exclusion 3: metformin allergy prior to or on landmark
+      prior_metfin_allergy_landmark = elig_date_metfin_allergy_last <= landmark_date,
+      # Exclusion 4: CKD 4/5 prior to or on landmark
+      prior_ckd45_landmark = elig_date_ckd_45_last <= landmark_date,
+      # Exclusion 5: liver cirrhosis prior to or on landmark
+      prior_cirrhosis_landmark = elig_date_liver_cirrhosis_last <= landmark_date,
+      # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
+      prior_interaction_landmark = (elig_date_metfin_interaction_last <= landmark_date) & (elig_date_metfin_interaction_last >= landmark_date - days(14))
+    )
+
+  # Filter 1: main inclusion criteria: T2DM diagnosis
+  data_filtered_T2DM <- data_processed %>%
+    filter(
+      (!no_t2dm_or_outofwindow | is.na(no_t2dm_or_outofwindow))
     )
   
-  # Count the criteria
-  count <- data_processed %>%
+  n_t2dm <- nrow(data_filtered_T2DM)
+  
+  # Among these, count the exclusion criteria
+  count <- data_filtered_T2DM %>%
     summarise(
-      n_no_t2dm_or_outofwindow = sum(no_t2dm_or_outofwindow, na.rm = TRUE),
       n_prior_metfin = sum(prior_metfin, na.rm = TRUE),
       n_prior_metfin_allergy = sum(prior_metfin_allergy, na.rm = TRUE),
       n_prior_ckd45 = sum(prior_ckd45, na.rm = TRUE),
@@ -53,7 +60,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_interaction_landmark = sum(prior_interaction_landmark, na.rm = TRUE)
     )
   
-  # Filter
+  # Filter 2: apply inclusion & all exclusion criteria
   data_filtered <- data_processed %>% # Output 1: filtered data
     filter(
       (!no_t2dm_or_outofwindow | is.na(no_t2dm_or_outofwindow)),
@@ -70,24 +77,41 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   
   n_after_exclusion_processing <- nrow(data_filtered)
   
-  # Output 2: Count for flowchart, incl. redaction and including pre/post processing counts
+  # Output 2: Count for flowchart, without redaction, and including pre/post processing counts
+  out <- tibble(
+    n_before_exclusion_processing = nrow(data_processed),
+    n_t2dm = n_t2dm, # counted among all data_processed
+    n_prior_metfin = count$n_prior_metfin, # counted only among n_t2dm !
+    n_prior_metfin_allergy = count$n_prior_metfin_allergy, # counted only among n_t2dm !
+    n_prior_ckd45 = count$n_prior_ckd45, # counted only among n_t2dm !
+    n_prior_cirrhosis = count$n_prior_cirrhosis, # counted only among n_t2dm !
+    n_prior_interaction = count$n_prior_interaction, # counted only among n_t2dm !
+    n_prior_metfin_allergy_landmark = count$n_prior_metfin_allergy_landmark, # counted only among n_t2dm !
+    n_prior_ckd45_landmark = count$n_prior_ckd45_landmark, # counted only among n_t2dm !
+    n_prior_cirrhosis_landmark = count$n_prior_cirrhosis_landmark, # counted only among n_t2dm !
+    n_prior_interaction_landmark = count$n_prior_interaction_landmark, # counted only among n_t2dm !
+    n_after_exclusion_processing = n_after_exclusion_processing
+  )
+  
+  # Output 3: Count for flowchart, with redaction, and including pre/post processing counts
   out_midpoint6 <- tibble(
     n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
-    n_no_t2dm_or_outofwindow_midpoint6 = fn_roundmid_any(count$n_no_t2dm_or_outofwindow, threshold),
-    n_prior_metfin_midpoint6 = fn_roundmid_any(count$n_prior_metfin, threshold),
-    n_prior_metfin_allergy_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy, threshold),
-    n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold),
-    n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold),
-    n_prior_interaction_midpoint6 = fn_roundmid_any(count$n_prior_interaction, threshold),
-    n_prior_metfin_allergy_landmark_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy_landmark, threshold),
-    n_prior_ckd45_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ckd45_landmark, threshold),
-    n_prior_cirrhosis_landmark_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis_landmark, threshold),
-    n_prior_interaction_landmark_midpoint6 = fn_roundmid_any(count$n_prior_interaction_landmark, threshold),
+    n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold), # counted among all data_processed
+    n_prior_metfin_midpoint6 = fn_roundmid_any(count$n_prior_metfin, threshold), # counted only among n_t2dm !
+    n_prior_metfin_allergy_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy, threshold), # counted only among n_t2dm !
+    n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold), # counted only among n_t2dm !
+    n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold), # counted only among n_t2dm !
+    n_prior_interaction_midpoint6 = fn_roundmid_any(count$n_prior_interaction, threshold), # counted only among n_t2dm !
+    n_prior_metfin_allergy_landmark_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy_landmark, threshold), # counted only among n_t2dm !
+    n_prior_ckd45_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ckd45_landmark, threshold), # counted only among n_t2dm !
+    n_prior_cirrhosis_landmark_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis_landmark, threshold), # counted only among n_t2dm !
+    n_prior_interaction_landmark_midpoint6 = fn_roundmid_any(count$n_prior_interaction_landmark, threshold), # counted only among n_t2dm !
     n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
   )
   
-  # Return both outputs as a list
+  # Return outputs as a list
   return(list(
+    n_elig_excluded = out,
     n_elig_excluded_midpoint6 = out_midpoint6,
     data_processed = data_filtered
   ))
