@@ -7,6 +7,7 @@ from ehrql import (
     create_dataset,
     when,
     minimum_of,
+    maximum_of,
     days
 )
 
@@ -188,33 +189,44 @@ dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
 
 ## DIABETES algo variables end ------------------------
 
-## Last metformin prescription before landmark
-dataset.exp_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, landmark_date).date # exp instead of elig, to be consistent with exposure terminology (see below)
+## Known hypersensitivity / intolerance to metformin, on or before landmark
+dataset.elig_date_metfin_allergy_last = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
+dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 
-## Known hypersensitivity / intolerance to metformin, on or before baseline
-dataset.elig_date_metfin_allergy = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
-
-## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before baseline
-dataset.elig_date_ckd_45 = minimum_of(
+## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before landmark
+dataset.elig_date_ckd_45_last = maximum_of(
     last_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
     last_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
 )
+dataset.elig_date_ckd_45_first = minimum_of(
+    first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, landmark_date).date,
+    first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, landmark_date).admission_date
+)
 
-## Advance decompensated liver cirrhosis, on or before baseline
-dataset.elig_date_liver_cirrhosis = minimum_of(
+## Advance decompensated liver cirrhosis, on or before landmark
+dataset.elig_date_liver_cirrhosis_last = maximum_of(
     last_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
     last_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
 )
+dataset.elig_date_liver_cirrhosis_first = minimum_of(
+    first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, landmark_date).date,
+    first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, landmark_date).admission_date
+)
 
 ## Use of the following medications in the last 14 days (drug-drug interaction with metformin)
-dataset.elig_date_metfin_interaction = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
-
+dataset.elig_date_metfin_interaction_last = last_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
+dataset.elig_date_metfin_interaction_first = first_matching_med_dmd_before(metformin_interaction_dmd, landmark_date).date
 
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables
 #######################################################################################
-## Any metformin use before baseline, i.e., extract first metformin use before landmark and use it a) for Intervention/Exposure assignment and b) to establish true eligibility variable (i.e. before T2DM diagnosis) 
+## Last metformin prescription before landmark: Use to establish "prescription xxx months prior to landmark"
+dataset.exp_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, landmark_date).date
+dataset.exp_date_metfin_mono_last = last_matching_med_dmd_before(metformin_mono_dmd, landmark_date).date 
+## First metformin prescription before landmark: Use to establish initiation of metformin
 dataset.exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, landmark_date).date
+dataset.exp_date_metfin_mono_first = first_matching_med_dmd_before(metformin_mono_dmd, landmark_date).date
+
 dataset.exp_count_metfin = (
   medications.where(
     medications.dmd_code.is_in(metformin_dmd))
@@ -459,6 +471,10 @@ dataset.cov_bin_healthcare_worker = (
 #)
 #tmp_not_dereg = practice_registrations.where(practice_registrations.end_date.is_null()).exists_for_patient() # has not left the practice
 #dataset.out_date_dereg = case(when(tmp_not_dereg == False).then(tmp_dereg_date))
+
+# for descriptive purpose and for censoring reasons, add metformin initiation as an "outcome" AFTER landmark
+dataset.out_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, landmark_date, studyend_date).date
+dataset.out_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, landmark_date, studyend_date).date
 
 ## Practice deregistration date 2: Based on registration on landmark_date
 dataset.out_date_dereg = registered.end_date

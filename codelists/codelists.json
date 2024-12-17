@@ -144,6 +144,12 @@
       "downloaded_at": "2024-11-11 08:58:59.504315Z",
       "sha": "efce5efd9d9c1a46c1de226bf543ad9076691071"
     },
+    "user-alainamstutz-metformin-without-other-antidiabetic-bristol-dmd.csv": {
+      "id": "user/alainamstutz/metformin-without-other-antidiabetic-bristol-dmd/40fca29a",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/metformin-without-other-antidiabetic-bristol-dmd/40fca29a/",
+      "downloaded_at": "2024-12-17 15:46:35.601239Z",
+      "sha": "cdaaa48b4acccb418f795dfe9d7a3f3378da69f0"
+    },
     "user-alainamstutz-metformin-intolerance-bristol.csv": {
       "id": "user/alainamstutz/metformin-intolerance-bristol/5af86d52",
       "url": "https://www.opencodelists.org/codelist/user/alainamstutz/metformin-intolerance-bristol/5af86d52/",
