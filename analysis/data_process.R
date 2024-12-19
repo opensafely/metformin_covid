@@ -183,7 +183,7 @@ data_processed <- eligibility$data_processed
 ################################################################################
 # assign treatment/exposure and one outcome measure
 data_processed <- data_processed %>% 
-  # if on any metformin prescription in 6m prior to landmark
+  # if on any metformin prescription in 6m prior to landmark (allow for T2DM diagnosis 6m prior)
   mutate(exp_bin_metfin_last = case_when(exp_date_metfin_last >= study_dates$landmark_date - days(183) ~ 1, 
                                    TRUE ~ 0),
          exp_date_metfin_last = case_when(exp_date_metfin_last >= study_dates$landmark_date - days(183) ~ exp_date_metfin_last, 
