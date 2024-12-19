@@ -32,7 +32,6 @@ opensafely/prediabetes-snomed/6bdbb7dd
 user/alex-walker/metformin-dmd/258f2054
 user/alainamstutz/metformin-without-other-antidiabetic-bristol-dmd/40fca29a
 
-
 user/alainamstutz/metformin-intolerance-bristol/5af86d52
 
 nhsd-primary-care-domain-refsets/ckdatrisk1_cod/08a67d83
@@ -57,8 +56,11 @@ primis-covid19-vacc-uptake/longres/v1
 
 user/alex-walker/sulfonylureas-dmd/6e0ab9fd
 user/alex-walker/dpp-4-inhibitors-dmd/57ae06be
-user/alex-walker/pioglitazone-dmd/3bebd393
+user/alainamstutz/dpp4-without-metformin-bristol-dmd/4914e27c
+user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc
+user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d
 user/alex-walker/sglt-2-inhibitors-dmd/2029a068
+user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286
 user/alainamstutz/glp1-bristol-dmd/7c628abb
 user/alainamstutz/meglitinides-bristol-dmd/79afcac5
 user/alainamstutz/alpha-glucosidase-inhibitors-bristol-dmd/4790e45b

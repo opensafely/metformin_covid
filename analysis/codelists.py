@@ -121,8 +121,11 @@ carehome = codelist_from_csv("codelists/primis-covid19-vacc-uptake-longres.csv",
 # other antidiabetics
 sulfonylurea_dmd = codelist_from_csv("codelists/user-alex-walker-sulfonylureas-dmd.csv",column="code")
 dpp4_dmd = codelist_from_csv("codelists/user-alex-walker-dpp-4-inhibitors-dmd.csv",column="code")
-tzd_dmd = codelist_from_csv("codelists/user-alex-walker-pioglitazone-dmd.csv",column="code")
+dpp4_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-dpp4-without-metformin-bristol-dmd.csv",column="code")
+tzd_dmd = codelist_from_csv("codelists/user-alainamstutz-thiazolidinedione-bristol-dmd.csv",column="code")
+tzd_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-thiazolidinedione-without-metformin-bristol-dmd.csv",column="code")
 sglt2_dmd = codelist_from_csv("codelists/user-alex-walker-sglt-2-inhibitors-dmd.csv",column="code")
+sglt2_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-sglt2-without-metformin-bristol-dmd.csv",column="code")
 glp1_dmd = codelist_from_csv("codelists/user-alainamstutz-glp1-bristol-dmd.csv",column="code")
 meglitinides_dmd = codelist_from_csv("codelists/user-alainamstutz-meglitinides-bristol-dmd.csv",column="code")
 agi_dmd = codelist_from_csv("codelists/user-alainamstutz-alpha-glucosidase-inhibitors-bristol-dmd.csv",column="code")

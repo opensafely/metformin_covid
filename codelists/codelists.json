@@ -240,17 +240,35 @@
       "downloaded_at": "2024-11-11 09:21:37.288837Z",
       "sha": "ac0b81bb76553709e101493b26488891ba93ec61"
     },
-    "user-alex-walker-pioglitazone-dmd.csv": {
-      "id": "user/alex-walker/pioglitazone-dmd/3bebd393",
-      "url": "https://www.opencodelists.org/codelist/user/alex-walker/pioglitazone-dmd/3bebd393/",
-      "downloaded_at": "2024-11-11 09:21:37.517763Z",
-      "sha": "6a8e795c9c3ad012fcf470e48c27ddac5c915f81"
+    "user-alainamstutz-dpp4-without-metformin-bristol-dmd.csv": {
+      "id": "user/alainamstutz/dpp4-without-metformin-bristol-dmd/4914e27c",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/dpp4-without-metformin-bristol-dmd/4914e27c/",
+      "downloaded_at": "2024-12-19 08:43:40.673432Z",
+      "sha": "1a61e13a7d240876828dbe4dc212861741da90e1"
+    },
+    "user-alainamstutz-thiazolidinedione-bristol-dmd.csv": {
+      "id": "user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc/",
+      "downloaded_at": "2024-12-19 08:43:40.745047Z",
+      "sha": "c0f6e2ff0f9fdd9aaeeb9696c9cc260ca90e30b4"
+    },
+    "user-alainamstutz-thiazolidinedione-without-metformin-bristol-dmd.csv": {
+      "id": "user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d/",
+      "downloaded_at": "2024-12-19 08:43:40.926859Z",
+      "sha": "3943b945913a39f356db726a329b6703382564d1"
     },
     "user-alex-walker-sglt-2-inhibitors-dmd.csv": {
       "id": "user/alex-walker/sglt-2-inhibitors-dmd/2029a068",
       "url": "https://www.opencodelists.org/codelist/user/alex-walker/sglt-2-inhibitors-dmd/2029a068/",
       "downloaded_at": "2024-11-11 09:21:37.774059Z",
       "sha": "350e157dc97b5ed1b921c922aba09a785ab0676c"
+    },
+    "user-alainamstutz-sglt2-without-metformin-bristol-dmd.csv": {
+      "id": "user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286/",
+      "downloaded_at": "2024-12-19 08:43:41.176483Z",
+      "sha": "eea50b1bfdeee4a96398e95c07c38756d6f16bf7"
     },
     "user-alainamstutz-glp1-bristol-dmd.csv": {
       "id": "user/alainamstutz/glp1-bristol-dmd/7c628abb",

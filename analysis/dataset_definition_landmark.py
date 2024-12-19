@@ -44,13 +44,14 @@ with open("output/study_dates.json") as f:
   study_dates = json.load(f)
 studyend_date = study_dates["studyend_date"]
 landmark_date = study_dates["landmark_date"]
+mid2018_date = study_dates["mid2018_date"]
 
 
 #######################################################################################
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=5000)
+dataset.configure_dummy_data(population_size=8000)
 dataset.define_population(patients.exists_for_patient())
 
 
@@ -61,8 +62,11 @@ dataset.define_population(patients.exists_for_patient())
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
 dataset.qa_bin_was_adult = (patients.age_on(landmark_date) >= 18) & (patients.age_on(landmark_date) <= 110) 
 dataset.qa_bin_was_alive = patients.is_alive_on(landmark_date)
+dataset.qa_bin_was_alive_mid2018 = patients.is_alive_on(mid2018_date)
 dataset.qa_bin_known_imd = addresses.for_patient_on(landmark_date).exists_for_patient() # known deprivation
 dataset.qa_bin_was_registered = practice_registrations.spanning(landmark_date - days(366), landmark_date).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+dataset.qa_bin_was_registered_mid2018 = practice_registrations.spanning(mid2018_date - days(366), mid2018_date).exists_for_patient() 
+
 
 ## Year of birth
 dataset.qa_num_birth_year = patients.date_of_birth
@@ -266,9 +270,13 @@ dataset.cov_cat_deprivation_5 = case(
 
 ## Practice registration info at landmark_date
 registered = practice_registrations.for_patient_on(landmark_date)
+registered_mid2018 = practice_registrations.for_patient_on(mid2018_date)
 dataset.cov_cat_region = registered.practice_nuts1_region_name ## Region
+dataset.cov_cat_region_mid2018 = registered_mid2018.practice_nuts1_region_name ## Region
 dataset.cov_cat_stp = registered.practice_stp ## Practice
+dataset.cov_cat_stp_mid2018 = registered_mid2018.practice_stp ## Practice
 dataset.cov_cat_rural_urban = addresses.for_patient_on(landmark_date).rural_urban_classification ## Rurality
+dataset.cov_cat_rural_urban_mid2018 = addresses.for_patient_on(mid2018_date).rural_urban_classification ## Rurality
 
 ## Smoking status at landmark_date
 tmp_most_recent_smoking_cat = last_matching_event_clinical_ctv3_before(smoking_clear, landmark_date).ctv3_code.to_category(smoking_clear)
@@ -302,8 +310,11 @@ dataset.cov_bin_carehome_status = case(
 ## Any other antidiabetic drug use before landmark_date (could also be a combo with metformin)
 dataset.cov_date_sulfo = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
 dataset.cov_date_dpp4 = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
+dataset.cov_date_dpp4_mono = last_matching_med_dmd_before(dpp4_mono_dmd, landmark_date).date 
 dataset.cov_date_tzd = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
+dataset.cov_date_tzd_mono = last_matching_med_dmd_before(tzd_mono_dmd, landmark_date).date 
 dataset.cov_date_sglt2 = last_matching_med_dmd_before(sglt2_dmd, landmark_date).date 
+dataset.cov_date_sglt2_mono = last_matching_med_dmd_before(sglt2_mono_dmd, landmark_date).date 
 dataset.cov_date_glp1 = last_matching_med_dmd_before(glp1_dmd, landmark_date).date 
 dataset.cov_date_megli = last_matching_med_dmd_before(meglitinides_dmd, landmark_date).date 
 dataset.cov_date_agi = last_matching_med_dmd_before(agi_dmd, landmark_date).date 
@@ -476,8 +487,10 @@ dataset.cov_bin_healthcare_worker = (
 dataset.out_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, landmark_date, studyend_date).date
 dataset.out_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, landmark_date, studyend_date).date
 
-## Practice deregistration date 2: Based on registration on landmark_date
+## Practice deregistration date 2: Based on registration at landmark_date
 dataset.out_date_dereg = registered.end_date
+## Practice deregistration date 3: Based on registration in mid2018
+dataset.out_date_dereg_mid2018 = registered_mid2018.end_date
 
 ## First covid-19 related hospital admission, between landmark_date and studyend_date (incl. those dates)
 dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, landmark_date, studyend_date).admission_date
@@ -513,33 +526,33 @@ dataset.out_date_viral_fatigue = first_matching_event_clinical_snomed_between(po
 dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid, dataset.out_date_viral_fatigue)
 
 ## Long COVID signs and symptoms, first code in primary care, between landmark_date and studyend_date (incl. those dates)
-dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, landmark_date, studyend_date).date
-dataset.out_date_cough = first_matching_event_clinical_snomed_between(cough_snomed, landmark_date, studyend_date).date
-dataset.out_date_chest_pain = first_matching_event_clinical_snomed_between(chest_pain_snomed, landmark_date, studyend_date).date
-dataset.out_date_chest_tightness = first_matching_event_clinical_snomed_between(chest_tightness_snomed, landmark_date, studyend_date).date
-dataset.out_date_palpitations = first_matching_event_clinical_snomed_between(palpitations_snomed, landmark_date, studyend_date).date
-dataset.out_date_fatigue = first_matching_event_clinical_snomed_between(fatigue_snomed, landmark_date, studyend_date).date
-dataset.out_date_fever = first_matching_event_clinical_snomed_between(fever_snomed, landmark_date, studyend_date).date
-dataset.out_date_pain = first_matching_event_clinical_snomed_between(pain_snomed, landmark_date, studyend_date).date
-dataset.out_date_cog_impair = first_matching_event_clinical_snomed_between(cog_impair_snomed, landmark_date, studyend_date).date
-dataset.out_date_headache = first_matching_event_clinical_snomed_between(headache_snomed, landmark_date, studyend_date).date
-dataset.out_date_sleep = first_matching_event_clinical_snomed_between(sleep_snomed, landmark_date, studyend_date).date
-dataset.out_date_pnp = first_matching_event_clinical_snomed_between(pnp_snomed, landmark_date, studyend_date).date
-dataset.out_date_dizziness = first_matching_event_clinical_snomed_between(dizziness_snomed, landmark_date, studyend_date).date
-dataset.out_date_delirium = first_matching_event_clinical_snomed_between(delirium_snomed, landmark_date, studyend_date).date
-dataset.out_date_mob_impair = first_matching_event_clinical_snomed_between(mob_impair_snomed, landmark_date, studyend_date).date
-dataset.out_date_visual = first_matching_event_clinical_snomed_between(visual_snomed, landmark_date, studyend_date).date
-dataset.out_date_abdo_pain = first_matching_event_clinical_snomed_between(abdo_pain_snomed, landmark_date, studyend_date).date
-dataset.out_date_nausea_vomiting = first_matching_event_clinical_snomed_between(nausea_vomiting_snomed, landmark_date, studyend_date).date
-dataset.out_date_diarrhoea = first_matching_event_clinical_snomed_between(diarrhoea_snomed, landmark_date, studyend_date).date
-dataset.out_date_weight_appetite = first_matching_event_clinical_snomed_between(weight_appetite_snomed, landmark_date, studyend_date).date
-dataset.out_date_tinnitus = first_matching_event_clinical_snomed_between(tinnitus_snomed, landmark_date, studyend_date).date
-dataset.out_date_earache = first_matching_event_clinical_snomed_between(earache_snomed, landmark_date, studyend_date).date
-dataset.out_date_sore_throat = first_matching_event_clinical_snomed_between(sore_throat_snomed, landmark_date, studyend_date).date
-dataset.out_date_smell_taste = first_matching_event_clinical_snomed_between(smell_taste_snomed, landmark_date, studyend_date).date
-dataset.out_date_nasal = first_matching_event_clinical_snomed_between(nasal_snomed, landmark_date, studyend_date).date
-dataset.out_date_hair_loss = first_matching_event_clinical_snomed_between(hair_loss_snomed, landmark_date, studyend_date).date
-dataset.out_date_skin_rash = first_matching_event_clinical_snomed_between(skin_rash_snomed, landmark_date, studyend_date).date
-dataset.out_date_anxiety = first_matching_event_clinical_snomed_between(anxiety_snomed, landmark_date, studyend_date).date
-dataset.out_date_depression = first_matching_event_clinical_snomed_between(depression_snomed, landmark_date, studyend_date).date
-dataset.out_date_ptsd = first_matching_event_clinical_snomed_between(ptsd_snomed, landmark_date, studyend_date).date
+#dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, landmark_date, studyend_date).date
+#dataset.out_date_cough = first_matching_event_clinical_snomed_between(cough_snomed, landmark_date, studyend_date).date
+#dataset.out_date_chest_pain = first_matching_event_clinical_snomed_between(chest_pain_snomed, landmark_date, studyend_date).date
+#dataset.out_date_chest_tightness = first_matching_event_clinical_snomed_between(chest_tightness_snomed, landmark_date, studyend_date).date
+#dataset.out_date_palpitations = first_matching_event_clinical_snomed_between(palpitations_snomed, landmark_date, studyend_date).date
+#dataset.out_date_fatigue = first_matching_event_clinical_snomed_between(fatigue_snomed, landmark_date, studyend_date).date
+#dataset.out_date_fever = first_matching_event_clinical_snomed_between(fever_snomed, landmark_date, studyend_date).date
+#dataset.out_date_pain = first_matching_event_clinical_snomed_between(pain_snomed, landmark_date, studyend_date).date
+#dataset.out_date_cog_impair = first_matching_event_clinical_snomed_between(cog_impair_snomed, landmark_date, studyend_date).date
+#dataset.out_date_headache = first_matching_event_clinical_snomed_between(headache_snomed, landmark_date, studyend_date).date
+#dataset.out_date_sleep = first_matching_event_clinical_snomed_between(sleep_snomed, landmark_date, studyend_date).date
+#dataset.out_date_pnp = first_matching_event_clinical_snomed_between(pnp_snomed, landmark_date, studyend_date).date
+#dataset.out_date_dizziness = first_matching_event_clinical_snomed_between(dizziness_snomed, landmark_date, studyend_date).date
+#dataset.out_date_delirium = first_matching_event_clinical_snomed_between(delirium_snomed, landmark_date, studyend_date).date
+#dataset.out_date_mob_impair = first_matching_event_clinical_snomed_between(mob_impair_snomed, landmark_date, studyend_date).date
+#dataset.out_date_visual = first_matching_event_clinical_snomed_between(visual_snomed, landmark_date, studyend_date).date
+#dataset.out_date_abdo_pain = first_matching_event_clinical_snomed_between(abdo_pain_snomed, landmark_date, studyend_date).date
+#dataset.out_date_nausea_vomiting = first_matching_event_clinical_snomed_between(nausea_vomiting_snomed, landmark_date, studyend_date).date
+#dataset.out_date_diarrhoea = first_matching_event_clinical_snomed_between(diarrhoea_snomed, landmark_date, studyend_date).date
+#dataset.out_date_weight_appetite = first_matching_event_clinical_snomed_between(weight_appetite_snomed, landmark_date, studyend_date).date
+#dataset.out_date_tinnitus = first_matching_event_clinical_snomed_between(tinnitus_snomed, landmark_date, studyend_date).date
+#dataset.out_date_earache = first_matching_event_clinical_snomed_between(earache_snomed, landmark_date, studyend_date).date
+#dataset.out_date_sore_throat = first_matching_event_clinical_snomed_between(sore_throat_snomed, landmark_date, studyend_date).date
+#dataset.out_date_smell_taste = first_matching_event_clinical_snomed_between(smell_taste_snomed, landmark_date, studyend_date).date
+#dataset.out_date_nasal = first_matching_event_clinical_snomed_between(nasal_snomed, landmark_date, studyend_date).date
+#dataset.out_date_hair_loss = first_matching_event_clinical_snomed_between(hair_loss_snomed, landmark_date, studyend_date).date
+#dataset.out_date_skin_rash = first_matching_event_clinical_snomed_between(skin_rash_snomed, landmark_date, studyend_date).date
+#dataset.out_date_anxiety = first_matching_event_clinical_snomed_between(anxiety_snomed, landmark_date, studyend_date).date
+#dataset.out_date_depression = first_matching_event_clinical_snomed_between(depression_snomed, landmark_date, studyend_date).date
+#dataset.out_date_ptsd = first_matching_event_clinical_snomed_between(ptsd_snomed, landmark_date, studyend_date).date
