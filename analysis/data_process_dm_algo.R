@@ -19,7 +19,7 @@ library('tidyr')
 
 ## Import custom user functions
 source(here::here("analysis", "functions", "fn_extract_data.R"))
-source(here::here("analysis", "functions", "fn_case_when.R"))
+source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
 
 ################################################################################
