@@ -11,6 +11,22 @@ actions:
       highly_sensitive:
         study_dates_json: output/study_dates.json
 
+  generate_dataset_dm_algo:
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_dm_algo.py --output output/dataset_dm_algo.arrow
+    needs: 
+    - study_dates
+    outputs:
+      highly_sensitive:
+        dataset: output/dataset_dm_algo.arrow
+  
+  data_process_dm_algo:
+    run: r:latest analysis/data_process_dm_algo.R
+    needs:
+    - generate_dataset_dm_algo
+    outputs:
+      highly_sensitive:
+        rds: output/data/*.rds
+
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
     needs: 

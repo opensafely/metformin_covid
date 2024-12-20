@@ -25,7 +25,6 @@ library('ggplot2')
 ## Import custom user functions and meta-dates
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
-source(here::here("analysis", "functions", "fn_diabetes_algorithm.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
@@ -55,6 +54,7 @@ threshold <- 6
 ################################################################################
 # 1 Import data
 ################################################################################
+data_processed_dm_algo <- readRDS("data_processed_dm_algo.rds")
 input_filename <- "dataset.arrow"
 
 ################################################################################
@@ -65,7 +65,7 @@ data_extracted <- fn_extract_data(input_filename)
 ################################################################################
 # 3 Process the data and apply diabetes algorithm
 ################################################################################
-data_extracted <- data_extracted %>%
+data_processed <- data_extracted %>%
   mutate(
     # POPULATION/DEMOGRAPHIC ----
     cov_cat_age = cut(
@@ -97,15 +97,6 @@ data_extracted <- data_extracted %>%
     
     cov_cat_stp = as.factor(cov_cat_stp),
     
-    cov_cat_ethnicity = fn_case_when(
-      cov_cat_ethnicity == "1" ~ "White",
-      cov_cat_ethnicity == "4" ~ "Black",
-      cov_cat_ethnicity == "3" ~ "South Asian",
-      cov_cat_ethnicity == "2" ~ "Mixed",
-      cov_cat_ethnicity == "5" ~ "Other",
-      cov_cat_ethnicity == "0" ~ "Unknown",
-      TRUE ~ NA_character_),
-    
     # Finalize smoking status
     cov_cat_smoking_status = fn_case_when(
       cov_cat_smoking_status == "S" ~ "Smoker",
@@ -132,8 +123,7 @@ data_extracted <- data_extracted %>%
     cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
     )
 
-# apply diabetes algorithm and delete all helper variables (tmp & step) at the end
-data_processed <- fn_diabetes_algorithm(data_extracted)
+# combine the two datasets data_processed_dm_algo and data_processed
 
 ################################################################################
 # 4 Apply the quality assurance criteria
