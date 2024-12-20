@@ -25,7 +25,7 @@ actions:
     - generate_dataset_dm_algo
     outputs:
       highly_sensitive:
-        rds: output/data/data_process_dm_algo.rds
+        rds: output/data/*.rds
 
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
@@ -41,6 +41,6 @@ actions:
     - generate_dataset
     outputs:
       highly_sensitive:
-        rds: output/data/data_process.rds
+        rds: output/data/*.rds
       moderately_sensitive:
         csv: output/data_properties/*.csv
