@@ -54,7 +54,7 @@ threshold <- 6
 ################################################################################
 # 1 Import data
 ################################################################################
-data_processed_dm_algo <- readRDS("data_processed_dm_algo.rds")
+data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
 input_filename <- "dataset.arrow"
 
 ################################################################################
