@@ -99,6 +99,10 @@ dataset.qa_bin_prostate_cancer = case(
 # Table 3) ELIGIBILITY criteria
 #######################################################################################
 
+###
+# diabetes variables defined in previous separate action/dataset definition
+###
+
 ## Known hypersensitivity / intolerance to metformin, on or before landmark
 dataset.elig_date_metfin_allergy_last = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date
 dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, landmark_date).date

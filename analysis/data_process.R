@@ -2,11 +2,12 @@
 ## This script does the following:
 # 1. Import/extract feather dataset from OpenSAFELY 
 # 2. Basic type formatting of variables -> fn_extract_data.R()
-# 3. Process some covariates and apply the diabetes algorithm -> fn_diabetes_algorithm()
-# 4. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
-# 5. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
-# 6. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
-# (for now: just to double-check: Assign treatment and main outcome)
+# 3. Process some covariates
+# 4. Import the processed dataset with the DM variables (and ethnicity and qa_num_birth_year) and merge
+# 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
+# 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
+# 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
+# (for now to double-check: 8. Assign treatment, various patterns and main outcome)
 ## Save the output: data_processed and the 1-row tables for the flow chart
 ################################################################################
 
@@ -52,9 +53,8 @@ study_dates <- lapply(study_dates, function(x) as.Date(x))
 threshold <- 6
 
 ################################################################################
-# 1 Import data
+# 1 Import the dataset definition
 ################################################################################
-data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
 input_filename <- "dataset.arrow"
 
 ################################################################################
@@ -63,7 +63,7 @@ input_filename <- "dataset.arrow"
 data_extracted <- fn_extract_data(input_filename)
 
 ################################################################################
-# 3 Process the data and apply diabetes algorithm
+# 3 Process the data
 ################################################################################
 data_processed <- data_extracted %>%
   mutate(
@@ -123,17 +123,23 @@ data_processed <- data_extracted %>%
     cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
     )
 
-# combine the two datasets data_processed_dm_algo and data_processed
+################################################################################
+# 4 Import the processed DM algo dataset and merge
+################################################################################
+data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
+data_processed <- merge(data_processed, data_processed_dm_algo, 
+                        by = "patient_id", 
+                        all.x = TRUE)
 
 ################################################################################
-# 4 Apply the quality assurance criteria
+# 5 Apply the quality assurance criteria
 ################################################################################
 qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
 n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
 data_processed <- qa$data_processed
 
 ################################################################################
-# 5 Apply the completeness criteria
+# 6 Apply the completeness criteria
 ################################################################################
 completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
 n_completeness_excluded <- completeness$n_completeness_excluded
@@ -141,7 +147,7 @@ n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoi
 data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
 
 ################################################################################
-# 6 Apply the eligibility criteria
+# 7 Apply the eligibility criteria
 ################################################################################
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => if so, use function with loop that can be mapped to other windows
 eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0)
@@ -169,7 +175,7 @@ data_processed <- eligibility$data_processed
 # names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
 
 ################################################################################
-# 7 Double-check feasibility: Assign treatment/exposure and main outcome
+# 8 Double-check feasibility: Assign treatment/exposure and main outcome
 ################################################################################
 # assign treatment/exposure and one outcome measure
 data_processed <- data_processed %>% 
@@ -594,7 +600,7 @@ n_exp_out_midpoint6 <- data_processed %>%
 # names(n_exp_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
 
 ################################################################################
-# 8 Save output
+# 9 Save output
 ################################################################################
 # the data
 write_rds(data_processed, here::here("output", "data", "data_processed.rds"))

@@ -39,6 +39,7 @@ actions:
     run: r:latest analysis/data_process.R
     needs:
     - generate_dataset
+    - data_process_dm_algo
     outputs:
       highly_sensitive:
         rds: output/data/data_processed.rds
