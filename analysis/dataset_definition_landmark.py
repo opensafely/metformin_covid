@@ -148,6 +148,19 @@ dataset.exp_count_metfin = (
     .count_for_patient()
 )
 
+## Any other antidiabetic drug exposure before landmark_date
+dataset.exp_date_sulfo_first = first_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
+dataset.exp_date_dpp4_first = first_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
+dataset.exp_date_dpp4_mono_first = first_matching_med_dmd_before(dpp4_mono_dmd, landmark_date).date 
+dataset.exp_date_tzd_first = first_matching_med_dmd_before(tzd_dmd, landmark_date).date 
+dataset.exp_date_tzd_mono_first = first_matching_med_dmd_before(tzd_mono_dmd, landmark_date).date 
+dataset.exp_date_sglt2_first = first_matching_med_dmd_before(sglt2_dmd, landmark_date).date 
+dataset.exp_date_sglt2_mono_first = first_matching_med_dmd_before(sglt2_mono_dmd, landmark_date).date 
+dataset.exp_date_glp1_first = first_matching_med_dmd_before(glp1_dmd, landmark_date).date 
+dataset.exp_date_megli_first = first_matching_med_dmd_before(meglitinides_dmd, landmark_date).date 
+dataset.exp_date_agi_first = first_matching_med_dmd_before(agi_dmd, landmark_date).date 
+dataset.exp_date_insulin_first = first_matching_med_dmd_before(insulin_dmd, landmark_date).date
+
 
 #######################################################################################
 # Table 5) Demographics, covariates and potential confounders
@@ -210,17 +223,17 @@ dataset.cov_bin_carehome_status = case(
 )
 
 ## Any other antidiabetic drug use before landmark_date (could also be a combo with metformin)
-dataset.cov_date_sulfo = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
-dataset.cov_date_dpp4 = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
-dataset.cov_date_dpp4_mono = last_matching_med_dmd_before(dpp4_mono_dmd, landmark_date).date 
-dataset.cov_date_tzd = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
-dataset.cov_date_tzd_mono = last_matching_med_dmd_before(tzd_mono_dmd, landmark_date).date 
-dataset.cov_date_sglt2 = last_matching_med_dmd_before(sglt2_dmd, landmark_date).date 
-dataset.cov_date_sglt2_mono = last_matching_med_dmd_before(sglt2_mono_dmd, landmark_date).date 
-dataset.cov_date_glp1 = last_matching_med_dmd_before(glp1_dmd, landmark_date).date 
-dataset.cov_date_megli = last_matching_med_dmd_before(meglitinides_dmd, landmark_date).date 
-dataset.cov_date_agi = last_matching_med_dmd_before(agi_dmd, landmark_date).date 
-dataset.cov_date_insulin = last_matching_med_dmd_before(insulin_dmd, landmark_date).date
+dataset.cov_date_sulfo_last = last_matching_med_dmd_before(sulfonylurea_dmd, landmark_date).date 
+dataset.cov_date_dpp4_last = last_matching_med_dmd_before(dpp4_dmd, landmark_date).date 
+#dataset.cov_date_dpp4_mono_last = last_matching_med_dmd_before(dpp4_mono_dmd, landmark_date).date 
+dataset.cov_date_tzd_last = last_matching_med_dmd_before(tzd_dmd, landmark_date).date 
+#dataset.cov_date_tzd_mono_last = last_matching_med_dmd_before(tzd_mono_dmd, landmark_date).date 
+dataset.cov_date_sglt2_last = last_matching_med_dmd_before(sglt2_dmd, landmark_date).date 
+#dataset.cov_date_sglt2_mono_last = last_matching_med_dmd_before(sglt2_mono_dmd, landmark_date).date 
+dataset.cov_date_glp1_last = last_matching_med_dmd_before(glp1_dmd, landmark_date).date 
+dataset.cov_date_megli_last = last_matching_med_dmd_before(meglitinides_dmd, landmark_date).date 
+dataset.cov_date_agi_last = last_matching_med_dmd_before(agi_dmd, landmark_date).date 
+dataset.cov_date_insulin_last = last_matching_med_dmd_before(insulin_dmd, landmark_date).date
 
 ## Obesity, on or before landmark_date
 dataset.cov_bin_obesity = (
@@ -385,9 +398,23 @@ dataset.cov_bin_healthcare_worker = (
 #tmp_not_dereg = practice_registrations.where(practice_registrations.end_date.is_null()).exists_for_patient() # has not left the practice
 #dataset.out_date_dereg = case(when(tmp_not_dereg == False).then(tmp_dereg_date))
 
-# for descriptive purpose and for censoring reasons, add metformin initiation as an "outcome" AFTER landmark
+# for descriptive purpose and for censoring reasons, add metformin initiation as an "outcome" AFTER landmark, as well as all other antidiabetics options
 dataset.out_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, landmark_date, studyend_date).date
 dataset.out_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, landmark_date, studyend_date).date
+
+## Any other antidiabetic drug use after landmark_date
+dataset.out_date_sulfo_first = first_matching_med_dmd_between(sulfonylurea_dmd, landmark_date, studyend_date).date 
+dataset.out_date_dpp4_first = first_matching_med_dmd_between(dpp4_dmd, landmark_date, studyend_date).date 
+# dataset.out_date_dpp4_mono_first = first_matching_med_dmd_between(dpp4_mono_dmd, landmark_date, studyend_date).date 
+dataset.out_date_tzd_first = first_matching_med_dmd_between(tzd_dmd, landmark_date, studyend_date).date 
+# dataset.out_date_tzd_mono_first = first_matching_med_dmd_between(tzd_mono_dmd, landmark_date, studyend_date).date 
+dataset.out_date_sglt2_first = first_matching_med_dmd_between(sglt2_dmd, landmark_date, studyend_date).date 
+# dataset.out_date_sglt2_mono_first = first_matching_med_dmd_between(sglt2_mono_dmd, landmark_date, studyend_date).date 
+dataset.out_date_glp1_first = first_matching_med_dmd_between(glp1_dmd, landmark_date, studyend_date).date 
+dataset.out_date_megli_first = first_matching_med_dmd_between(meglitinides_dmd, landmark_date, studyend_date).date 
+dataset.out_date_agi_first = first_matching_med_dmd_between(agi_dmd, landmark_date, studyend_date).date 
+dataset.out_date_insulin_first = first_matching_med_dmd_between(insulin_dmd, landmark_date, studyend_date).date
+
 
 ## Practice deregistration date 2: Based on registration at landmark_date
 dataset.out_date_dereg = registered.end_date
