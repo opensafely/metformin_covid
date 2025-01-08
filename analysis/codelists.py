@@ -77,7 +77,7 @@ non_metformin_dmd = codelist_from_csv("codelists/user-r_denholm-non-metformin-an
 prediabetes_snomed = codelist_from_csv("codelists/opensafely-prediabetes-snomed.csv",column="code")
 
 ## metformin
-metformin_dmd = codelist_from_csv("codelists/user-alex-walker-metformin-dmd.csv",column="code")
+metformin_dmd = codelist_from_csv("codelists/user-alainamstutz-metformin-bristol-dmd.csv",column="code")
 metformin_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-metformin-without-other-antidiabetic-bristol-dmd.csv",column="code")
 
 ## metformin allergy

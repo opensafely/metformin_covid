@@ -138,11 +138,11 @@
       "downloaded_at": "2024-09-25 17:22:23.853512Z",
       "sha": "a52da34bd7178717df884211fca799db460a6b43"
     },
-    "user-alex-walker-metformin-dmd.csv": {
-      "id": "user/alex-walker/metformin-dmd/258f2054",
-      "url": "https://www.opencodelists.org/codelist/user/alex-walker/metformin-dmd/258f2054/",
-      "downloaded_at": "2024-11-11 08:58:59.504315Z",
-      "sha": "efce5efd9d9c1a46c1de226bf543ad9076691071"
+    "user-alainamstutz-metformin-bristol-dmd.csv": {
+      "id": "user/alainamstutz/metformin-bristol-dmd/3fbb0ecb",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/metformin-bristol-dmd/3fbb0ecb/",
+      "downloaded_at": "2025-01-08 17:39:03.652886Z",
+      "sha": "002e169aab3587b76d652c57983c7a776d2a861d"
     },
     "user-alainamstutz-metformin-without-other-antidiabetic-bristol-dmd.csv": {
       "id": "user/alainamstutz/metformin-without-other-antidiabetic-bristol-dmd/40fca29a",

@@ -29,7 +29,7 @@ user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58
 opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926
 opensafely/prediabetes-snomed/6bdbb7dd
 
-user/alex-walker/metformin-dmd/258f2054
+user/alainamstutz/metformin-bristol-dmd/3fbb0ecb
 user/alainamstutz/metformin-without-other-antidiabetic-bristol-dmd/40fca29a
 
 user/alainamstutz/metformin-intolerance-bristol/5af86d52
