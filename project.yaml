@@ -43,7 +43,7 @@ actions:
     outputs:
       highly_sensitive:
         rds1: output/data/data_processed.rds
-        #rds2: output/data/data_plots.rds
+        rds2: output/data/data_plots.rds
       moderately_sensitive:
         csv: output/data_properties/*.csv
 
@@ -53,7 +53,7 @@ actions:
       --dir_output=output/km_estimates/
       --df_output=output/km_estimates/km_estimates_metfin.csv
       --exposure=exp_bin_metfin_anytime
-      --origin_date=studystart_date
+      --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
       --censor_date=out_date_covid19_severe
       --plot=TRUE
