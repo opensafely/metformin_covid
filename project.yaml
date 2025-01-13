@@ -50,8 +50,7 @@ actions:
   km_estimates_metfin:
     run: kaplan-meier-function:v0.0.2 
       --df_input=data_plots.rds
-      --dir_output=output/km_estimates/
-      --df_output=output/km_estimates/km_estimates_metfin.csv
+      --df_output=output/km_estimates_metfin.csv
       --exposure=exp_bin_metfin_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
@@ -61,4 +60,4 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        csv1: output/km_estimates/km_estimates_metfin.csv
+        csv1: output/km_estimates_metfin.csv
