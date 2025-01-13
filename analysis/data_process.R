@@ -509,7 +509,7 @@ n_exp_out_midpoint6 <- data_processed %>%
 ################################################################################
 # 9 Output for cumulative incidence plots re treatment regimen pattern
 ################################################################################
-data_processed$studystart_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
+data_processed$studystart_date <- as.Date("2018-07-01")
 data_plots <- data_processed %>%
   select(patient_id, studystart_date, 
          exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
