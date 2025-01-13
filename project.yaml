@@ -49,7 +49,7 @@ actions:
 
   km_estimates_metfin:
     run: kaplan-meier-function:v0.0.2 
-      --df_input=data/data_plots.rds
+      --df_input=output/data/data_plots.rds
       --dir_output=output/km_estimates_metfin.csv
       --exposure=exp_bin_metfin_anytime
       --origin_date=elig_date_t2dm
