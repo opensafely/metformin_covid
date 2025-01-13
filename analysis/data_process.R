@@ -522,7 +522,7 @@ data_plots <- data_processed %>%
 # the full data
 write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
 # data for cumulative incidence plots re treatment regimen pattern
-write_rds(data_plots, here::here("output", "data", "data_plots.rds"))
+write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # flow chart quality assurance
 write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
