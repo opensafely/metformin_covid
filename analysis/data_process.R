@@ -7,8 +7,9 @@
 # 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
 # 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
 # 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
-# (for now to double-check: 8. Assign treatment, various patterns and main outcome)
-## Save the output: data_processed and the 1-row tables for the flow chart
+# 8. Assign treatment, various treatment regimen patterns and main outcome
+# 9. Output for cumulative incidence plots re treatment regimen pattern
+## Save all output
 ################################################################################
 
 ################################################################################
@@ -175,13 +176,15 @@ data_processed <- eligibility$data_processed
 # names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
 
 ################################################################################
-# 8 Double-check feasibility: Assign treatment/exposure and main outcome
+# 8 Assign treatment/exposure and main outcome
 ################################################################################
 # assign treatment/exposure and main outcome measure
 data_processed <- data_processed %>% 
   mutate(
     # started any metformin before pandemic start, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
     exp_bin_metfin_first = case_when(exp_date_metfin_first <= study_dates$pandemicstart_date ~ 1, 
+                                     TRUE ~ 0),
+    exp_bin_metfin_mono_first = case_when(exp_date_metfin_mono_first <= study_dates$pandemicstart_date ~ 1, 
                                      TRUE ~ 0),
     # any metformin prescription in 6m prior to pandemic start, among those that started after a T2DM diagnosis, mid2018 onwards
     # should be less than exp_bin_metfin_first; difference => those that stopped again before pandemic start 
@@ -395,6 +398,7 @@ n_exp_out <- data_processed %>%
     n_exp_bin_agi_mono_anytime = sum(exp_bin_agi_mono_anytime),
     n_exp_bin_insulin_mono_anytime = sum(exp_bin_insulin_mono_anytime),
     
+    n_exp_bin_metfin_mono_first = sum(exp_bin_metfin_mono_first),
     n_exp_bin_dpp4_mono_first = sum(exp_bin_dpp4_mono_first),
     n_exp_bin_tzd_mono_first = sum(exp_bin_tzd_mono_first),
     n_exp_bin_sglt2_mono_first = sum(exp_bin_sglt2_mono_first),
@@ -443,6 +447,7 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_agi_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono_anytime, na.rm = TRUE), threshold), 
     n_exp_bin_insulin_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono_anytime, na.rm = TRUE), threshold), 
     
+    n_exp_bin_metfin_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_first, na.rm = TRUE), threshold),
     n_exp_bin_dpp4_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4_mono_first, na.rm = TRUE), threshold), 
     n_exp_bin_tzd_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd_mono_first, na.rm = TRUE), threshold), 
     n_exp_bin_sglt2_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_sglt2_mono_first, na.rm = TRUE), threshold), 
@@ -500,11 +505,27 @@ n_exp_out_midpoint6 <- data_processed %>%
 #   )
 # names(n_exp_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
 
+
 ################################################################################
-# 9 Save output
+# 9 Output for cumulative incidence plots re treatment regimen pattern
 ################################################################################
-# the data
+data_processed$studystart_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
+data_plots <- data_processed %>%
+  select(patient_id, studystart_date, 
+         exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
+         exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime, exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime, 
+         exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, 
+         exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
+         out_date_covid19_severe, out_date_dereg_any)
+  
+################################################################################
+# 10 Save output
+################################################################################
+# the full data
 write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
+# data for cumulative incidence plots re treatment regimen pattern
+write_rds(data_plots, here::here("output", "data", "data_plots.rds"))
+
 # flow chart quality assurance
 write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
 # flow chart completeness criteria
@@ -512,7 +533,7 @@ write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_p
 # flow chart eligibility criteria
 write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_properties", "n_elig_excluded_midpoint6.csv"))
 write.csv(n_elig_excluded, file = here::here("output", "data_properties", "n_elig_excluded.csv"))
-# descriptive exposure and 1 outcome
+# descriptive/feasibility data re treatment patterns, events between index_date and pandemic start, and main outcome
 write.csv(n_exp_out_midpoint6, file = here::here("output", "data_properties", "n_exp_out_midpoint6.csv"))
 write.csv(n_exp_out, file = here::here("output", "data_properties", "n_exp_out.csv"))
 
