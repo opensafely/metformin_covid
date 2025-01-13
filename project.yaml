@@ -42,8 +42,8 @@ actions:
     - data_process_dm_algo
     outputs:
       highly_sensitive:
-        rds1: output/data/data_processed.rds
-        rds2: output/data/data_plots.rds
+        rds: output/data/data_processed.rds
+        feather: output/data/data_plots.feather
       moderately_sensitive:
         csv: output/data_properties/*.csv
 
