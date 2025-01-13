@@ -509,13 +509,13 @@ n_exp_out_midpoint6 <- data_processed %>%
 ################################################################################
 # 9 Output for cumulative incidence plots re treatment regimen pattern
 ################################################################################
-data_processed$studystart_date <- as.Date("2018-07-01")
-data_plots <- data_processed %>%
-  dplyr::select(patient_id, studystart_date, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
-         exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime, exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime, 
-         exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, 
-         exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
-         out_date_covid19_severe, out_date_dereg_any)
+# data_processed$studystart_date <- as.Date("2018-07-01")
+# data_plots <- data_processed %>%
+#   dplyr::select(patient_id, studystart_date, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
+#          exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime, exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime, 
+#          exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, 
+#          exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
+#          out_date_covid19_severe, out_date_dereg_any)
   
 ################################################################################
 # 10 Save output
@@ -523,7 +523,7 @@ data_plots <- data_processed %>%
 # the full data
 write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
 # data for cumulative incidence plots re treatment regimen pattern
-write_rds(data_plots, here::here("output", "data", "data_plots.rds"))
+# write_rds(data_plots, here::here("output", "data", "data_plots.rds"))
 
 # flow chart quality assurance
 write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
