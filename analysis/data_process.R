@@ -511,8 +511,7 @@ n_exp_out_midpoint6 <- data_processed %>%
 ################################################################################
 data_processed$studystart_date <- as.Date("2018-07-01")
 data_plots <- data_processed %>%
-  select(patient_id, studystart_date, 
-         exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
+  dplyr::select(patient_id, studystart_date, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, 
          exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime, exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime, 
          exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, 
          exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
