@@ -60,12 +60,12 @@ data_extracted <- fn_extract_data(input_filename)
 data_extracted <- data_extracted %>%
   mutate(
     cov_cat_ethnicity = fn_case_when(
-      cov_cat_ethnicity == "1" ~ "White",
-      cov_cat_ethnicity == "4" ~ "Black",
-      cov_cat_ethnicity == "3" ~ "South Asian",
-      cov_cat_ethnicity == "2" ~ "Mixed",
-      cov_cat_ethnicity == "5" ~ "Other",
-      cov_cat_ethnicity == "0" ~ "Unknown",
+      cov_cat_ethnicity == "White" ~ "White",
+      cov_cat_ethnicity == "Black" ~ "Black",
+      cov_cat_ethnicity == "South Asian" ~ "South Asian",
+      cov_cat_ethnicity == "Mixed" ~ "Mixed",
+      cov_cat_ethnicity == "Other" ~ "Other",
+      cov_cat_ethnicity == "Unknown" ~ "Unknown",
       TRUE ~ NA_character_) # if ethnicity is NA, it remains NA -> will not influence diabetes algo, except that for step 5 only age will be used for these cases
     )
 

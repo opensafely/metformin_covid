@@ -180,23 +180,23 @@ data_processed <- eligibility$data_processed
 # assign treatment/exposure and main outcome measure
 data_processed <- data_processed %>% 
   mutate(
-    # started any metformin before landmark, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
-    exp_bin_metfin_first = case_when(exp_date_metfin_first <= study_dates$landmark_date ~ 1, 
+    # started any metformin before pandemic start, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
+    exp_bin_metfin_first = case_when(exp_date_metfin_first <= study_dates$pandemicstart_date ~ 1, 
                                      TRUE ~ 0),
-    # any metformin prescription in 6m prior to landmark, among those that started after a T2DM diagnosis, mid2018 onwards
-    # should be less than exp_bin_metfin_first; difference => those that stopped again before landmark 
+    # any metformin prescription in 6m prior to pandemic start, among those that started after a T2DM diagnosis, mid2018 onwards
+    # should be less than exp_bin_metfin_first; difference => those that stopped again before pandemic start 
     exp_bin_metfin_last = case_when(exp_bin_metfin_first == 1 
-                                    & exp_date_metfin_last >= study_dates$landmark_date - days(183) ~ 1, 
+                                    & exp_date_metfin_last >= study_dates$pandemicstart_date - days(183) ~ 1, 
                                     TRUE ~ 0),
-    # any metformin mono-therapy prescription in 6m prior to landmark
+    # any metformin mono-therapy prescription in 6m prior to pandemic start
     # should be less than exp_bin_metfin_last
     exp_bin_metfin_mono_last = case_when(exp_bin_metfin_first == 1 # ensures initiation of ANY metformin (broad codelist, any combo)
-                                         & exp_date_metfin_mono_last >= study_dates$landmark_date - days(183) ~ 1, # reduces them to metformin mono
+                                         & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183) ~ 1, # reduces them to metformin mono
                                               TRUE ~ 0),
-    # if started any metformin before OR after landmark (i.e. any initiation from T2DM diagnosis until study end date)
-    # CAVE: irrespective those who stopped just before landmark
-    exp_bin_metfin_anytime = case_when(exp_date_metfin_first <= study_dates$landmark_date
-                                   | out_date_metfin_first > study_dates$landmark_date ~ 1, 
+    # if started any metformin before OR after pandemic start (i.e. any initiation from T2DM diagnosis until study end date)
+    # CAVE: irrespective those who stopped just before pandemic start
+    exp_bin_metfin_anytime = case_when(exp_date_metfin_first <= study_dates$pandemicstart_date
+                                   | out_date_metfin_first > study_dates$pandemicstart_date ~ 1, 
                                    TRUE ~ 0),
     exp_date_metfin_anytime = case_when(exp_bin_metfin_anytime == 1 ~ pmin(exp_date_metfin_first, out_date_metfin_first, na.rm = TRUE), 
                                     TRUE ~ as.Date(NA)),
@@ -206,115 +206,164 @@ data_processed <- data_processed %>%
                                       TRUE ~ 0),
     exp_bin_metfin_anytime_6m = case_when(!is.na(tb_T2DMdiag_metfin_anytime) & tb_T2DMdiag_metfin_anytime <= 180 ~ 1,
                                       TRUE ~ 0),
-    # if started any metformin mono-therapy before OR after landmark (i.e. any initiation from T2DM diagnosis until study end date)
-    exp_bin_metfin_mono_anytime = case_when(exp_date_metfin_mono_first <= study_dates$landmark_date
-                                    | out_date_metfin_mono_first > study_dates$landmark_date ~ 1, 
+    # if started any metformin mono-therapy before OR after pandemic start (i.e. any initiation from T2DM diagnosis until study end date)
+    exp_bin_metfin_mono_anytime = case_when(exp_date_metfin_mono_first <= study_dates$pandemicstart_date
+                                    | out_date_metfin_mono_first > study_dates$pandemicstart_date ~ 1, 
                                     TRUE ~ 0),
     exp_date_metfin_mono_anytime = case_when(exp_bin_metfin_mono_anytime == 1 ~ pmin(exp_date_metfin_mono_first, out_date_metfin_mono_first, na.rm = TRUE), 
                                     TRUE ~ as.Date(NA)),
     
-    ## NOW, let's investigate those who did not start any metfin combo, i.e. exp_bin_metfin_anytime == 0
+    
+    ## NOW, let's investigate those who did not start any metfin combo, OVER ENTIRE STUDY PERIOD, i.e. exp_bin_metfin_anytime == 0
     # DPP4 mono (or combo with SGLT2)
     exp_bin_dpp4_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with dpp4 (e.g. Janumet)
-                                 & (exp_date_dpp4_first <= study_dates$landmark_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                    | out_date_dpp4_first > study_dates$landmark_date) ~ 1, 
+                                 & (exp_date_dpp4_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
+                                    | out_date_dpp4_first > study_dates$pandemicstart_date) ~ 1, 
                                  TRUE ~ 0),
     exp_date_dpp4_mono_anytime = case_when(exp_bin_dpp4_mono_anytime == 1 ~ pmin(exp_date_dpp4_first, out_date_dpp4_first, na.rm = TRUE), 
                                     TRUE ~ as.Date(NA)),
     # TZD mono
     exp_bin_tzd_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with tzd (e.g. actoplusmet, or combo with Rosiglitazone, but formally not in use anymore in NHS after 2010: https://www.gov.uk/drug-device-alerts/drug-alert-recall-of-avandia-4mg-8mg-avandamet-1mg-500mg-2mg-500mg-2mg-1000mg-4mg-1000mg)
-                                          & (exp_date_tzd_first <= study_dates$landmark_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                             | out_date_tzd_first > study_dates$landmark_date) ~ 1, 
+                                          & (exp_date_tzd_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
+                                             | out_date_tzd_first > study_dates$pandemicstart_date) ~ 1, 
                                           TRUE ~ 0),
     exp_date_tzd_mono_anytime = case_when(exp_bin_tzd_mono_anytime == 1 ~ pmin(exp_date_tzd_first, out_date_tzd_first, na.rm = TRUE), 
                                            TRUE ~ as.Date(NA)),
     # SGLT2 mono (or combo with DPP4)
     exp_bin_sglt2_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with sglt2 (e.g. synjardy)
-                                         & (exp_date_sglt2_first <= study_dates$landmark_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                            | out_date_sglt2_first > study_dates$landmark_date) ~ 1, 
+                                         & (exp_date_sglt2_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
+                                            | out_date_sglt2_first > study_dates$pandemicstart_date) ~ 1, 
                                          TRUE ~ 0),
     exp_date_sglt2_mono_anytime = case_when(exp_bin_sglt2_mono_anytime == 1 ~ pmin(exp_date_sglt2_first, out_date_sglt2_first, na.rm = TRUE), 
                                           TRUE ~ as.Date(NA)),
     # sulfo mono
     exp_bin_sulfo_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails sulfo mono (glucovance/glibenclamid + metfin not in use anymore)
-                                           & (exp_date_sulfo_first <= study_dates$landmark_date
-                                              | out_date_sulfo_first > study_dates$landmark_date) ~ 1, 
+                                           & (exp_date_sulfo_first <= study_dates$pandemicstart_date
+                                              | out_date_sulfo_first > study_dates$pandemicstart_date) ~ 1, 
                                            TRUE ~ 0),
     exp_date_sulfo_mono_anytime = case_when(exp_bin_sulfo_mono_anytime == 1 ~ pmin(exp_date_sulfo_first, out_date_sulfo_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # glp1 mono
     exp_bin_glp1_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails glp1 mono (no combinations with metformin)
-                                           & (exp_date_glp1_first <= study_dates$landmark_date
-                                              | out_date_glp1_first > study_dates$landmark_date) ~ 1, 
+                                           & (exp_date_glp1_first <= study_dates$pandemicstart_date
+                                              | out_date_glp1_first > study_dates$pandemicstart_date) ~ 1, 
                                            TRUE ~ 0),
     exp_date_glp1_mono_anytime = case_when(exp_bin_glp1_mono_anytime == 1 ~ pmin(exp_date_glp1_first, out_date_glp1_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # megli mono
     exp_bin_megli_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
-                                          & (exp_date_megli_first <= study_dates$landmark_date
-                                             | out_date_megli_first > study_dates$landmark_date) ~ 1, 
+                                          & (exp_date_megli_first <= study_dates$pandemicstart_date
+                                             | out_date_megli_first > study_dates$pandemicstart_date) ~ 1, 
                                           TRUE ~ 0),
     exp_date_megli_mono_anytime = case_when(exp_bin_megli_mono_anytime == 1 ~ pmin(exp_date_megli_first, out_date_megli_first, na.rm = TRUE), 
                                            TRUE ~ as.Date(NA)),
     # agi mono
     exp_bin_agi_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
-                                           & (exp_date_agi_first <= study_dates$landmark_date
-                                              | out_date_agi_first > study_dates$landmark_date) ~ 1, 
+                                           & (exp_date_agi_first <= study_dates$pandemicstart_date
+                                              | out_date_agi_first > study_dates$pandemicstart_date) ~ 1, 
                                            TRUE ~ 0),
     exp_date_agi_mono_anytime = case_when(exp_bin_agi_mono_anytime == 1 ~ pmin(exp_date_agi_first, out_date_agi_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # insulin mono
     exp_bin_insulin_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
-                                         & (exp_date_insulin_first <= study_dates$landmark_date
-                                            | out_date_insulin_first > study_dates$landmark_date) ~ 1, 
+                                         & (exp_date_insulin_first <= study_dates$pandemicstart_date
+                                            | out_date_insulin_first > study_dates$pandemicstart_date) ~ 1, 
                                          TRUE ~ 0),
     exp_date_insulin_mono_anytime = case_when(exp_bin_insulin_mono_anytime == 1 ~ pmin(exp_date_insulin_first, out_date_insulin_first, na.rm = TRUE), 
                                           TRUE ~ as.Date(NA)),
     
-    ## NOW, let's investigate treatment status at landmark_date, among those who did not start any metfin combo until landmark, i.e. exp_bin_metfin_last == 0
+    ## NOW, let's investigate those who did not start any metfin combo UNTIL PANDEMIC START, i.e. exp_bin_metfin_first == 0
+    # Of course, they might initiate metfin later, after pandemic start
     # DPP4 mono (or combo with SGLT2)
-    exp_bin_dpp4_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                      & cov_date_dpp4_last >= study_dates$landmark_date - days(183) ~ 1, # but combo with SGLT2 possible
-                                      TRUE ~ 0),
+    exp_bin_dpp4_mono_first = case_when(exp_date_metfin_first == 0
+                                        & exp_date_dpp4_first <= study_dates$pandemicstart_date ~ 1, # combo with SGLT2 possible
+                                        TRUE ~ 0),
     # TZD mono
-    exp_bin_tzd_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                     & cov_date_tzd_last >= study_dates$landmark_date - days(183) ~ 1,
-                                     TRUE ~ 0),
+    exp_bin_tzd_mono_first = case_when(exp_date_metfin_first == 0
+                                        & exp_date_tzd_first <= study_dates$pandemicstart_date ~ 1,
+                                        TRUE ~ 0),
     # SGLT2 mono (or combo with DPP4)
-    exp_bin_sglt2_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                       & cov_date_sglt2_last >= study_dates$landmark_date - days(183) ~ 1, # but combo with DPP4 possible
+    exp_bin_sglt2_mono_first = case_when(exp_date_metfin_first == 0
+                                       & exp_date_sglt2_first <= study_dates$pandemicstart_date ~ 1, # but combo with DPP4 possible
                                        TRUE ~ 0),
     # sulfo mono
-    exp_bin_sulfo_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                       & cov_date_sulfo_last >= study_dates$landmark_date - days(183) ~ 1,
+    exp_bin_sulfo_mono_first = case_when(exp_date_metfin_first == 0
+                                         & exp_date_sulfo_first <= study_dates$pandemicstart_date ~ 1,
+                                         TRUE ~ 0),
+    # glp1 mono
+    exp_bin_glp1_mono_first = case_when(exp_date_metfin_first == 0
+                                         & exp_date_glp1_first <= study_dates$pandemicstart_date ~ 1,
+                                         TRUE ~ 0),
+    # megli mono
+    exp_bin_megli_mono_first = case_when(exp_date_metfin_first == 0
+                                        & exp_date_megli_first <= study_dates$pandemicstart_date ~ 1,
+                                        TRUE ~ 0),
+    # agi mono
+    exp_bin_agi_mono_first = case_when(exp_date_metfin_first == 0
+                                         & exp_date_agi_first <= study_dates$pandemicstart_date ~ 1,
+                                         TRUE ~ 0),
+    # insulin mono
+    exp_bin_insulin_mono_first = case_when(exp_date_metfin_first == 0
+                                       & exp_date_insulin_first <= study_dates$pandemicstart_date ~ 1,
+                                       TRUE ~ 0),
+    ## NOW, let's see who had no prescription at all UNTIL PANDEMIC START
+    exp_bin_treat_nothing_first = case_when(exp_bin_metfin_first == 0 # covers exp_bin_metfin_mono_first (sub-codelist of exp_bin_metfin_first)
+                                           & exp_bin_dpp4_mono_first == 0
+                                           & exp_bin_tzd_mono_first == 0 
+                                           & exp_bin_sglt2_mono_first == 0 
+                                           & exp_bin_sulfo_mono_first == 0
+                                           & exp_bin_glp1_mono_first == 0 
+                                           & exp_bin_megli_mono_first == 0
+                                           & exp_bin_agi_mono_first == 0
+                                           & exp_bin_insulin_mono_first == 0 ~ 1,
+                                           TRUE ~ 0),
+    
+    
+    ## NOW, let's go backwards from pandemicstart_date, with a last prescription in past 6m, among those who do not have a any metfin combo in 6m prior to pandemic start, i.e. exp_bin_metfin_last == 0
+    ## these are less relevant...since treatment status will be defined at landmark = 6m after T2DM diagnosis and not at pandemic start !
+    # DPP4 mono (or combo with SGLT2)
+    exp_bin_dpp4_mono_last = case_when(exp_bin_metfin_last == 0
+                                      & cov_date_dpp4_last >= study_dates$pandemicstart_date - days(183) ~ 1, # but combo with SGLT2 possible
+                                      TRUE ~ 0),
+    # TZD mono
+    exp_bin_tzd_mono_last = case_when(exp_bin_metfin_last == 0
+                                     & cov_date_tzd_last >= study_dates$pandemicstart_date - days(183) ~ 1,
+                                     TRUE ~ 0),
+    # SGLT2 mono (or combo with DPP4)
+    exp_bin_sglt2_mono_last = case_when(exp_bin_metfin_last == 0
+                                       & cov_date_sglt2_last >= study_dates$pandemicstart_date - days(183) ~ 1, # but combo with DPP4 possible
+                                       TRUE ~ 0),
+    # sulfo mono
+    exp_bin_sulfo_mono_last = case_when(exp_bin_metfin_last == 0
+                                       & cov_date_sulfo_last >= study_dates$pandemicstart_date - days(183) ~ 1,
                                        TRUE ~ 0),
     # glp1 mono
-    exp_bin_glp1_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                      & cov_date_glp1_last >= study_dates$landmark_date - days(183) ~ 1,
+    exp_bin_glp1_mono_last = case_when(exp_bin_metfin_last == 0
+                                      & cov_date_glp1_last >= study_dates$pandemicstart_date - days(183) ~ 1,
                                       TRUE ~ 0),
     # megli mono
-    exp_bin_megli_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                       & cov_date_megli_last >= study_dates$landmark_date - days(183) ~ 1,
+    exp_bin_megli_mono_last = case_when(exp_bin_metfin_last == 0
+                                       & cov_date_megli_last >= study_dates$pandemicstart_date - days(183) ~ 1,
                                        TRUE ~ 0),
     # agi mono
-    exp_bin_agi_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                     & cov_date_agi_last >= study_dates$landmark_date - days(183) ~ 1,
+    exp_bin_agi_mono_last = case_when(exp_bin_metfin_last == 0
+                                     & cov_date_agi_last >= study_dates$pandemicstart_date - days(183) ~ 1,
                                      TRUE ~ 0),
     # insulin mono
-    exp_bin_insulin_mono_landmark = case_when(exp_bin_metfin_last == 0
-                                         & cov_date_insulin_last >= study_dates$landmark_date - days(183) ~ 1,
+    exp_bin_insulin_mono_last = case_when(exp_bin_metfin_last == 0
+                                         & cov_date_insulin_last >= study_dates$pandemicstart_date - days(183) ~ 1,
                                          TRUE ~ 0),
     
-    ## NOW, let's see who had no prescription at all from the above, at landmark_date (any of these prescription within 6m prior to landmark)
-    exp_bin_treat_nothing_landmark = case_when(exp_bin_metfin_last == 0 # covers exp_bin_metfin_mono_last (sub-codelist of exp_bin_metfin_last)
-                                               & exp_bin_dpp4_mono_landmark == 0
-                                               & exp_bin_tzd_mono_landmark == 0 
-                                               & exp_bin_sglt2_mono_landmark == 0 
-                                               & exp_bin_sulfo_mono_landmark == 0
-                                               & exp_bin_glp1_mono_landmark == 0 
-                                               & exp_bin_megli_mono_landmark == 0
-                                               & exp_bin_agi_mono_landmark == 0
-                                               & exp_bin_insulin_mono_landmark == 0 ~ 1,
+    ## NOW, let's see who had no prescription at all from the above, at pandemicstart_date (any of these prescription within 6m prior to landmark)
+    exp_bin_treat_nothing_last = case_when(exp_bin_metfin_last == 0 # covers exp_bin_metfin_mono_last (sub-codelist of exp_bin_metfin_last)
+                                               & exp_bin_dpp4_mono_last == 0
+                                               & exp_bin_tzd_mono_last == 0 
+                                               & exp_bin_sglt2_mono_last == 0 
+                                               & exp_bin_sulfo_mono_last == 0
+                                               & exp_bin_glp1_mono_last == 0 
+                                               & exp_bin_megli_mono_last == 0
+                                               & exp_bin_agi_mono_last == 0
+                                               & exp_bin_insulin_mono_last == 0 ~ 1,
                                                TRUE ~ 0)
     
     # e.g. invokamet (canaglifozin + metformin) or xigduo XR (dapaglifozin + metformin) or synjardy (Empagliflozin/metformin (0601023AR))
@@ -325,7 +374,7 @@ data_processed <- data_processed %>%
     ) %>%
   
   ## add primary outcome
-  mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$landmark_date ~ 1, # severe covid outcome (hosp or death)
+  mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$pandemicstart_date ~ 1, # severe covid outcome (hosp or death)
                                          TRUE ~ 0))
 
 n_exp_out <- data_processed %>% 
@@ -346,15 +395,25 @@ n_exp_out <- data_processed %>%
     n_exp_bin_agi_mono_anytime = sum(exp_bin_agi_mono_anytime),
     n_exp_bin_insulin_mono_anytime = sum(exp_bin_insulin_mono_anytime),
     
-    n_exp_bin_dpp4_mono_landmark = sum(exp_bin_dpp4_mono_landmark),
-    n_exp_bin_tzd_mono_landmark = sum(exp_bin_tzd_mono_landmark),
-    n_exp_bin_sglt2_mono_landmark = sum(exp_bin_sglt2_mono_landmark),
-    n_exp_bin_sulfo_mono_landmark = sum(exp_bin_sulfo_mono_landmark),
-    n_exp_bin_glp1_mono_landmark = sum(exp_bin_glp1_mono_landmark),
-    n_exp_bin_megli_mono_landmark = sum(exp_bin_megli_mono_landmark),
-    n_exp_bin_agi_mono_landmark = sum(exp_bin_agi_mono_landmark),
-    n_exp_bin_insulin_mono_landmark = sum(exp_bin_insulin_mono_landmark),
-    n_exp_bin_treat_nothing_landmark = sum(exp_bin_treat_nothing_landmark),
+    n_exp_bin_dpp4_mono_first = sum(exp_bin_dpp4_mono_first),
+    n_exp_bin_tzd_mono_first = sum(exp_bin_tzd_mono_first),
+    n_exp_bin_sglt2_mono_first = sum(exp_bin_sglt2_mono_first),
+    n_exp_bin_sulfo_mono_first = sum(exp_bin_sulfo_mono_first),
+    n_exp_bin_glp1_mono_first = sum(exp_bin_glp1_mono_first),
+    n_exp_bin_megli_mono_first = sum(exp_bin_megli_mono_first),
+    n_exp_bin_agi_mono_first = sum(exp_bin_agi_mono_first),
+    n_exp_bin_insulin_mono_first = sum(exp_bin_insulin_mono_first),
+    n_exp_bin_treat_nothing_first = sum(exp_bin_treat_nothing_first),
+    
+    n_exp_bin_dpp4_mono_last = sum(exp_bin_dpp4_mono_last),
+    n_exp_bin_tzd_mono_last = sum(exp_bin_tzd_mono_last),
+    n_exp_bin_sglt2_mono_last = sum(exp_bin_sglt2_mono_last),
+    n_exp_bin_sulfo_mono_last = sum(exp_bin_sulfo_mono_last),
+    n_exp_bin_glp1_mono_last = sum(exp_bin_glp1_mono_last),
+    n_exp_bin_megli_mono_last = sum(exp_bin_megli_mono_last),
+    n_exp_bin_agi_mono_last = sum(exp_bin_agi_mono_last),
+    n_exp_bin_insulin_mono_last = sum(exp_bin_insulin_mono_last),
+    n_exp_bin_treat_nothing_last = sum(exp_bin_treat_nothing_last),
     
     n_out_severeCOVID = sum(out_bin_severecovid),
     
@@ -384,15 +443,25 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_agi_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono_anytime, na.rm = TRUE), threshold), 
     n_exp_bin_insulin_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono_anytime, na.rm = TRUE), threshold), 
     
-    n_exp_bin_dpp4_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_tzd_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_sglt2_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_sglt2_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_sulfo_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_sulfo_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_glp1_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_glp1_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_megli_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_megli_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_agi_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_insulin_mono_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono_landmark, na.rm = TRUE), threshold), 
-    n_exp_bin_treat_nothing_landmark_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing_landmark, na.rm = TRUE), threshold), 
+    n_exp_bin_dpp4_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_tzd_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_sglt2_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_sglt2_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_sulfo_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_sulfo_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_glp1_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_glp1_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_megli_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_megli_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_agi_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_insulin_mono_first_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono_first, na.rm = TRUE), threshold), 
+    n_exp_bin_treat_nothing_first_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing_first, na.rm = TRUE), threshold), 
+    
+    n_exp_bin_dpp4_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_tzd_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_sglt2_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_sglt2_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_sulfo_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_sulfo_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_glp1_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_glp1_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_megli_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_megli_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_agi_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_insulin_mono_last_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono_last, na.rm = TRUE), threshold), 
+    n_exp_bin_treat_nothing_last_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing_last, na.rm = TRUE), threshold), 
     
     n_out_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold),
     
@@ -405,8 +474,8 @@ n_exp_out_midpoint6 <- data_processed %>%
 #   .x = data_processed_all_windows,
 #   .f = ~ .x %>% 
 #     # main exposure
-#     mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$landmark_date 
-#                                      & exp_date_metfin_last >= study_dates$landmark_date - days(183) ~ 1, # 1 if started/treated/exposed and still on it
+#     mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$pandemicstart_date 
+#                                      & exp_date_metfin_last >= study_dates$pandemicstart_date - days(183) ~ 1, # 1 if started/treated/exposed and still on it
 #                                      TRUE ~ 0)) %>% # 0 if not started/treated/exposed until landmark or not on it anymore
 #     # summarise everything
 #     summarise(

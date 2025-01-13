@@ -36,10 +36,11 @@ hrt_dmd = codelist_from_csv("codelists/user-elsie_horne-hrt_dmd.csv",column="dmd
 #######################################################################################
 # ethnicity
 ethnicity_codes = codelist_from_csv(
-    "codelists/opensafely-ethnicity.csv",
-    column="Code",
+    "codelists/opensafely-ethnicity-snomed-0removed.csv",
+    column="snomedcode",
     category_column="Grouping_6",
 )
+
 primis_covid19_vacc_update_ethnicity = codelist_from_csv(
     "codelists/primis-covid19-vacc-uptake-eth2001.csv",
     column="code",

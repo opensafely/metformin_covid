@@ -14,7 +14,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       # Rule 2: Year of birth is after year of death
       yob_after_yod = !is.na(qa_num_birth_year) & qa_num_birth_year > year(qa_date_of_death),
       # Rule 3: Year of birth predates NHS established year or year of birth exceeds study end date
-      yob_beforeNHS_afterstudyend = qa_num_birth_year < 1793 | (qa_num_birth_year > year(studyend_date)),
+      yob_beforeNHS_afterstudyend = qa_num_birth_year < 1838 | (qa_num_birth_year > year(studyend_date)),
       # Rule 4: Date of death is on or before 1/1/1900 (and not NULL) or after current date (and not NULL)
       dob_invalid = (qa_date_of_death <= as.Date("1900-01-01") | qa_date_of_death > Sys.Date()),
       # Rule 5: Pregnancy/birth codes for men
