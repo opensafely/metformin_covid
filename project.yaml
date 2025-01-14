@@ -55,7 +55,6 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1460
       --plot=TRUE
     needs:
     - data_process

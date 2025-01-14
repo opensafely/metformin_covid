@@ -135,17 +135,17 @@ data_processed <- merge(data_processed, data_processed_dm_algo,
 ################################################################################
 # 5 Apply the quality assurance criteria
 ################################################################################
-#qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
-#n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
-#data_processed <- qa$data_processed
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
 
 ################################################################################
 # 6 Apply the completeness criteria
 ################################################################################
-#completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
-#n_completeness_excluded <- completeness$n_completeness_excluded
-#n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-#data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
+completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+n_completeness_excluded <- completeness$n_completeness_excluded
+n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
 
 ################################################################################
 # 7 Apply the eligibility criteria
@@ -515,6 +515,12 @@ data_plots <- data_processed %>%
          exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime,
          exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
          out_date_covid19_severe, out_date_dereg_any)
+
+# # ensure no event_time is == 0
+# data_plots <- data_plots %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>% 
+#   dplyr::filter(elig_date_t2dm < out_date_covid19_severe | is.na(out_date_covid19_severe)) %>% 
+#   dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm))
   
 ################################################################################
 # 10 Save output
@@ -525,9 +531,9 @@ write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
 write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # flow chart quality assurance
-#write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
+write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
 # flow chart completeness criteria
-#write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
+write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
 # flow chart eligibility criteria
 write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_properties", "n_elig_excluded_midpoint6.csv"))
 write.csv(n_elig_excluded, file = here::here("output", "data_properties", "n_elig_excluded.csv"))
@@ -551,4 +557,53 @@ write.csv(n_exp_out, file = here::here("output", "data_properties", "n_exp_out.c
 #                    row.names = FALSE)
 # )
 
-
+# 
+# # Load necessary libraries
+# library(survival)  # For Kaplan-Meier analysis
+# library(ggplot2)   # For plotting
+# library(arrow)     # For handling Feather files
+# 
+# # File paths
+# df_input <- "output/data/data_plots.feather"
+# dir_output <- "output/km_estimates/km_estimates_metfin.feather"
+# 
+# # Variable definitions
+# exposure <- "exp_bin_metfin_anytime"
+# origin_date <- "elig_date_t2dm"
+# event_date <- "exp_date_metfin_anytime"
+# censor_date <- "out_date_covid19_severe"
+# 
+# # Read input data
+# data <- data_plots
+# 
+# # Prepare survival object
+# surv_obj <- Surv(
+#   time = as.numeric(difftime(data[[event_date]], data[[origin_date]], units = "days")),
+#   event = !is.na(data[[event_date]]) & 
+#     (is.na(data[[censor_date]]) | data[[event_date]] <= data[[censor_date]])
+# )
+# 
+# # Kaplan-Meier fit
+# km_fit <- survfit(surv_obj ~ data[[exposure]], data = data)
+# 
+# # Save KM estimates to Feather file
+# km_estimates <- data.frame(
+#   time = km_fit$time,
+#   n_risk = km_fit$n.risk,
+#   n_event = km_fit$n.event,
+#   n_censor = km_fit$n.censor,
+#   survival = km_fit$surv,
+#   std_err = km_fit$std.err,
+#   conf_lower = km_fit$lower,
+#   conf_upper = km_fit$upper
+# )
+# 
+# plot(
+#   km_fit,
+#   col = c("blue", "red"),  # Colors for different groups
+#   lty = 1:2,               # Line types for different groups
+#   xlab = "Days",
+#   ylab = "Survival Probability",
+#   main = "Kaplan-Meier Survival Curves",
+#   conf.int = F          # Add confidence intervals
+# )
