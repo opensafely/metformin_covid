@@ -47,17 +47,30 @@ actions:
       moderately_sensitive:
         csv: output/data_properties/*.csv
 
-  km_estimates_metfin:
-    run: kaplan-meier-function:v0.0.2 
-      --df_input=output/data/data_plots.feather
-      --dir_output=output/km_estimates_metfin.feather
-      --exposure=exp_bin_metfin_anytime
-      --origin_date=elig_date_t2dm
-      --event_date=exp_date_metfin_anytime
-      --censor_date=out_date_covid19_severe
-      --plot=TRUE
-    needs:
-    - data_process
+  plot_km:
+    run: r:latest analysis/km.R 
+      --plot TRUE
+    needs: [data_process]
     outputs:
-      highly_sensitive:
-        output: output/km_estimates_metfin.feather
+      moderately_sensitive:
+        csv1: output/km_estimates/km_estimates_metfin.csv
+        csv2: output/km_estimates/km_estimates_metfin_red.csv
+        csv3: output/km_estimates/km_estimates_metfin_red2.csv
+        plot1: output/km_estimates/km_estimates_metfin.png
+        plot2: output/km_estimates/km_estimates_metfin_red.png
+
+
+#  km_estimates_metfin:
+#    run: kaplan-meier-function:v0.0.2 
+#      --df_input=output/data/data_plots.feather
+#      --dir_output=output/km_estimates_metfin.feather ### double-check!!!
+#      --exposure=exp_bin_metfin_anytime
+#      --origin_date=elig_date_t2dm
+#      --event_date=exp_date_metfin_anytime
+#      --censor_date=out_date_covid19_severe
+#      --plot=TRUE
+#    needs:
+#    - data_process
+#    outputs:
+#      highly_sensitive:
+#        output: output/km_estimates_metfin.feather
