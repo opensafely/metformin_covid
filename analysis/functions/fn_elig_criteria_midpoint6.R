@@ -12,7 +12,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       # Exclusion 1: no T2DM diagnosis or out of window
       no_t2dm_or_outofwindow = is.na(elig_date_t2dm) | 
         (elig_date_t2dm >= pandemicstart_date - days(183) & elig_date_t2dm < pandemicstart_date) 
-      | (elig_date_t2dm < mid2018_date - days(years_in_days))
+      # | (elig_date_t2dm < mid2018_date - days(years_in_days))
       )
   
   # Filter 1: main eligibility criteria: T2DM diagnosis
