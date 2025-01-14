@@ -434,11 +434,11 @@ dataset.out_date_covid19_death = case(when(tmp_out_bin_death_covid).then(ons_dea
 dataset.out_date_covid19_severe = minimum_of(dataset.out_date_covid19_death, dataset.out_date_covid19_hosp)
 
 ## First Long COVID code in primary care, between pandemicstart_date and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-dataset.out_date_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, pandemicstart_date, studyend_date).date
+#dataset.out_date_long_covid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, pandemicstart_date, studyend_date).date
 ## First Viral fatigue code in primary care, between pandemicstart_date and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-dataset.out_date_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, pandemicstart_date, studyend_date).date
+#dataset.out_date_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, pandemicstart_date, studyend_date).date
 # combined: First Long COVID code or Viral Fatigue code after pandemicstart_date = primary outcome
-dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid, dataset.out_date_viral_fatigue)
+#dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid, dataset.out_date_viral_fatigue)
 
 ## Long COVID signs and symptoms, first code in primary care, between pandemicstart_date and studyend_date (incl. those dates)
 #dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, pandemicstart_date, studyend_date).date
