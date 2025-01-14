@@ -135,17 +135,17 @@ data_processed <- merge(data_processed, data_processed_dm_algo,
 ################################################################################
 # 5 Apply the quality assurance criteria
 ################################################################################
-# qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
-# n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
-# data_processed <- qa$data_processed
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
 
 ################################################################################
 # 6 Apply the completeness criteria
 ################################################################################
-# completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
-# n_completeness_excluded <- completeness$n_completeness_excluded
-# n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-# data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
+completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+n_completeness_excluded <- completeness$n_completeness_excluded
+n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
 
 ################################################################################
 # 7 Apply the eligibility criteria
@@ -540,9 +540,9 @@ write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
 write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # flow chart quality assurance
-# write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
+write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
 # flow chart completeness criteria
-# write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
+write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
 # flow chart eligibility criteria
 write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_properties", "n_elig_excluded_midpoint6.csv"))
 write.csv(n_elig_excluded, file = here::here("output", "data_properties", "n_elig_excluded.csv"))
