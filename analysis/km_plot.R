@@ -3,13 +3,18 @@
 # Purpose: Build 1 combined plot from all disclosure-safe Kaplan-Meier estimates of antidiabetic treatment regimen patterns among T2DM patients
 # # # # # # # # # # # # # # # # # # # # #
 
-## Import libraries ----
+################################################################################
+# Import libraries
+################################################################################
 library(tidyverse)
 library(here)
 library(arrow)
 library(plotly)
 library(ggplot2)
 
+################################################################################
+# Load the data
+################################################################################
 # Name of the datasets
 file_names <- c("metfin", "metfin_mono", "dpp4_mono", "tzd_mono", 
                 "sglt2_mono", "sulfo_mono", "glp1_mono", 
@@ -27,6 +32,11 @@ combined_data <- bind_rows(
     data_list[[i]] %>% mutate(group = file_names[i])
   })
 )
+
+################################################################################
+# Create directories for output
+################################################################################
+fs::dir_create(here::here("output", "data_properties"))
 
 ################################################################################
 # Plot
