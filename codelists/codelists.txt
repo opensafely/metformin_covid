@@ -10,7 +10,7 @@ opensafely/covid-identification-in-primary-care-probable-covid-clinical-code/202
 opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16
 user/RochelleKnight/confirmed-hospitalised-covid-19/1f0d2526
 
-opensafely/ethnicity/2020-04-27
+opensafely/ethnicity-snomed-0removed/2e641f61
 primis-covid19-vacc-uptake/eth2001/v1
 
 user/hjforbes/type-1-diabetes/674fbd7a

@@ -32,24 +32,15 @@ hrt_dmd = codelist_from_csv("codelists/user-elsie_horne-hrt_dmd.csv",column="dmd
 
 
 #######################################################################################
-# DEMOGRAPHIC variables
+# DEMOGRAPHIC and ELIGIBILITY variables
 #######################################################################################
 # ethnicity
 ethnicity_codes = codelist_from_csv(
-    "codelists/opensafely-ethnicity.csv",
-    column="Code",
+    "codelists/opensafely-ethnicity-snomed-0removed.csv",
+    column="snomedcode",
     category_column="Grouping_6",
 )
-primis_covid19_vacc_update_ethnicity = codelist_from_csv(
-    "codelists/primis-covid19-vacc-uptake-eth2001.csv",
-    column="code",
-    category_column="grouping_6_id",
-)
 
-
-#######################################################################################
-# ELIGIBILITY variables
-#######################################################################################
 ## DIABETES
 # T1DM
 diabetes_type1_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-type-1-diabetes.csv",column="code")
