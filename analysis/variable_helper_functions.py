@@ -54,14 +54,17 @@ def last_matching_med_dmd_before(codelist, baseline_date, where=True):
     )
 
 ## In SECONDARY CARE (Hospital Episodes)
-def last_matching_event_apc_before(codelist, baseline_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_before(baseline_date))
-        .sort_by(apcs.admission_date)
-        .last_for_patient()
-    )
+def last_matching_event_apc_before(codelist, baseline_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_before(baseline_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.sort_by(apcs.admission_date).last_for_patient()
 
 ## In OUTPATIENT CARE
 def last_matching_event_opa_before(codelist, baseline_date, where=True):
@@ -128,14 +131,17 @@ def last_matching_med_dmd_between(codelist, start_date, baseline_date, where=Tru
     )
 
 ## In SECONDARY CARE (Hospital Episodes)
-def last_matching_event_apc_between(codelist, start_date, baseline_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_between(start_date, baseline_date))
-        .sort_by(apcs.admission_date)
-        .last_for_patient()
-    )
+def last_matching_event_apc_between(codelist, start_date, baseline_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_between(start_date, baseline_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.sort_by(apcs.admission_date).last_for_patient()
 
 ## In OUTPATIENT CARE
 def last_matching_event_opa_between(codelist, start_date, baseline_date, where=True):
@@ -183,13 +189,17 @@ def count_matching_event_clinical_snomed_before(codelist, baseline_date, where=T
     )
 
 ## In SECONDARY CARE (Hospital Episodes)
-def count_matching_event_apc_before(codelist, baseline_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_before(baseline_date))
-        .count_for_patient()
-    )
+def count_matching_event_apc_before(codelist, baseline_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_before(baseline_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.count_for_patient()
 
 ## In OUTPATIENT CARE
 def count_matching_event_opa_before(codelist, baseline_date, where=True):
@@ -222,13 +232,17 @@ def count_matching_event_clinical_snomed_between(codelist, start_date, baseline_
     )
 
 ## In SECONDARY CARE (Hospital Episodes)
-def count_matching_event_apc_between(codelist, start_date, baseline_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_between(start_date, baseline_date))
-        .count_for_patient()
-    )
+def count_matching_event_apc_between(codelist, start_date, baseline_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_between(start_date, baseline_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.count_for_patient()
 
 ## In OUTPATIENT CARE
 def count_matching_event_opa_between(codelist, start_date, baseline_date, where=True):
@@ -272,14 +286,17 @@ def first_matching_med_dmd_before(codelist, baseline_date, where=True):
     )
 
 ## In SECONDARY CARE (Hospital Episodes)
-def first_matching_event_apc_before(codelist, baseline_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_before(baseline_date))
-        .sort_by(apcs.admission_date)
-        .first_for_patient()
-    )
+def first_matching_event_apc_before(codelist, baseline_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_before(baseline_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.sort_by(apcs.admission_date).first_for_patient()
 
 ## In EMERGENCY CARE
 def first_matching_event_ec_snomed_before(codelist, baseline_date, where=True):
@@ -328,14 +345,17 @@ def first_matching_med_dmd_between(codelist, baseline_date, end_date, where=True
     )
 
 ## In SECONDARY CARE
-def first_matching_event_apc_between(codelist, baseline_date, end_date, where=True):
-    return(
-        apcs.where(where)
-        .where(apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist))
-        .where(apcs.admission_date.is_on_or_between(baseline_date, end_date))
-        .sort_by(apcs.admission_date)
-        .first_for_patient()
-    )
+def first_matching_event_apc_between(codelist, baseline_date, end_date, only_prim_sec_diagnoses=False, where=True):
+    query = apcs.where(where).where(apcs.admission_date.is_on_or_between(baseline_date, end_date))
+    if only_prim_sec_diagnoses:
+        # If set to True, then check only primary and secondary diagnoses fields
+        query = query.where(
+            apcs.primary_diagnosis.is_in(codelist) | apcs.secondary_diagnosis.is_in(codelist)
+        )
+    else:
+        # Else, check all diagnoses (default, i.e. when only_prim_sec_diagnoses argument not defined)
+        query = query.where(apcs.all_diagnoses.contains_any_of(codelist))
+    return query.sort_by(apcs.admission_date).first_for_patient()
 
 ## In OUTPATIENT CARE
 def first_matching_event_opa_between(codelist, baseline_date, end_date, where=True):
