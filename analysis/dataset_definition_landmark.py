@@ -408,7 +408,7 @@ dataset.out_date_dereg_any = (
 )
 
 ## First covid-19 related hospital admission, between pandemicstart_date and studyend_date (incl. those dates)
-dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date).admission_date
+dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date, only_prim_diagnoses=True).admission_date
 ## First covid-19 related emergency attendance, between pandemicstart_date and studyend_date (incl. those dates)
 dataset.out_date_covid19_emergency = first_matching_event_ec_snomed_between(covid_emergency, pandemicstart_date, studyend_date).arrival_date
 # combined: First covid-19 related hospitalization
