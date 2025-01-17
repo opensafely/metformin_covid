@@ -50,7 +50,7 @@ mid2018_date = study_dates["mid2018_date"]
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=10000)
+dataset.configure_dummy_data(population_size=5000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################

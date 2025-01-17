@@ -62,7 +62,13 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
     n_hrt_men_midpoint6 = fn_roundmid_any(count$n_hrt_men, threshold),
     n_prost_women_midpoint6 = fn_roundmid_any(count$n_prost_women, threshold),
     n_after_qa_processing_midpoint6 = fn_roundmid_any(n_after_qa_processing, threshold)
-  )
+  ) %>% 
+    # pivot (for easier data review in L4)
+    pivot_longer(
+      cols = everything(),
+      names_to = "Variable",
+      values_to = "Value"
+    )
   
   # Return both outputs as a list
   return(list(

@@ -424,7 +424,16 @@ n_exp_out <- data_processed %>%
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
     IQR_upper_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.75, na.rm = TRUE)
-    )
+    
+    ) %>% 
+  
+  # pivot (for easier data review in L4)
+  pivot_longer(
+    cols = everything(),
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
 
 # midpoint6 rounded
 n_exp_out_midpoint6 <- data_processed %>% 
@@ -473,7 +482,15 @@ n_exp_out_midpoint6 <- data_processed %>%
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
     IQR_upper_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.75, na.rm = TRUE)
-  )
+    
+  ) %>% 
+  
+  # pivot (for easier data review in L4)
+  pivot_longer(
+    cols = everything(),
+    names_to = "Variable",
+    values_to = "Value"
+    )
 
 # n_exp_severecovid_midpoint6 <- map(
 #   .x = data_processed_all_windows,

@@ -63,7 +63,13 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
     n_not_alive_mid2018 = count$n_not_alive_mid2018,
     n_not_registered_mid2018 = count$n_not_registered_mid2018,
     n_after_exclusion_processing = n_after_exclusion_processing
-  )
+  ) %>% 
+    # pivot (for easier data review in L4)
+    pivot_longer(
+      cols = everything(),
+      names_to = "Variable",
+      values_to = "Value"
+    )
   
   # Output 3: Count for flowchart, with redaction, including pre/post processing counts
   out_midpoint6 <- tibble(
@@ -77,7 +83,13 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
     n_not_alive_mid2018_midpoint6 = fn_roundmid_any(count$n_not_alive_mid2018, threshold),
     n_not_registered_mid2018_midpoint6 = fn_roundmid_any(count$n_not_registered_mid2018, threshold),
     n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
-  )
+  ) %>% 
+    # pivot (for easier data review in L4)
+    pivot_longer(
+      cols = everything(),
+      names_to = "Variable",
+      values_to = "Value"
+    )
   
   # Return both outputs as a list
   return(list(

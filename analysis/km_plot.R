@@ -33,18 +33,17 @@ combined_data <- bind_rows(
 )
 
 # Take out the duplicates with 0 risk
-# combined_data <- combined_data %>% 
-#   dplyr::filter((exp_bin_metfin_anytime == 1) | 
-#                   (exp_bin_metfin_mono_anytime == 1) |
-#                   (exp_bin_dpp4_mono_anytime == 1) |
-#                   (exp_bin_tzd_mono_anytime == 1) |
-#                   (exp_bin_sglt2_mono_anytime == 1) |
-#                   (exp_bin_sulfo_mono_anytime == 1) |
-#                   (exp_bin_glp1_mono_anytime == 1) |
-#                   (exp_bin_megli_mono_anytime == 1) |
-#                   (exp_bin_agi_mono_anytime == 1) |
-#                   (exp_bin_insulin_mono_anytime == 1))
-# table(combined_data$group, useNA = "always")
+combined_data <- combined_data %>%
+  dplyr::filter((exp_bin_metfin_anytime == 1) |
+                  (exp_bin_metfin_mono_anytime == 1) |
+                  (exp_bin_dpp4_mono_anytime == 1) |
+                  (exp_bin_tzd_mono_anytime == 1) |
+                  (exp_bin_sglt2_mono_anytime == 1) |
+                  (exp_bin_sulfo_mono_anytime == 1) |
+                  (exp_bin_glp1_mono_anytime == 1) |
+                  (exp_bin_megli_mono_anytime == 1) |
+                  (exp_bin_agi_mono_anytime == 1) |
+                  (exp_bin_insulin_mono_anytime == 1))
 
 ################################################################################
 # Create directories for output

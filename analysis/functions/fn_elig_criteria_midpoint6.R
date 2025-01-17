@@ -12,7 +12,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       # Exclusion 1: no T2DM diagnosis or out of window
       no_t2dm_or_outofwindow = is.na(elig_date_t2dm) | 
         (elig_date_t2dm >= pandemicstart_date - days(183) & elig_date_t2dm < pandemicstart_date) 
-      | (elig_date_t2dm < mid2018_date - days(years_in_days))
+      # | (elig_date_t2dm < mid2018_date - days(years_in_days))
       )
   
   # Filter 1: main eligibility criteria: T2DM diagnosis
@@ -108,7 +108,13 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_death_landmark = count$n_prior_death_landmark, # counted only among n_t2dm
     n_prior_ltfu_landmark = count$n_prior_ltfu_landmark, # counted only among n_t2dm
     n_after_exclusion_processing = n_after_exclusion_processing
-  )
+  ) %>% 
+    # pivot (for easier data review in L4)
+    pivot_longer(
+      cols = everything(),
+      names_to = "Variable",
+      values_to = "Value"
+    )
   
   # Output 3: Count for flowchart, with redaction, and including pre/post processing counts
   out_midpoint6 <- tibble(
@@ -126,7 +132,13 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_death_landmark_midpoint6 = fn_roundmid_any(count$n_prior_death_landmark, threshold), # counted only among n_t2dm
     n_prior_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ltfu_landmark, threshold), # counted only among n_t2dm
     n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
-  )
+  ) %>% 
+    # pivot (for easier data review in L4)
+    pivot_longer(
+      cols = everything(),
+      names_to = "Variable",
+      values_to = "Value"
+    )
   
   # Return outputs as a list
   return(list(
