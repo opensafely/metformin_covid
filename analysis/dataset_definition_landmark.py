@@ -396,16 +396,18 @@ dataset.out_date_agi_first = first_matching_med_dmd_between(agi_dmd, pandemicsta
 dataset.out_date_insulin_first = first_matching_med_dmd_between(insulin_dmd, pandemicstart_date, studyend_date).date
 
 ## Practice deregistration date 1: Based on registration at pandemicstart_date
-dataset.out_date_dereg_pandemicstart_date = registered.end_date
+# dataset.out_date_dereg_pandemicstart_date = registered.end_date
+
 ## Practice deregistration date 2: Based on registration in mid2018
 dataset.out_date_dereg_mid2018 = registered_mid2018.end_date
-## Practice deregistration date 3: Any dereg after mid2018
-dataset.out_date_dereg_any = (
-  practice_registrations.where(practice_registrations.end_date.is_on_or_between(mid2018_date, studyend_date))
-  .sort_by(practice_registrations.end_date)
-  .first_for_patient()
-  .end_date
-)
+
+## Practice deregistration date 3: Any dereg after mid2018 / but this does not take into account those who were registered at baseline - the above one is cleaner and for sure only takes into account the baseline registration
+#dataset.out_date_dereg_any = (
+#  practice_registrations.where(practice_registrations.end_date.is_on_or_between(mid2018_date, studyend_date))
+#  .sort_by(practice_registrations.end_date)
+#  .first_for_patient()
+#  .end_date
+#)
 
 ## First covid-19 related hospital admission, between pandemicstart_date and studyend_date (incl. those dates)
 dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date, only_prim_diagnoses=True).admission_date

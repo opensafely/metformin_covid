@@ -55,9 +55,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
                               & qa_date_of_death <= pandemicstart_date,
       # Exclusion 12: LTFU prior to landmark
       prior_ltfu_landmark = (out_date_dereg_mid2018 > mid2018_date - days(years_in_days))
-                            & out_date_dereg_mid2018 <= pandemicstart_date,
-      prior_ltfu_landmark2 = (out_date_dereg_any > mid2018_date - days(years_in_days))
-                            & out_date_dereg_any <= pandemicstart_date,
+                            & out_date_dereg_mid2018 <= pandemicstart_date
     )
 
   # Among these, count the exclusion criteria
@@ -73,8 +71,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_cirrhosis_landmark = sum(prior_cirrhosis_landmark, na.rm = TRUE),
       n_prior_interaction_landmark = sum(prior_interaction_landmark, na.rm = TRUE),
       n_prior_death_landmark = sum(prior_death_landmark, na.rm = TRUE),
-      n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE),
-      n_prior_ltfu_landmark2 = sum(prior_ltfu_landmark2, na.rm = TRUE)
+      n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE)
     )
   
   # Filter 2: apply inclusion & all exclusion criteria
@@ -110,7 +107,6 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_interaction_landmark = count$n_prior_interaction_landmark, # counted only among n_t2dm
     n_prior_death_landmark = count$n_prior_death_landmark, # counted only among n_t2dm
     n_prior_ltfu_landmark = count$n_prior_ltfu_landmark, # counted only among n_t2dm
-    n_prior_ltfu_landmark2 = count$n_prior_ltfu_landmark2, # counted only among n_t2dm
     n_after_exclusion_processing = n_after_exclusion_processing
   )
   
@@ -129,7 +125,6 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_interaction_landmark_midpoint6 = fn_roundmid_any(count$n_prior_interaction_landmark, threshold), # counted only among n_t2dm
     n_prior_death_landmark_midpoint6 = fn_roundmid_any(count$n_prior_death_landmark, threshold), # counted only among n_t2dm
     n_prior_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ltfu_landmark, threshold), # counted only among n_t2dm
-    n_prior_ltfu_landmark2_midpoint6 = fn_roundmid_any(count$n_prior_ltfu_landmark2, threshold), # counted only among n_t2dm
     n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
   )
   
