@@ -25,6 +25,7 @@ library('tidyr')
 library('purrr')
 library('forcats')
 library('ggplot2')
+library('jsonlite')
 ## Import custom user functions and meta-dates
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
@@ -39,12 +40,10 @@ fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_properties"))
 
 ################################################################################
-# 0.2 Import command-line arguments and dates # to be adapted at a later stage
+# 0.2 Import command-line arguments and dates
 ################################################################################
-args <- commandArgs(trailingOnly=TRUE)
-# study_dates <-
-#    jsonlite::read_json(path = here::here("output", "study_dates.json")) %>%
-#    map(as.Date)
+# args <- commandArgs(trailingOnly=TRUE) # if needed at a later stage to define local testing
+# study_dates <- fromJSON(here::here("output", "study_dates.json")) # does not work locally, use below instead, try later
 source(here::here("analysis", "metadates.R"))
 # Convert the meta-dates into Date objects
 study_dates <- lapply(study_dates, function(x) as.Date(x))

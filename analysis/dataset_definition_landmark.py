@@ -32,10 +32,11 @@ from variable_helper_functions import *
 ## json (for the dates)
 import json
 
-# numpy for random seed - and set random seed
+# random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
-#np.random.seed(1928374) # random seed
-
+#np.random.seed(19283) # random seed
+import random
+random.seed(19283) # random seed
 
 #######################################################################################
 # DEFINE the feasibility study end date
