@@ -35,8 +35,8 @@ actions:
       highly_sensitive:
         dataset: output/dataset.arrow
   
-  data_preprocess:
-    run: r:latest analysis/data_preprocess.R
+  data_process:
+    run: r:latest analysis/data_process.R
     needs:
     - generate_dataset
     - data_process_dm_algo
@@ -58,7 +58,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/metfin/*.csv
@@ -74,7 +74,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/metfin_mono/*.csv
@@ -90,7 +90,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/dpp4_mono/*.csv
@@ -106,7 +106,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/tzd_mono/*.csv
@@ -122,7 +122,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/sglt2_mono/*.csv
@@ -138,7 +138,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/sulfo_mono/*.csv
@@ -154,7 +154,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/glp1_mono/*.csv
@@ -170,7 +170,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/megli_mono/*.csv
@@ -186,7 +186,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/agi_mono/*.csv
@@ -202,7 +202,7 @@ actions:
       --max_fup=1095
       --plot=FALSE
     needs:
-    - data_preprocess
+    - data_process
     outputs:
       moderately_sensitive:
         output: output/insulin_mono/*.csv
