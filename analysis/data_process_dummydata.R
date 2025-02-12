@@ -4,9 +4,9 @@
 # 2. Basic type formatting of variables -> fn_extract_data.R()
 # 3. Process some covariates
 # 4. Import the processed dataset with the DM variables (and ethnicity and qa_num_birth_year) and merge
-# 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
-# 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
-# 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
+# 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6() -> commented out for dummydata!
+# 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6() -> commented out for dummydata!
+# 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_dummydata_midpoint6() -> adapted for dummydata!
 # 8. Assign treatment, various treatment regimen patterns and main outcome
 # 9. Output for cumulative incidence plots re treatment regimen pattern
 ## Save all output
@@ -29,7 +29,7 @@ source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
-source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
+source(here::here("analysis", "functions", "fn_elig_criteria_dummydata_midpoint6.R")) # to adapt the dummy data
 
 ################################################################################
 # 0.1 Create directories for output
@@ -122,7 +122,7 @@ data_processed <- data_extracted %>%
     tmp_cov_num_hdl_cholesterol = replace(tmp_cov_num_hdl_cholesterol, tmp_cov_num_hdl_cholesterol < 0.4 | tmp_cov_num_hdl_cholesterol > 5, NA_real_),
     cov_num_tc_hdl_ratio = tmp_cov_num_cholesterol / tmp_cov_num_hdl_cholesterol,
     cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
-    )
+  )
 
 ################################################################################
 # 4 Import the processed DM algo dataset and merge
@@ -135,23 +135,23 @@ data_processed <- merge(data_processed, data_processed_dm_algo,
 ################################################################################
 # 5 Apply the quality assurance criteria
 ################################################################################
-qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
-n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
-data_processed <- qa$data_processed
+# qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+# n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+# data_processed <- qa$data_processed
 
 ################################################################################
 # 6 Apply the completeness criteria
 ################################################################################
-completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
-n_completeness_excluded <- completeness$n_completeness_excluded
-n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
+# completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+# n_completeness_excluded <- completeness$n_completeness_excluded
+# n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+# data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
 
 ################################################################################
 # 7 Apply the eligibility criteria
 ################################################################################
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on => if so, use function with loop that can be mapped to other windows
-eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0)
+eligibility <- fn_elig_criteria_dummydata_midpoint6(data_processed, study_dates, years_in_days = 0)
 n_elig_excluded <- eligibility$n_elig_excluded
 n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 data_processed <- eligibility$data_processed
@@ -557,9 +557,9 @@ write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
 write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # flow chart quality assurance
-write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
+#write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv")) # commented out due to dummy data adaptation (no such output)
 # flow chart completeness criteria
-write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
+#write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv")) # commented out due to dummy data adaptation (no such output)
 # flow chart eligibility criteria
 write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_properties", "n_elig_excluded_midpoint6.csv"))
 write.csv(n_elig_excluded, file = here::here("output", "data_properties", "n_elig_excluded.csv"))
