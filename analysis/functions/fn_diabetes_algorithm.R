@@ -158,13 +158,17 @@ fn_diabetes_algorithm <- function(data_extracted){
     # remove original diabetes variables to avoid duplication
     dplyr::select(- elig_date_t1dm, - elig_date_t2dm, - elig_date_otherdm, - elig_date_gestationaldm) %>%
            # GESTATIONAL
-    mutate(elig_date_gestationaldm = as_date(case_when(elig_cat_diabetes == "GDM" ~ tmp_elig_date_first_diabetes_diag)),
+    mutate(elig_date_gestationaldm = as_date(case_when(elig_cat_diabetes == "GDM" ~ tmp_elig_date_first_diabetes_diag,
+                                                       TRUE ~ as.Date(NA))),
            # T2DM
-           elig_date_t2dm = as_date(case_when(elig_cat_diabetes == "T2DM" ~ tmp_elig_date_first_diabetes_diag)),
+           elig_date_t2dm = as_date(case_when(elig_cat_diabetes == "T2DM" ~ tmp_elig_date_first_diabetes_diag,
+                                              TRUE ~ as.Date(NA))),
            # T1DM
-           elig_date_t1dm = as_date(case_when(elig_cat_diabetes == "T1DM" ~ tmp_elig_date_first_diabetes_diag)),
+           elig_date_t1dm = as_date(case_when(elig_cat_diabetes == "T1DM" ~ tmp_elig_date_first_diabetes_diag,
+                                              TRUE ~ as.Date(NA))),
            # OTHER
-           elig_date_otherdm = as_date(case_when(elig_cat_diabetes == "DM_other" ~ pmin(tmp_hba1c_date_step7, tmp_over5_pocc_step7, na.rm = TRUE)))) %>%
+           elig_date_otherdm = as_date(case_when(elig_cat_diabetes == "DM_other" ~ pmin(tmp_hba1c_date_step7, tmp_over5_pocc_step7, na.rm = TRUE),
+                                                 TRUE ~ as.Date(NA)))) %>%
     # drop unnecessary helper variables
-    select(-contains("tmp"), -contains("step"))
+    dplyr::select(-contains("tmp"), -contains("step"))
 }

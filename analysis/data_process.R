@@ -124,13 +124,13 @@ data_processed <- data_extracted %>%
     cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
     )
 
-################################################################################
-# 4 Import the processed DM algo dataset and merge
-################################################################################
-data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
-data_processed <- merge(data_processed, data_processed_dm_algo, 
-                        by = "patient_id", 
-                        all.x = TRUE)
+# ################################################################################
+# # 4 Import the processed DM algo dataset and merge
+# ################################################################################
+# data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
+# data_processed <- merge(data_processed, data_processed_dm_algo, 
+#                         by = "patient_id", 
+#                         all.x = TRUE)
 
 ################################################################################
 # 5 If code is run locally, then do not run completeness and quality assurance and run adapted eligibility function (all to increase dummy data)
@@ -167,7 +167,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
   n_completeness_excluded <- completeness$n_completeness_excluded
   n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-  data_processed <- completeness$data_processed # CAVE: Being alive and registration based on mid2018, not landmark!
+  data_processed <- completeness$data_processed
   
   ################################################################################
   # 8 Apply the eligibility criteria (Real Data)

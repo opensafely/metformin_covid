@@ -25,12 +25,14 @@ from variable_helper_functions import *
 ## json (for the dates)
 import json
 
-# numpy for random seed - and set random seed
+# random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
-#np.random.seed(1928374) # random seed
+#np.random.seed(19283) # random seed
+import random
+random.seed(19283) # random seed
 
 #######################################################################################
-# DEFINE the feasibility study end date
+# DEFINE the exposure end date (pandemic start)
 #######################################################################################
 with open("output/study_dates.json") as f:
   study_dates = json.load(f)
@@ -46,7 +48,6 @@ dataset.define_population(patients.exists_for_patient())
 #######################################################################################
 # Table 3) ELIGIBILITY criteria
 #######################################################################################
-
 ## Year of birth
 dataset.qa_num_birth_year = patients.date_of_birth
 
@@ -70,7 +71,6 @@ dataset.cov_cat_ethnicity = case(
 )
 
 ## DIABETES algo variables start ------------------------
-## See https://github.com/opensafely/post-covid-diabetes/blob/main/analysis/common_variables.py 
 
 ## Type 1 Diabetes 
 # First date from primary+secondary, but also primary care date separately for diabetes algo

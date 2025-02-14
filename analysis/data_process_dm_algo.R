@@ -2,9 +2,8 @@
 ## This script does the following:
 # 1. Import feather dataset from OpenSAFELY 
 # 2. Basic formatting of variables -> fn_extract_data.R()
-# 3. Process the ethnicity variable -> not needed anymore since the update of the ethnicity variable in ehrQL !
-# 4. Apply the diabetes algorithm -> fn_diabetes_algorithm()
-# 5. Save the output: data_processed
+# 3. Apply the diabetes algorithm -> fn_diabetes_algorithm()
+# 4. Save the output: data_processed
 ################################################################################
 
 ################################################################################
@@ -55,22 +54,7 @@ input_filename <- "dataset_dm_algo.arrow"
 data_extracted <- fn_extract_data(input_filename)
 
 ################################################################################
-# 3 Process the data and apply diabetes algorithm
-################################################################################
-# data_extracted <- data_extracted %>%
-#   mutate(
-#     cov_cat_ethnicity = fn_case_when(
-#       cov_cat_ethnicity == "White" ~ "White",
-#       cov_cat_ethnicity == "Black" ~ "Black",
-#       cov_cat_ethnicity == "South Asian" ~ "South Asian",
-#       cov_cat_ethnicity == "Mixed" ~ "Mixed",
-#       cov_cat_ethnicity == "Other" ~ "Other",
-#       cov_cat_ethnicity == "Unknown" ~ "Unknown",
-#       TRUE ~ NA_character_) # if ethnicity is NA, it remains NA -> will not influence diabetes algo, except that for step 5 only age will be used for these cases
-#     )
-
-################################################################################
-# 4 Apply diabetes algorithm
+# 3 Apply diabetes algorithm
 ################################################################################
 # apply diabetes algorithm and delete all helper variables (tmp & step) at the end
 data_processed_dm_algo <- fn_diabetes_algorithm(data_extracted)
@@ -79,4 +63,4 @@ data_processed_dm_algo <- fn_diabetes_algorithm(data_extracted)
 # 4 Save output
 ################################################################################
 # the data
-write_rds(data_processed_dm_algo, here::here("output", "data", "data_processed_dm_algo.rds"))
+write_csv(data_processed_dm_algo, here::here("output", "data", "data_processed_dm_algo.csv.gz"), na = "") # important to specify (na = ""), otherwise @table_from_file("output/data/data_processed_dm_algo.csv.gz") doesn't work (accept empty or a date, but not NA)
