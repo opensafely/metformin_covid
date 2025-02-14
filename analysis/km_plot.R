@@ -97,7 +97,7 @@ cum_inc_plot_rounded <- combined_data %>%
   scale_x_continuous(breaks = seq(0, max(combined_data$time), by = 30)) +  # Add ticks every 30 days
   coord_cartesian(xlim = c(0, NA)) +
   labs(
-    x = "Days since origin",
+    x = "Days since T2DM diagnosis",
     y = "Kaplan-Meier estimate",
     colour = NULL,
     title = NULL
@@ -135,7 +135,7 @@ cum_inc_plot_rounded_withCI <- combined_data %>%
   scale_x_continuous(breaks = seq(0, max(combined_data$time), by = 30)) +  # Add ticks every 30 days
   coord_cartesian(xlim = c(0, NA)) +
   labs(
-    x = "Days since origin",
+    x = "Days since T2DM diagnosis",
     y = "Kaplan-Meier estimate",
     colour = NULL,
     title = NULL

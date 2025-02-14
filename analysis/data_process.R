@@ -147,7 +147,8 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   n_elig_excluded <- eligibility$n_elig_excluded
   n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
   data_processed <- eligibility$data_processed
-  
+  data_processed <- data_processed %>%
+    dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm)) # since no qual assurance applied for dummy data..
   message("Eligibility criteria applied for dummy data")
   
 } else {
@@ -246,56 +247,72 @@ data_processed <- data_processed %>%
     # DPP4 mono (or combo with SGLT2)
     exp_bin_dpp4_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with dpp4 (e.g. Janumet)
                                  & (exp_date_dpp4_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                    | out_date_dpp4_first > study_dates$pandemicstart_date) ~ 1, 
+                                    | out_date_dpp4_first > study_dates$pandemicstart_date)
+                                 & (exp_date_dpp4_first >= elig_date_t2dm | is.na(exp_date_dpp4_first)) # need to add these two lines since this was not an exclusion criteria
+                                 & (out_date_dpp4_first >= elig_date_t2dm | is.na(out_date_dpp4_first)) ~ 1, 
                                  TRUE ~ 0),
     exp_date_dpp4_mono_anytime = case_when(exp_bin_dpp4_mono_anytime == 1 ~ pmin(exp_date_dpp4_first, out_date_dpp4_first, na.rm = TRUE), 
                                     TRUE ~ as.Date(NA)),
     # TZD mono
     exp_bin_tzd_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with tzd (e.g. actoplusmet, or combo with Rosiglitazone, but formally not in use anymore in NHS after 2010: https://www.gov.uk/drug-device-alerts/drug-alert-recall-of-avandia-4mg-8mg-avandamet-1mg-500mg-2mg-500mg-2mg-1000mg-4mg-1000mg)
                                           & (exp_date_tzd_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                             | out_date_tzd_first > study_dates$pandemicstart_date) ~ 1, 
+                                             | out_date_tzd_first > study_dates$pandemicstart_date)
+                                         & (exp_date_tzd_first >= elig_date_t2dm | is.na(exp_date_tzd_first))
+                                         & (out_date_tzd_first >= elig_date_t2dm | is.na(out_date_tzd_first)) ~ 1, 
                                           TRUE ~ 0),
     exp_date_tzd_mono_anytime = case_when(exp_bin_tzd_mono_anytime == 1 ~ pmin(exp_date_tzd_first, out_date_tzd_first, na.rm = TRUE), 
                                            TRUE ~ as.Date(NA)),
     # SGLT2 mono (or combo with DPP4)
     exp_bin_sglt2_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist entails all combo with sglt2 (e.g. synjardy)
                                          & (exp_date_sglt2_first <= study_dates$pandemicstart_date # codelist entails all combo with metformin, does not matter, since they are all also part of the metfin combo list and thus are set to exp_bin_metfin_anytime == 1
-                                            | out_date_sglt2_first > study_dates$pandemicstart_date) ~ 1, 
+                                            | out_date_sglt2_first > study_dates$pandemicstart_date)
+                                         & (exp_date_sglt2_first >= elig_date_t2dm | is.na(exp_date_sglt2_first))
+                                         & (out_date_sglt2_first >= elig_date_t2dm | is.na(out_date_sglt2_first)) ~ 1, 
                                          TRUE ~ 0),
     exp_date_sglt2_mono_anytime = case_when(exp_bin_sglt2_mono_anytime == 1 ~ pmin(exp_date_sglt2_first, out_date_sglt2_first, na.rm = TRUE), 
                                           TRUE ~ as.Date(NA)),
     # sulfo mono
     exp_bin_sulfo_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails sulfo mono (glucovance/glibenclamid + metfin not in use anymore)
                                            & (exp_date_sulfo_first <= study_dates$pandemicstart_date
-                                              | out_date_sulfo_first > study_dates$pandemicstart_date) ~ 1, 
+                                              | out_date_sulfo_first > study_dates$pandemicstart_date)
+                                           & (exp_date_sulfo_first >= elig_date_t2dm | is.na(exp_date_sulfo_first))
+                                           & (out_date_sulfo_first >= elig_date_t2dm | is.na(out_date_sulfo_first)) ~ 1, 
                                            TRUE ~ 0),
     exp_date_sulfo_mono_anytime = case_when(exp_bin_sulfo_mono_anytime == 1 ~ pmin(exp_date_sulfo_first, out_date_sulfo_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # glp1 mono
     exp_bin_glp1_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails glp1 mono (no combinations with metformin)
                                            & (exp_date_glp1_first <= study_dates$pandemicstart_date
-                                              | out_date_glp1_first > study_dates$pandemicstart_date) ~ 1, 
+                                              | out_date_glp1_first > study_dates$pandemicstart_date)
+                                          & (exp_date_glp1_first >= elig_date_t2dm | is.na(exp_date_glp1_first))
+                                          & (out_date_glp1_first >= elig_date_t2dm | is.na(out_date_glp1_first)) ~ 1, 
                                            TRUE ~ 0),
     exp_date_glp1_mono_anytime = case_when(exp_bin_glp1_mono_anytime == 1 ~ pmin(exp_date_glp1_first, out_date_glp1_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # megli mono
     exp_bin_megli_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
                                           & (exp_date_megli_first <= study_dates$pandemicstart_date
-                                             | out_date_megli_first > study_dates$pandemicstart_date) ~ 1, 
+                                             | out_date_megli_first > study_dates$pandemicstart_date)
+                                          & (exp_date_megli_first >= elig_date_t2dm | is.na(exp_date_megli_first))
+                                          & (out_date_megli_first >= elig_date_t2dm | is.na(out_date_megli_first)) ~ 1, 
                                           TRUE ~ 0),
     exp_date_megli_mono_anytime = case_when(exp_bin_megli_mono_anytime == 1 ~ pmin(exp_date_megli_first, out_date_megli_first, na.rm = TRUE), 
                                            TRUE ~ as.Date(NA)),
     # agi mono
     exp_bin_agi_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
                                            & (exp_date_agi_first <= study_dates$pandemicstart_date
-                                              | out_date_agi_first > study_dates$pandemicstart_date) ~ 1, 
+                                              | out_date_agi_first > study_dates$pandemicstart_date)
+                                         & (exp_date_agi_first >= elig_date_t2dm | is.na(exp_date_agi_first))
+                                         & (out_date_agi_first >= elig_date_t2dm | is.na(out_date_agi_first)) ~ 1, 
                                            TRUE ~ 0),
     exp_date_agi_mono_anytime = case_when(exp_bin_agi_mono_anytime == 1 ~ pmin(exp_date_agi_first, out_date_agi_first, na.rm = TRUE), 
                                             TRUE ~ as.Date(NA)),
     # insulin mono
     exp_bin_insulin_mono_anytime = case_when(exp_bin_metfin_anytime == 0 # codelist only entails megli mono (no combinations with metformin)
                                          & (exp_date_insulin_first <= study_dates$pandemicstart_date
-                                            | out_date_insulin_first > study_dates$pandemicstart_date) ~ 1, 
+                                            | out_date_insulin_first > study_dates$pandemicstart_date)
+                                         & (exp_date_insulin_first >= elig_date_t2dm | is.na(exp_date_insulin_first))
+                                         & (out_date_insulin_first >= elig_date_t2dm | is.na(out_date_insulin_first)) ~ 1, 
                                          TRUE ~ 0),
     exp_date_insulin_mono_anytime = case_when(exp_bin_insulin_mono_anytime == 1 ~ pmin(exp_date_insulin_first, out_date_insulin_first, na.rm = TRUE), 
                                           TRUE ~ as.Date(NA)),
@@ -303,36 +320,44 @@ data_processed <- data_processed %>%
     ## NOW, let's investigate those who did not start any metfin combo UNTIL PANDEMIC START, i.e. exp_bin_metfin_first == 0
     # Of course, they might initiate metfin later, after pandemic start
     # DPP4 mono (or combo with SGLT2)
-    exp_bin_dpp4_mono_first = case_when(exp_date_metfin_first == 0
-                                        & exp_date_dpp4_first <= study_dates$pandemicstart_date ~ 1, # combo with SGLT2 possible
+    exp_bin_dpp4_mono_first = case_when(exp_bin_metfin_first == 0
+                                        & exp_date_dpp4_first <= study_dates$pandemicstart_date
+                                        & exp_date_dpp4_first >= elig_date_t2dm ~ 1, # need to add these two lines since this was not an exclusion criteria
                                         TRUE ~ 0),
     # TZD mono
-    exp_bin_tzd_mono_first = case_when(exp_date_metfin_first == 0
-                                        & exp_date_tzd_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_tzd_mono_first = case_when(exp_bin_metfin_first == 0
+                                        & exp_date_tzd_first <= study_dates$pandemicstart_date
+                                       & exp_date_tzd_first >= elig_date_t2dm ~ 1,
                                         TRUE ~ 0),
     # SGLT2 mono (or combo with DPP4)
-    exp_bin_sglt2_mono_first = case_when(exp_date_metfin_first == 0
-                                       & exp_date_sglt2_first <= study_dates$pandemicstart_date ~ 1, # but combo with DPP4 possible
+    exp_bin_sglt2_mono_first = case_when(exp_bin_metfin_first == 0
+                                       & exp_date_sglt2_first <= study_dates$pandemicstart_date
+                                       & exp_date_sglt2_first >= elig_date_t2dm ~ 1, # but combo with DPP4 possible
                                        TRUE ~ 0),
     # sulfo mono
-    exp_bin_sulfo_mono_first = case_when(exp_date_metfin_first == 0
-                                         & exp_date_sulfo_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_sulfo_mono_first = case_when(exp_bin_metfin_first == 0
+                                         & exp_date_sulfo_first <= study_dates$pandemicstart_date
+                                         & exp_date_sulfo_first >= elig_date_t2dm ~ 1,
                                          TRUE ~ 0),
     # glp1 mono
-    exp_bin_glp1_mono_first = case_when(exp_date_metfin_first == 0
-                                         & exp_date_glp1_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_glp1_mono_first = case_when(exp_bin_metfin_first == 0
+                                         & exp_date_glp1_first <= study_dates$pandemicstart_date
+                                        & exp_date_glp1_first >= elig_date_t2dm ~ 1,
                                          TRUE ~ 0),
     # megli mono
-    exp_bin_megli_mono_first = case_when(exp_date_metfin_first == 0
-                                        & exp_date_megli_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_megli_mono_first = case_when(exp_bin_metfin_first == 0
+                                        & exp_date_megli_first <= study_dates$pandemicstart_date
+                                        & exp_date_megli_first >= elig_date_t2dm ~ 1,
                                         TRUE ~ 0),
     # agi mono
-    exp_bin_agi_mono_first = case_when(exp_date_metfin_first == 0
-                                         & exp_date_agi_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_agi_mono_first = case_when(exp_bin_metfin_first == 0
+                                         & exp_date_agi_first <= study_dates$pandemicstart_date
+                                       & exp_date_agi_first >= elig_date_t2dm ~ 1,
                                          TRUE ~ 0),
     # insulin mono
-    exp_bin_insulin_mono_first = case_when(exp_date_metfin_first == 0
-                                       & exp_date_insulin_first <= study_dates$pandemicstart_date ~ 1,
+    exp_bin_insulin_mono_first = case_when(exp_bin_metfin_first == 0
+                                       & exp_date_insulin_first <= study_dates$pandemicstart_date
+                                       & exp_date_insulin_first >= elig_date_t2dm ~ 1,
                                        TRUE ~ 0),
     ## NOW, let's see who had no prescription at all UNTIL PANDEMIC START
     exp_bin_treat_nothing_first = case_when(exp_bin_metfin_first == 0 # covers exp_bin_metfin_mono_first (sub-codelist of exp_bin_metfin_first)
@@ -348,7 +373,7 @@ data_processed <- data_processed %>%
     
     
     ## NOW, let's go backwards from pandemicstart_date, with a last prescription in past 6m, among those who do not have a any metfin combo in 6m prior to pandemic start, i.e. exp_bin_metfin_last == 0
-    ## these are less relevant...since treatment status will be defined at landmark = 6m after T2DM diagnosis and not at pandemic start !
+    ## these are less relevant...since treatment status will be defined at landmark = 6m after T2DM diagnosis and not at pandemic start and defined using _first!
     # DPP4 mono (or combo with SGLT2)
     exp_bin_dpp4_mono_last = case_when(exp_bin_metfin_last == 0
                                       & cov_date_dpp4_last >= study_dates$pandemicstart_date - days(183) ~ 1, # but combo with SGLT2 possible
@@ -559,19 +584,13 @@ data_plots <- data_processed %>%
          out_date_covid19_severe)
 
 # ensure no event_time is == 0 (especially important for dummy dataset, but ok to keep check in real data)
-data_plots <- data_plots %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < out_date_covid19_severe | is.na(out_date_covid19_severe)) %>%
-  dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm)) %>% 
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime))
+# data_plots <- data_plots %>%
+#   dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm)) # since no qual assurance applied for dummy data
+# %>% # the following is being taken care of in fn_elig_criteria
+# dplyr::filter(elig_date_t2dm < out_date_covid19_severe | is.na(out_date_covid19_severe)) %>%
+# dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
+# dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime))
+
   
 ################################################################################
 # 11 Save output

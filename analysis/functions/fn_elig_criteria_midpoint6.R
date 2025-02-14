@@ -40,22 +40,22 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   # Re-Apply the time-updated eligibility criteria again at landmark
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
-      # Exclusion 7: metformin allergy prior to or on landmark
-      prior_metfin_allergy_landmark = (elig_date_metfin_allergy_first > mid2018_date - days(years_in_days)) # don't count those diagnosed with allergy on day of diagnosis again
+      # Exclusion 7: metformin allergy prior to or on landmark, but after elig_date_t2dm (baseline) since all elig_date_t2dm in data_filtered_T2DM are in eligible time window (mid2018-2019)
+      prior_metfin_allergy_landmark = (elig_date_metfin_allergy_first > elig_date_t2dm) # don't count those diagnosed with allergy on day of diagnosis again
                                       & elig_date_metfin_allergy_first <= pandemicstart_date,
       # Exclusion 8: CKD 4/5 prior to or on landmark
-      prior_ckd45_landmark = (elig_date_ckd_45_first > mid2018_date - days(years_in_days)) 
+      prior_ckd45_landmark = (elig_date_ckd_45_first > elig_date_t2dm) 
                               & elig_date_ckd_45_first <= pandemicstart_date,
       # Exclusion 9: liver cirrhosis prior to or on landmark
-      prior_cirrhosis_landmark = (elig_date_liver_cirrhosis_first > mid2018_date - days(years_in_days)) 
+      prior_cirrhosis_landmark = (elig_date_liver_cirrhosis_first > elig_date_t2dm) 
                                   & elig_date_liver_cirrhosis_first <= pandemicstart_date,
       # Exclusion 10: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
       prior_interaction_landmark = (elig_date_metfin_interaction_last <= pandemicstart_date) & (elig_date_metfin_interaction_last >= pandemicstart_date - days(14)),
       # Exclusion 11: died prior to landmark
-      prior_death_landmark = (qa_date_of_death > mid2018_date - days(years_in_days))
+      prior_death_landmark = (qa_date_of_death > elig_date_t2dm)
                               & qa_date_of_death <= pandemicstart_date,
       # Exclusion 12: LTFU prior to landmark
-      prior_ltfu_landmark = (out_date_dereg_mid2018 > mid2018_date - days(years_in_days))
+      prior_ltfu_landmark = (out_date_dereg_mid2018 > elig_date_t2dm)
                             & out_date_dereg_mid2018 <= pandemicstart_date
     )
 
@@ -75,7 +75,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE)
     )
   
-  # Filter 2: apply inclusion & all exclusion criteria
+  # Filter 2: apply all exclusion criteria (inclusion criteria T2DM applied above)
   data_filtered <- data_filtered_T2DM %>% # Output 1: filtered data
     filter(
       (!prior_metfin | is.na(prior_metfin)),
