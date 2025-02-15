@@ -26,37 +26,49 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
       # Exclusion 2: metformin use prior to T2DM diagnosis
-      prior_metfin = exp_date_metfin_first < elig_date_t2dm, # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      prior_metfin = (!is.na(exp_date_metfin_first) 
+                      & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
       # Exclusion 3: metformin allergy prior to or on T2DM diagnosis
-      prior_metfin_allergy = elig_date_metfin_allergy_first <= elig_date_t2dm, # count those diagnosed with allergy on day of diagnosis
+      prior_metfin_allergy = (!is.na(elig_date_metfin_allergy_first) 
+                              & elig_date_metfin_allergy_first <= elig_date_t2dm), # count those diagnosed with allergy on day of diagnosis
       # Exclusion 4: CKD 4/5 prior to or on T2DM diagnosis
-      prior_ckd45 = elig_date_ckd_45_first <= elig_date_t2dm, # count those diagnosed with ckd on day of diagnosis
+      prior_ckd45 = (!is.na(elig_date_ckd_45_first) 
+                     & elig_date_ckd_45_first <= elig_date_t2dm), # count those diagnosed with ckd on day of diagnosis
       # Exclusion 5: liver cirrhosis prior to or on T2DM diagnosis
-      prior_cirrhosis = elig_date_liver_cirrhosis_first <= elig_date_t2dm, # count those diagnosed with cirrhosis on day of diagnosis
+      prior_cirrhosis = (!is.na(elig_date_liver_cirrhosis_first) 
+                         & elig_date_liver_cirrhosis_first <= elig_date_t2dm), # count those diagnosed with cirrhosis on day of diagnosis
       # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before or on T2DM diagnosis day
-      prior_interaction = (elig_date_metfin_interaction_first <= elig_date_t2dm) & (elig_date_metfin_interaction_first >= elig_date_t2dm - days(14))
+      prior_interaction = (!is.na(elig_date_metfin_interaction_last) 
+                           & (elig_date_metfin_interaction_last <= elig_date_t2dm) & (elig_date_metfin_interaction_last >= elig_date_t2dm - days(14)))
     )
   
   # Re-Apply the time-updated eligibility criteria again at landmark
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
       # Exclusion 7: metformin allergy prior to or on landmark, but after elig_date_t2dm (baseline) since all elig_date_t2dm in data_filtered_T2DM are in eligible time window (mid2018-2019)
-      prior_metfin_allergy_landmark = (elig_date_metfin_allergy_first > elig_date_t2dm) # don't count those diagnosed with allergy on day of diagnosis again
-                                      & elig_date_metfin_allergy_first <= pandemicstart_date,
+      prior_metfin_allergy_landmark = (!is.na(elig_date_metfin_allergy_first) 
+                                       & elig_date_metfin_allergy_first > elig_date_t2dm # don't count those diagnosed with allergy on day of diagnosis again
+                                       & elig_date_metfin_allergy_first <= elig_date_t2dm + days(183)),
       # Exclusion 8: CKD 4/5 prior to or on landmark
-      prior_ckd45_landmark = (elig_date_ckd_45_first > elig_date_t2dm) 
-                              & elig_date_ckd_45_first <= pandemicstart_date,
+      prior_ckd45_landmark = (!is.na(elig_date_ckd_45_first) 
+                              & elig_date_ckd_45_first > elig_date_t2dm
+                              & elig_date_ckd_45_first <= elig_date_t2dm + days(183)),
       # Exclusion 9: liver cirrhosis prior to or on landmark
-      prior_cirrhosis_landmark = (elig_date_liver_cirrhosis_first > elig_date_t2dm) 
-                                  & elig_date_liver_cirrhosis_first <= pandemicstart_date,
+      prior_cirrhosis_landmark = (!is.na(elig_date_liver_cirrhosis_first) 
+                                  & elig_date_liver_cirrhosis_first > elig_date_t2dm 
+                                  & elig_date_liver_cirrhosis_first <= elig_date_t2dm + days(183)),
       # Exclusion 10: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
-      prior_interaction_landmark = (elig_date_metfin_interaction_last <= pandemicstart_date) & (elig_date_metfin_interaction_last >= pandemicstart_date - days(14)),
+      prior_interaction_landmark = (!is.na(elig_date_metfin_interaction_last) 
+                                    & elig_date_metfin_interaction_last <= elig_date_t2dm + days(183) 
+                                    & elig_date_metfin_interaction_last >= elig_date_t2dm + days(169)),
       # Exclusion 11: died prior to landmark
-      prior_death_landmark = (qa_date_of_death > elig_date_t2dm)
-                              & qa_date_of_death <= pandemicstart_date,
+      prior_death_landmark = (!is.na(qa_date_of_death) 
+                              & qa_date_of_death > elig_date_t2dm
+                              & qa_date_of_death <= elig_date_t2dm + days(183)),
       # Exclusion 12: LTFU prior to landmark
-      prior_ltfu_landmark = (out_date_dereg_mid2018 > elig_date_t2dm)
-                            & out_date_dereg_mid2018 <= pandemicstart_date
+      prior_ltfu_landmark = (!is.na(out_date_dereg) 
+                             & out_date_dereg > elig_date_t2dm
+                             & out_date_dereg <= elig_date_t2dm + days(183))
     )
 
   # Among these, count the exclusion criteria
@@ -170,37 +182,49 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     data_filtered_T2DM <- data_filtered_T2DM %>%
       mutate(
         # Exclusion 2: metformin use prior to T2DM diagnosis
-        prior_metfin = exp_date_metfin_first < elig_date_t2dm, # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+        prior_metfin = (!is.na(exp_date_metfin_first) 
+                        & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
         # Exclusion 3: metformin allergy prior to or on T2DM diagnosis
-        prior_metfin_allergy = elig_date_metfin_allergy_first <= elig_date_t2dm, # count those diagnosed with allergy on day of diagnosis
+        prior_metfin_allergy = (!is.na(elig_date_metfin_allergy_first) 
+                                & elig_date_metfin_allergy_first <= elig_date_t2dm), # count those diagnosed with allergy on day of diagnosis
         # Exclusion 4: CKD 4/5 prior to or on T2DM diagnosis
-        prior_ckd45 = elig_date_ckd_45_first <= elig_date_t2dm, # count those diagnosed with ckd on day of diagnosis
+        prior_ckd45 = (!is.na(elig_date_ckd_45_first) 
+                       & elig_date_ckd_45_first <= elig_date_t2dm), # count those diagnosed with ckd on day of diagnosis
         # Exclusion 5: liver cirrhosis prior to or on T2DM diagnosis
-        prior_cirrhosis = elig_date_liver_cirrhosis_first <= elig_date_t2dm, # count those diagnosed with cirrhosis on day of diagnosis
+        prior_cirrhosis = (!is.na(elig_date_liver_cirrhosis_first) 
+                           & elig_date_liver_cirrhosis_first <= elig_date_t2dm), # count those diagnosed with cirrhosis on day of diagnosis
         # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before or on T2DM diagnosis day
-        prior_interaction = (elig_date_metfin_interaction_first <= elig_date_t2dm) & (elig_date_metfin_interaction_first >= elig_date_t2dm - days(14))
+        prior_interaction = (!is.na(elig_date_metfin_interaction_last) 
+                             & (elig_date_metfin_interaction_last <= elig_date_t2dm) & (elig_date_metfin_interaction_last >= elig_date_t2dm - days(14)))
       )
     
     # Re-Apply the time-updated eligibility criteria again at landmark
     data_filtered_T2DM <- data_filtered_T2DM %>%
       mutate(
-        # Exclusion 7: metformin allergy prior to or on landmark
-        prior_metfin_allergy_landmark = (elig_date_metfin_allergy_first > mid2018_date - days(years_in_days)) # don't count those diagnosed with allergy on day of diagnosis again
-        & elig_date_metfin_allergy_first <= pandemicstart_date,
+        # Exclusion 7: metformin allergy prior to or on landmark, but after elig_date_t2dm (baseline) since all elig_date_t2dm in data_filtered_T2DM are in eligible time window (mid2018-2019)
+        prior_metfin_allergy_landmark = (!is.na(elig_date_metfin_allergy_first) 
+                                         & elig_date_metfin_allergy_first > elig_date_t2dm # don't count those diagnosed with allergy on day of diagnosis again
+                                         & elig_date_metfin_allergy_first <= elig_date_t2dm + days(183)),
         # Exclusion 8: CKD 4/5 prior to or on landmark
-        prior_ckd45_landmark = (elig_date_ckd_45_first > mid2018_date - days(years_in_days)) 
-        & elig_date_ckd_45_first <= pandemicstart_date,
+        prior_ckd45_landmark = (!is.na(elig_date_ckd_45_first) 
+                                & elig_date_ckd_45_first > elig_date_t2dm
+                                & elig_date_ckd_45_first <= elig_date_t2dm + days(183)),
         # Exclusion 9: liver cirrhosis prior to or on landmark
-        prior_cirrhosis_landmark = (elig_date_liver_cirrhosis_first > mid2018_date - days(years_in_days)) 
-        & elig_date_liver_cirrhosis_first <= pandemicstart_date,
+        prior_cirrhosis_landmark = (!is.na(elig_date_liver_cirrhosis_first) 
+                                    & elig_date_liver_cirrhosis_first > elig_date_t2dm 
+                                    & elig_date_liver_cirrhosis_first <= elig_date_t2dm + days(183)),
         # Exclusion 10: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
-        prior_interaction_landmark = (elig_date_metfin_interaction_last <= pandemicstart_date) & (elig_date_metfin_interaction_last >= pandemicstart_date - days(14)),
+        prior_interaction_landmark = (!is.na(elig_date_metfin_interaction_last) 
+                                      & elig_date_metfin_interaction_last <= elig_date_t2dm + days(183) 
+                                      & elig_date_metfin_interaction_last >= elig_date_t2dm + days(169)),
         # Exclusion 11: died prior to landmark
-        prior_death_landmark = (qa_date_of_death > mid2018_date - days(years_in_days))
-        & qa_date_of_death <= pandemicstart_date,
+        prior_death_landmark = (!is.na(qa_date_of_death) 
+                                & qa_date_of_death > elig_date_t2dm
+                                & qa_date_of_death <= elig_date_t2dm + days(183)),
         # Exclusion 12: LTFU prior to landmark
-        prior_ltfu_landmark = (out_date_dereg_mid2018 > mid2018_date - days(years_in_days))
-        & out_date_dereg_mid2018 <= pandemicstart_date
+        prior_ltfu_landmark = (!is.na(out_date_dereg) 
+                               & out_date_dereg > elig_date_t2dm
+                               & out_date_dereg <= elig_date_t2dm + days(183))
       )
     
     # Among these, count the exclusion criteria

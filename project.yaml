@@ -25,21 +25,42 @@ actions:
     - generate_dataset_dm_algo
     outputs:
       highly_sensitive:
-        rds: output/data/data_processed_dm_algo.rds
+        dataset: output/data/data_processed_dm_algo.csv.gz
+
+  #generate_dataset:
+  #  run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
+  #  needs: 
+  #  - study_dates
+  #  outputs:
+  #    highly_sensitive:
+  #      dataset: output/dataset.arrow
 
   generate_dataset:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
     needs: 
     - study_dates
+    - generate_dataset_dm_algo
+    - data_process_dm_algo
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
   
+  #data_process:
+  #  run: r:latest analysis/data_process.R
+  #  needs:
+  #  - generate_dataset
+  #  - data_process_dm_algo
+  #  outputs:
+  #    highly_sensitive:
+  #      rds: output/data/data_processed.rds
+  #      feather: output/data/data_plots.feather
+  #    moderately_sensitive:
+  #      csv: output/data_properties/*.csv
+
   data_process:
     run: r:latest analysis/data_process.R
     needs:
     - generate_dataset
-    - data_process_dm_algo
     outputs:
       highly_sensitive:
         rds: output/data/data_processed.rds
@@ -54,8 +75,8 @@ actions:
       --exposure=exp_bin_metfin_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -70,8 +91,8 @@ actions:
       --exposure=exp_bin_metfin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -86,8 +107,8 @@ actions:
       --exposure=exp_bin_dpp4_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_dpp4_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -102,8 +123,8 @@ actions:
       --exposure=exp_bin_tzd_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_tzd_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -118,8 +139,8 @@ actions:
       --exposure=exp_bin_sglt2_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -134,8 +155,8 @@ actions:
       --exposure=exp_bin_sulfo_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -150,8 +171,8 @@ actions:
       --exposure=exp_bin_glp1_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -166,8 +187,8 @@ actions:
       --exposure=exp_bin_megli_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_megli_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -182,8 +203,8 @@ actions:
       --exposure=exp_bin_agi_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_agi_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -198,8 +219,8 @@ actions:
       --exposure=exp_bin_insulin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
-      --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --censor_date=out_date_severecovid
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -231,7 +252,7 @@ actions:
 #      --exposure=exp_bin_metfin_anytime
 #      --origin_date=elig_date_t2dm
 #      --event_date=exp_date_metfin_anytime
-#      --censor_date=out_date_covid19_severe
+#      --censor_date=out_date_severecovid
 #      --plot=TRUE
 #    needs:
 #    - data_process
