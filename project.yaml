@@ -76,7 +76,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -92,7 +92,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -108,7 +108,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_dpp4_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -124,7 +124,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_tzd_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -140,7 +140,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -156,7 +156,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -172,7 +172,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -188,7 +188,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_megli_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -204,7 +204,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_agi_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process
@@ -220,7 +220,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
       --censor_date=out_date_covid19_severe
-      --max_fup=1095
+      --max_fup=730
       --plot=FALSE
     needs:
     - data_process

@@ -402,7 +402,7 @@ dataset.cov_bin_healthcare_worker = (
 )
 
 #######################################################################################
-# Table 6) Outcomes
+# Table 6) Outcomes and censoring events
 #######################################################################################
 # for descriptive purpose and for censoring reasons, add metformin initiation as an "outcome" AFTER landmark, as well as all other antidiabetics options
 #dataset.out_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, pandemicstart_date, studyend_date).date
@@ -496,3 +496,22 @@ dataset.out_date_covid19_severe = minimum_of(dataset.out_date_covid19_death, dat
 #dataset.out_date_anxiety = first_matching_event_clinical_snomed_between(anxiety_snomed, dataset.elig_date_t2dm, studyend_date).date
 #dataset.out_date_depression = first_matching_event_clinical_snomed_between(depression_snomed, dataset.elig_date_t2dm, studyend_date).date
 #dataset.out_date_ptsd = first_matching_event_clinical_snomed_between(ptsd_snomed, dataset.elig_date_t2dm, studyend_date).date
+
+### UPDATED eligibility for censoring
+## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
+dataset.out_date_metfin_allergy_first = first_matching_event_clinical_snomed_between(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date
+
+## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before elig_date_t2dm
+dataset.out_date_ckd_45_first = minimum_of(
+    first_matching_event_clinical_snomed_between(ckd_snomed_clinical_45, dataset.elig_date_t2dm + days(1), studyend_date).date,
+    first_matching_event_apc_between(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+)
+
+## Advance decompensated liver cirrhosis, on or before elig_date_t2dm
+dataset.out_date_liver_cirrhosis_first = minimum_of(
+    first_matching_event_clinical_snomed_between(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
+    first_matching_event_apc_between(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+)
+
+## Use of the following medications (drug-drug interaction with metformin)
+dataset.out_date_metfin_interaction_first = first_matching_med_dmd_between(metformin_interaction_dmd, dataset.elig_date_t2dm + days(1), studyend_date).date
