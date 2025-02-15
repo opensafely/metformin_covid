@@ -75,7 +75,7 @@ actions:
       --exposure=exp_bin_metfin_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -91,7 +91,7 @@ actions:
       --exposure=exp_bin_metfin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -107,7 +107,7 @@ actions:
       --exposure=exp_bin_dpp4_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_dpp4_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -123,7 +123,7 @@ actions:
       --exposure=exp_bin_tzd_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_tzd_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -139,7 +139,7 @@ actions:
       --exposure=exp_bin_sglt2_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -155,7 +155,7 @@ actions:
       --exposure=exp_bin_sulfo_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -171,7 +171,7 @@ actions:
       --exposure=exp_bin_glp1_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -187,7 +187,7 @@ actions:
       --exposure=exp_bin_megli_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_megli_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -203,7 +203,7 @@ actions:
       --exposure=exp_bin_agi_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_agi_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -219,7 +219,7 @@ actions:
       --exposure=exp_bin_insulin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
-      --censor_date=out_date_covid19_severe
+      --censor_date=out_date_severecovid
       --max_fup=730
       --plot=FALSE
     needs:
@@ -252,7 +252,7 @@ actions:
 #      --exposure=exp_bin_metfin_anytime
 #      --origin_date=elig_date_t2dm
 #      --event_date=exp_date_metfin_anytime
-#      --censor_date=out_date_covid19_severe
+#      --censor_date=out_date_severecovid
 #      --plot=TRUE
 #    needs:
 #    - data_process
