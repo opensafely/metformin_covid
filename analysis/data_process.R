@@ -430,18 +430,26 @@ data_processed <- data_processed %>%
   ## add primary outcome
   mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$pandemicstart_date ~ 1, # severe covid outcome (hosp or death)
                                          TRUE ~ 0),
+         out_date_severecovid = case_when(out_bin_severecovid == 1 ~ out_date_covid19_severe, 
+                                             TRUE ~ as.Date(NA)),
          out_bin_severecovid2 = case_when(out_date_covid19_severe > elig_date_t2dm ~ 1, # should give the same as above
                                          TRUE ~ 0),
+         out_date_severecovid2 = case_when(out_bin_severecovid2 == 1 ~ out_date_covid19_severe, 
+                                          TRUE ~ as.Date(NA)),
          # deaths between landmark and pandemic start
          out_bin_death_pandemicstart = case_when(!is.na(qa_date_of_death)
                                                  & qa_date_of_death <= study_dates$pandemicstart_date 
                                                  & qa_date_of_death > elig_date_t2dm + days(183) ~ 1,
                                                  TRUE ~ 0),
+         out_date_death_pandemicstart = case_when(out_bin_death_pandemicstart == 1 ~ qa_date_of_death, 
+                                           TRUE ~ as.Date(NA)),
          # LTFU between landmark and pandemic start
          out_bin_ltfu_pandemicstart = case_when(!is.na(out_date_dereg)
                                                 & out_date_dereg <= study_dates$pandemicstart_date
                                                 & out_date_dereg > elig_date_t2dm + days(183) ~ 1,
-                                                TRUE ~ 0)
+                                                TRUE ~ 0),
+         out_date_ltfu_pandemicstart = case_when(out_bin_ltfu_pandemicstart == 1 ~ out_date_dereg, 
+                                                  TRUE ~ as.Date(NA))
          )
 
 n_exp_out <- data_processed %>% 
@@ -602,19 +610,6 @@ data_plots <- data_processed %>%
                 exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, 
                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
                 out_date_covid19_severe)
-
-# ensure no event_time is == 0 (for plot only)
-data_plots <- data_plots %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime))
 
 ################################################################################
 # 11 Save output
