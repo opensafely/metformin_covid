@@ -371,6 +371,17 @@ data_processed <- data_processed %>%
                                            & exp_bin_agi_mono == 0
                                            & exp_bin_insulin_mono == 0 ~ 1,
                                            TRUE ~ 0),
+    ## OAD prescription (except metformin combo) UNTIL 6M after T2DM diagnosis (i.e. will not have metfin combo in control arm)
+    exp_bin_oad = case_when(exp_bin_metfin == 0
+                                              & (exp_bin_dpp4_mono == 1
+                                                 | exp_bin_tzd_mono == 1 
+                                                 | exp_bin_sglt2_mono == 1 
+                                                 | exp_bin_sulfo_mono == 1
+                                                 | exp_bin_glp1_mono == 1 
+                                                 | exp_bin_megli_mono == 1
+                                                 | exp_bin_agi_mono == 1
+                                                 | exp_bin_insulin_mono == 1) ~ 1,
+                                              TRUE ~ 0),
     
     ## Let's investigate those who did not start any metfin MONO UNTIL 6M LANDMARK, i.e. exp_bin_metfin_mono == 0
     # Of course, they might initiate metfin later
@@ -424,7 +435,18 @@ data_processed <- data_processed %>%
                                       & exp_bin_megli == 0
                                       & exp_bin_agi == 0
                                       & exp_bin_insulin == 0 ~ 1,
-                                      TRUE ~ 0)
+                                      TRUE ~ 0),
+    ## OAD prescription (except metformin mono) UNTIL 6M after T2DM diagnosis (i.e. might have some metfin combo in control arm)
+    exp_bin_oad_metfincombo = case_when(exp_bin_metfin_mono == 0
+                                       & (exp_bin_dpp4 == 1
+                                       | exp_bin_tzd == 1 
+                                       | exp_bin_sglt2 == 1 
+                                       | exp_bin_sulfo == 1
+                                       | exp_bin_glp1 == 1 
+                                       | exp_bin_megli == 1
+                                       | exp_bin_agi == 1
+                                       | exp_bin_insulin == 1) ~ 1,
+                                       TRUE ~ 0)
     ) %>%
   
   ## add primary outcome

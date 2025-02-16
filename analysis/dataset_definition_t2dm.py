@@ -165,11 +165,11 @@ dataset.exp_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mo
 ## Other antidiabetic drug exposure on/after T2DM diagnosis (to define treatment strategy, or/and as covariate)
 dataset.exp_date_sulfo_first = first_matching_med_dmd_between(sulfonylurea_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_dpp4_first = first_matching_med_dmd_between(dpp4_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_dpp4_mono_first = first_matching_med_dmd_between(dpp4_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
+#dataset.exp_date_dpp4_mono_first = first_matching_med_dmd_between(dpp4_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_tzd_first = first_matching_med_dmd_between(tzd_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_tzd_mono_first = first_matching_med_dmd_between(tzd_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
+#dataset.exp_date_tzd_mono_first = first_matching_med_dmd_between(tzd_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_sglt2_first = first_matching_med_dmd_between(sglt2_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_sglt2_mono_first = first_matching_med_dmd_between(sglt2_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
+#dataset.exp_date_sglt2_mono_first = first_matching_med_dmd_between(sglt2_mono_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_glp1_first = first_matching_med_dmd_between(glp1_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_megli_first = first_matching_med_dmd_between(meglitinides_dmd, dataset.elig_date_t2dm, studyend_date).date 
 dataset.exp_date_agi_first = first_matching_med_dmd_between(agi_dmd, dataset.elig_date_t2dm, studyend_date).date 
