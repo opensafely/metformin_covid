@@ -45,13 +45,13 @@ from datetime import date
 ## import diabetes algo created data
 @table_from_file("output/data/data_processed_dm_algo.csv.gz")
 class data_processed_dm_algo(PatientFrame):
-    qa_num_birth_year = Series(int)
+    #qa_num_birth_year = Series(int) # could import it, too, but creates friction with data formatting function
     cov_cat_ethnicity = Series(str)
-    #elig_cat_diabetes = Series(str)
-    #elig_date_gestationaldm = Series(date)
+    #elig_cat_diabetes = Series(str) # not needed for this study
+    #elig_date_gestationaldm = Series(date) # not needed for this study
     elig_date_t2dm = Series(date)
-    #elig_date_t1dm = Series(date)
-    #elig_date_otherdm = Series(date)
+    #elig_date_t1dm = Series(date) # not needed for this study
+    #elig_date_otherdm = Series(date) # not needed for this study
 
 # random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
@@ -80,7 +80,7 @@ mid2018_date = study_dates["mid2018_date"]
 # Table 2) QUALITY ASSURANCES and completeness criteria
 #######################################################################################
 ## Year of birth
-dataset.qa_num_birth_year = data_processed_dm_algo.qa_num_birth_year
+dataset.qa_num_birth_year = patients.date_of_birth
 # population variables for dataset definition 
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
