@@ -79,6 +79,8 @@ mid2018_date = study_dates["mid2018_date"]
 #######################################################################################
 # Table 2) QUALITY ASSURANCES and completeness criteria
 #######################################################################################
+## Year of birth
+dataset.qa_num_birth_year = data_processed_dm_algo.qa_num_birth_year
 # population variables for dataset definition 
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
