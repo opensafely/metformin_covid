@@ -495,7 +495,14 @@ data_processed <- data_processed %>%
                                                 TRUE ~ FALSE),
          out_date_ltfu_pandemicstart = case_when(out_bin_ltfu_pandemicstart == TRUE ~ out_date_dereg, 
                                                   TRUE ~ as.Date(NA))
-         )
+     ) %>%
+  
+  ## add main treatment variables
+  mutate(exp_bin_treat = case_when(exp_bin_metfin == TRUE ~ TRUE, 
+                                   exp_bin_treat_nothing == TRUE ~ FALSE)
+  )
+         
+  
 
 n_exp_out <- data_processed %>% 
   summarise(
@@ -548,6 +555,8 @@ n_exp_out <- data_processed %>%
     n_out_severeCOVID2 = sum(out_bin_severecovid2),
     n_out_bin_death_pandemicstart = sum(out_bin_death_pandemicstart),
     n_out_bin_ltfu_pandemicstart = sum(out_bin_ltfu_pandemicstart),
+    
+    n_exp_bin_treat = sum(exp_bin_treat),
     
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
@@ -618,6 +627,8 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_out_severeCOVID2_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid2, na.rm = TRUE), threshold), 
     n_out_bin_death_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_death_pandemicstart, na.rm = TRUE), threshold), 
     n_out_bin_ltfu_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_ltfu_pandemicstart, na.rm = TRUE), threshold), 
+    
+    n_exp_bin_treat_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold),
     
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
