@@ -116,21 +116,21 @@ actions:
       moderately_sensitive:
         output: output/dpp4_mono/*.csv
 
-  km_estimates_tzd_mono:
-    run: r:latest analysis/km.R 
-      --df_input=output/data/data_plots.feather
-      --dir_output=output/tzd_mono
-      --exposure=exp_bin_tzd_mono_anytime
-      --origin_date=elig_date_t2dm
-      --event_date=exp_date_tzd_mono_anytime
-      --censor_date=out_date_severecovid
-      --max_fup=730
-      --plot=FALSE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        output: output/tzd_mono/*.csv
+  #km_estimates_tzd_mono:
+  #  run: r:latest analysis/km.R 
+  #    --df_input=output/data/data_plots.feather
+  #    --dir_output=output/tzd_mono
+  #    --exposure=exp_bin_tzd_mono_anytime
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=exp_date_tzd_mono_anytime
+  #    --censor_date=out_date_severecovid
+  #    --max_fup=730
+  #    --plot=FALSE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      output: output/tzd_mono/*.csv
 
   km_estimates_sglt2_mono:
     run: r:latest analysis/km.R 
@@ -180,37 +180,37 @@ actions:
       moderately_sensitive:
         output: output/glp1_mono/*.csv
 
-  km_estimates_megli_mono:
-    run: r:latest analysis/km.R 
-      --df_input=output/data/data_plots.feather
-      --dir_output=output/megli_mono
-      --exposure=exp_bin_megli_mono_anytime
-      --origin_date=elig_date_t2dm
-      --event_date=exp_date_megli_mono_anytime
-      --censor_date=out_date_severecovid
-      --max_fup=730
-      --plot=FALSE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        output: output/megli_mono/*.csv
+  #km_estimates_megli_mono:
+  #  run: r:latest analysis/km.R 
+  #    --df_input=output/data/data_plots.feather
+  #    --dir_output=output/megli_mono
+  #    --exposure=exp_bin_megli_mono_anytime
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=exp_date_megli_mono_anytime
+  #    --censor_date=out_date_severecovid
+  #    --max_fup=730
+  #    --plot=FALSE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      output: output/megli_mono/*.csv
 
-  km_estimates_agi_mono:
-    run: r:latest analysis/km.R 
-      --df_input=output/data/data_plots.feather
-      --dir_output=output/agi_mono
-      --exposure=exp_bin_agi_mono_anytime
-      --origin_date=elig_date_t2dm
-      --event_date=exp_date_agi_mono_anytime
-      --censor_date=out_date_severecovid
-      --max_fup=730
-      --plot=FALSE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        output: output/agi_mono/*.csv
+  #km_estimates_agi_mono:
+  #  run: r:latest analysis/km.R 
+  #    --df_input=output/data/data_plots.feather
+  #    --dir_output=output/agi_mono
+  #    --exposure=exp_bin_agi_mono_anytime
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=exp_date_agi_mono_anytime
+  #    --censor_date=out_date_severecovid
+  #    --max_fup=730
+  #    --plot=FALSE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      output: output/agi_mono/*.csv
 
   km_estimates_insulin_mono:
     run: r:latest analysis/km.R 
@@ -234,12 +234,12 @@ actions:
     - km_estimates_metfin
     - km_estimates_metfin_mono
     - km_estimates_dpp4_mono
-    - km_estimates_tzd_mono
+    #- km_estimates_tzd_mono
     - km_estimates_sglt2_mono
     - km_estimates_sulfo_mono
     - km_estimates_glp1_mono
-    - km_estimates_megli_mono
-    - km_estimates_agi_mono
+    #- km_estimates_megli_mono
+    #- km_estimates_agi_mono
     - km_estimates_insulin_mono
     outputs:
       moderately_sensitive:

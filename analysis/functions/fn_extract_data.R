@@ -8,7 +8,7 @@ fn_extract_data <- function(input_filename) {
     mutate(across(c(contains("_date")),
                   ~ floor_date(as.Date(., format="%Y-%m-%d"), unit = "days")), # rounding down the date to the nearest day
            across(contains('_birth_year'),
-                   ~ format(as.Date(.), "%Y")), # specifically for birth_year, then pass it onto _num to create cov_num_birth_year
+                   ~ format(as.Date(.), "%Y")), # specifically for birth_year, then pass it onto _num to create _num_birth_year
            across(contains('_num'), ~ as.numeric(.)),
            across(contains('_cat'), ~ as.factor(.)),
            across(contains('_bin'), ~ as.logical(.))

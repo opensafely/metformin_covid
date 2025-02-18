@@ -16,7 +16,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       # Rule 3: Year of birth predates NHS established year or year of birth exceeds study end date
       yob_beforeNHS_afterstudyend = qa_num_birth_year < 1838 | (qa_num_birth_year > year(studyend_date)),
       # Rule 4: Date of death is on or before 1/1/1900 (and not NULL) or after current date (and not NULL)
-      dob_invalid = (qa_date_of_death <= as.Date("1900-01-01") | qa_date_of_death > Sys.Date()),
+      dod_invalid = (qa_date_of_death <= as.Date("1900-01-01") | qa_date_of_death > Sys.Date()),
       # Rule 5: Pregnancy/birth codes for men
       preg_men = qa_bin_pregnancy == TRUE & cov_cat_sex == "Male",
       # Rule 6: HRT or COCP meds for men
@@ -31,7 +31,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       n_yob_missing = sum(yob_missing, na.rm = TRUE),
       n_yob_after_yod = sum(yob_after_yod, na.rm = TRUE),
       n_yob_beforeNHS_afterstudyend = sum(yob_beforeNHS_afterstudyend, na.rm = TRUE),
-      n_dob_invalid = sum(dob_invalid, na.rm = TRUE),
+      n_dod_invalid = sum(dod_invalid, na.rm = TRUE),
       n_preg_men = sum(preg_men, na.rm = TRUE),
       n_hrt_men = sum(hrt_men, na.rm = TRUE),
       n_prost_women = sum(prost_women, na.rm = TRUE)
@@ -43,7 +43,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       (!yob_missing | is.na(yob_missing)),
       (!yob_after_yod | is.na(yob_after_yod)),
       (!yob_beforeNHS_afterstudyend | is.na(yob_beforeNHS_afterstudyend)),
-      (!dob_invalid | is.na(dob_invalid)),
+      (!dod_invalid | is.na(dod_invalid)),
       (!preg_men | is.na(preg_men)),
       (!hrt_men | is.na(hrt_men)),
       (!prost_women | is.na(prost_women))
@@ -57,7 +57,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
     n_yob_missing_midpoint6 = fn_roundmid_any(count$n_yob_missing, threshold),
     n_yob_after_yod_midpoint6 = fn_roundmid_any(count$n_yob_after_yod, threshold),
     n_yob_beforeNHS_afterstudyend_midpoint6 = fn_roundmid_any(count$n_yob_beforeNHS_afterstudyend, threshold),
-    n_dob_invalid_midpoint6 = fn_roundmid_any(count$n_dob_invalid, threshold),
+    n_dod_invalid_midpoint6 = fn_roundmid_any(count$n_dod_invalid, threshold),
     n_preg_men_midpoint6 = fn_roundmid_any(count$n_preg_men, threshold),
     n_hrt_men_midpoint6 = fn_roundmid_any(count$n_hrt_men, threshold),
     n_prost_women_midpoint6 = fn_roundmid_any(count$n_prost_women, threshold),
