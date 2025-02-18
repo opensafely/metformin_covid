@@ -16,8 +16,8 @@ library(ggplot2)
 ################################################################################
 # Name of the datasets
 file_names <- c("metfin", "metfin_mono", "insulin_mono", "sulfo_mono", 
-                "dpp4_mono", "sglt2_mono",  "glp1_mono", 
-                # "megli_mono", "agi_mono", "tzd_mono"
+                "dpp4_mono", "sglt2_mono",  "glp1_mono"
+                #, "megli_mono", "agi_mono", "tzd_mono"
                 )
 
 # Load them into a list and assign their names

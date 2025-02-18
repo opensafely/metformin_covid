@@ -132,6 +132,22 @@ actions:
   #    moderately_sensitive:
   #      output: output/tzd_mono/*.csv
 
+  #km_estimates_tzd_mono:
+  #  run: kaplan-meier-function:v0.0.2 
+  #    --df_input=output/data/data_plots.feather
+  #    --dir_output=output/tzd_mono
+  #    --exposure=exp_bin_tzd_mono_anytime
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=exp_date_tzd_mono_anytime
+  #    --censor_date=out_date_severecovid
+  #    --max_fup=730
+  #    --plot=FALSE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      output: output/tzd_mono/*.csv
+
   km_estimates_sglt2_mono:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
@@ -244,18 +260,3 @@ actions:
     outputs:
       moderately_sensitive:
         plot: output/data_properties/*.png
-
-#  km_estimates_metfin:
-#    run: kaplan-meier-function:v0.0.2 
-#      --df_input=output/data/data_plots.feather
-#      --dir_output=output/km_estimates_metfin.feather ### double-check!!!
-#      --exposure=exp_bin_metfin_anytime
-#      --origin_date=elig_date_t2dm
-#      --event_date=exp_date_metfin_anytime
-#      --censor_date=out_date_severecovid
-#      --plot=TRUE
-#    needs:
-#    - data_process
-#    outputs:
-#      highly_sensitive:
-#        output: output/km_estimates_metfin.feather
