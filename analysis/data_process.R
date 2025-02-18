@@ -499,9 +499,9 @@ data_processed <- data_processed %>%
   
   ## add main treatment variables
   mutate(exp_bin_treat = case_when(exp_bin_metfin == TRUE ~ TRUE, 
-                                   exp_bin_treat_nothing == TRUE ~ FALSE)
+                                   exp_bin_treat_nothing == TRUE ~ FALSE,
+                                   TRUE ~ NA)
   )
-         
   
 
 n_exp_out <- data_processed %>% 
