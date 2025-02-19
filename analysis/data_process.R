@@ -123,6 +123,20 @@ data_processed <- data_extracted %>%
     tmp_cov_num_hdl_cholesterol = replace(tmp_cov_num_hdl_cholesterol, tmp_cov_num_hdl_cholesterol < 0.4 | tmp_cov_num_hdl_cholesterol > 5, NA_real_),
     cov_num_tc_hdl_ratio = tmp_cov_num_cholesterol / tmp_cov_num_hdl_cholesterol,
     cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
+    
+    # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
+    cov_cat_tc_hdl_ratio = cut(
+      cov_num_tc_hdl_ratio,
+      breaks = c(1, 3.5, 5.1, 50), # 50 is upper limit, see above -> NA
+      labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
+      right = FALSE),
+    
+    # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
+    cov_cat_hba1c_mmol_mol = cut(
+      cov_num_hba1c_mmol_mol,
+      breaks = c(0, 42, 53, 59, 76, 120), # 120 is upper limit, above NA
+      labels = c("below 42" ,"42-52", "53-58", "59-75", "above 75"),
+      right = FALSE),
     )
 
 # ################################################################################
@@ -373,7 +387,7 @@ data_processed <- data_processed %>%
                                            & exp_bin_insulin_mono == FALSE ~ TRUE,
                                            TRUE ~ FALSE),
     ## OAD prescription (except metformin combo) UNTIL 6M after T2DM diagnosis (i.e. will not have metfin combo in control arm)
-    exp_bin_oad = case_when(exp_bin_metfin == FALSE
+    exp_bin_oad = case_when(exp_bin_metfin == FALSE # covers metfin_mono
                                               & (exp_bin_dpp4_mono == TRUE
                                                  | exp_bin_tzd_mono == TRUE 
                                                  | exp_bin_sglt2_mono == TRUE 
@@ -384,16 +398,17 @@ data_processed <- data_processed %>%
                                                  | exp_bin_insulin_mono == TRUE) ~ TRUE,
                                               TRUE ~ FALSE),
     ## OAD prescription (except metformin combo) UNTIL 6M after T2DM diagnosis (i.e. will not have metfin combo in control arm) OR nothing
+    # should be more than exp_bin_treat_nothing
     exp_bin_oad_nothing = case_when(exp_bin_metfin == FALSE
-                            & (exp_bin_dpp4_mono == TRUE | is.na(exp_bin_dpp4_mono)
-                               | exp_bin_tzd_mono == TRUE | is.na(exp_bin_tzd_mono)
-                               | exp_bin_sglt2_mono == TRUE | is.na(exp_bin_sglt2_mono)
-                               | exp_bin_sulfo_mono == TRUE | is.na(exp_bin_sulfo_mono)
-                               | exp_bin_glp1_mono == TRUE | is.na(exp_bin_glp1_mono)
-                               | exp_bin_megli_mono == TRUE | is.na(exp_bin_megli_mono)
-                               | exp_bin_agi_mono == TRUE | is.na(exp_bin_agi_mono)
-                               | exp_bin_insulin_mono == TRUE | is.na(exp_bin_insulin_mono)) ~ TRUE,
-                            TRUE ~ FALSE),
+                                    | exp_bin_dpp4_mono == TRUE
+                                    | exp_bin_tzd_mono == TRUE
+                                    | exp_bin_sglt2_mono == TRUE
+                                    | exp_bin_sulfo_mono == TRUE
+                                    | exp_bin_glp1_mono == TRUE
+                                    | exp_bin_megli_mono == TRUE
+                                    | exp_bin_agi_mono == TRUE
+                                    | exp_bin_insulin_mono == TRUE ~ TRUE,
+                                    TRUE ~ FALSE),
     
     ## Let's investigate those who did not start any metfin MONO UNTIL 6M LANDMARK, i.e. exp_bin_metfin_mono == FALSE
     # Of course, they might initiate metfin later
@@ -449,6 +464,7 @@ data_processed <- data_processed %>%
                                       & exp_bin_insulin == FALSE ~ TRUE,
                                       TRUE ~ FALSE),
     ## OAD prescription (except metformin mono) UNTIL 6M after T2DM diagnosis (i.e. might have some metfin combo in control arm)
+    # should be more than exp_bin_oad
     exp_bin_oad_metfincombo = case_when(exp_bin_metfin_mono == FALSE
                                        & (exp_bin_dpp4 == TRUE
                                        | exp_bin_tzd == TRUE 
@@ -460,19 +476,20 @@ data_processed <- data_processed %>%
                                        | exp_bin_insulin == TRUE) ~ TRUE,
                                        TRUE ~ FALSE),
     ## OAD prescription (except metformin mono) UNTIL 6M after T2DM diagnosis (i.e. might have some metfin combo in control arm) OR nothing
+    # should be more than exp_bin_oad_nothing
     exp_bin_oad_metfincombo_nothing = case_when(exp_bin_metfin_mono == FALSE
-                                        & (exp_bin_dpp4 == TRUE | is.na(exp_bin_dpp4)
-                                           | exp_bin_tzd == TRUE | is.na(exp_bin_tzd)
-                                           | exp_bin_sglt2 == TRUE | is.na(exp_bin_sglt2)
-                                           | exp_bin_sulfo == TRUE | is.na(exp_bin_sulfo)
-                                           | exp_bin_glp1 == TRUE | is.na(exp_bin_glp1)
-                                           | exp_bin_megli == TRUE | is.na(exp_bin_megli)
-                                           | exp_bin_agi == TRUE | is.na(exp_bin_agi)
-                                           | exp_bin_insulin == TRUE | is.na(exp_bin_insulin)) ~ TRUE,
+                                                | exp_bin_dpp4 == TRUE
+                                                | exp_bin_tzd == TRUE 
+                                                | exp_bin_sglt2 == TRUE 
+                                                | exp_bin_sulfo == TRUE
+                                                | exp_bin_glp1 == TRUE 
+                                                | exp_bin_megli == TRUE
+                                                | exp_bin_agi == TRUE
+                                                | exp_bin_insulin == TRUE ~ TRUE,
                                         TRUE ~ FALSE)
     ) %>%
   
-  ## add primary outcome
+  ## add outcomes
   mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$pandemicstart_date ~ TRUE, # severe covid outcome (hosp or death)
                                          TRUE ~ FALSE),
          out_date_severecovid = case_when(out_bin_severecovid == TRUE ~ out_date_covid19_severe, 
@@ -480,6 +497,18 @@ data_processed <- data_processed %>%
          out_bin_severecovid2 = case_when(out_date_covid19_severe > elig_date_t2dm ~ TRUE, # should give the same as above
                                          TRUE ~ FALSE),
          out_date_severecovid2 = case_when(out_bin_severecovid2 == TRUE ~ out_date_covid19_severe, 
+                                          TRUE ~ as.Date(NA)),
+         out_bin_covid_hosp = case_when(out_date_covid19_hosp > elig_date_t2dm ~ TRUE,
+                                          TRUE ~ FALSE),
+         out_date_covid_hosp = case_when(out_bin_covid_hosp == TRUE ~ out_date_covid19_hosp, 
+                                           TRUE ~ as.Date(NA)),
+         out_bin_covid_death = case_when(out_date_covid19_death > elig_date_t2dm ~ TRUE,
+                                        TRUE ~ FALSE),
+         out_date_covid_death = case_when(out_bin_covid_death == TRUE ~ out_date_covid19_death, 
+                                         TRUE ~ as.Date(NA)),
+         out_bin_covid = case_when(out_date_covid19 > elig_date_t2dm ~ TRUE,
+                                         TRUE ~ FALSE),
+         out_date_covid = case_when(out_bin_covid == TRUE ~ out_date_covid19, 
                                           TRUE ~ as.Date(NA)),
          # deaths between landmark and pandemic start
          out_bin_death_pandemicstart = case_when(!is.na(qa_date_of_death)
@@ -498,11 +527,15 @@ data_processed <- data_processed %>%
      ) %>%
   
   ## add main treatment variables
-  mutate(exp_bin_treat = case_when(exp_bin_metfin == TRUE ~ TRUE, 
+  mutate(exp_bin_treat = case_when(exp_bin_metfin_mono == TRUE ~ TRUE, 
                                    exp_bin_treat_nothing == TRUE ~ FALSE,
-                                   TRUE ~ NA)
+                                   TRUE ~ NA),
+         exp_bin_treat_all = case_when(exp_bin_metfin_mono == TRUE ~ 1, 
+                                   exp_bin_treat_nothing == TRUE ~ 2,
+                                   exp_bin_oad == TRUE ~ 3,
+                                   exp_bin_oad_metfincombo == TRUE ~ 4,
+                                   TRUE ~ NA_real_)
   )
-  
 
 n_exp_out <- data_processed %>% 
   summarise(
@@ -551,12 +584,13 @@ n_exp_out <- data_processed %>%
     n_exp_bin_oad_metfincombo = sum(exp_bin_oad_metfincombo),
     n_exp_bin_oad_metfincombo_nothing = sum(exp_bin_oad_metfincombo_nothing),
     
-    n_out_severeCOVID = sum(out_bin_severecovid),
-    n_out_severeCOVID2 = sum(out_bin_severecovid2),
+    n_out_bin_severeCOVID = sum(out_bin_severecovid),
+    n_out_bin_severeCOVID2 = sum(out_bin_severecovid2),
+    n_out_bin_covid_hosp = sum(out_bin_covid_hosp),
+    n_out_bin_covid_death = sum(out_bin_covid_death),
+    n_out_bin_covid = sum(out_bin_covid),
     n_out_bin_death_pandemicstart = sum(out_bin_death_pandemicstart),
     n_out_bin_ltfu_pandemicstart = sum(out_bin_ltfu_pandemicstart),
-    
-    n_exp_bin_treat = sum(exp_bin_treat),
     
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
@@ -623,12 +657,13 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_oad_metfincombo_midpoint6 = fn_roundmid_any(sum(exp_bin_oad_metfincombo, na.rm = TRUE), threshold),
     n_exp_bin_oad_metfincombo_nothing_midpoint6 = fn_roundmid_any(sum(exp_bin_oad_metfincombo_nothing, na.rm = TRUE), threshold),
     
-    n_out_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold), 
-    n_out_severeCOVID2_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid2, na.rm = TRUE), threshold), 
+    n_out_bin_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold), 
+    n_out_bin_severeCOVID2_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid2, na.rm = TRUE), threshold), 
+    n_out_bin_covid_hosp_midpoint6 = fn_roundmid_any(sum(out_bin_covid_hosp, na.rm = TRUE), threshold), 
+    n_out_bin_covid_death_midpoint6 = fn_roundmid_any(sum(out_bin_covid_death, na.rm = TRUE), threshold), 
+    n_out_bin_covid_midpoint6 = fn_roundmid_any(sum(out_bin_covid, na.rm = TRUE), threshold), 
     n_out_bin_death_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_death_pandemicstart, na.rm = TRUE), threshold), 
     n_out_bin_ltfu_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_ltfu_pandemicstart, na.rm = TRUE), threshold), 
-    
-    n_exp_bin_treat_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold),
     
     median_tb_T2DMdiag_metfin_anytime = median(tb_T2DMdiag_metfin_anytime, na.rm = TRUE),
     IQR_lower_tb_T2DMdiag_metfin_anytime = quantile(tb_T2DMdiag_metfin_anytime, 0.25, na.rm = TRUE),
@@ -675,6 +710,7 @@ data_plots <- data_processed %>%
                 out_date_severecovid)
 
 data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0 (especially important for dummy dataset, but ok to keep check in real data)
+  # dplyr::filter(!is.na(elig_date_t2dm)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
@@ -690,10 +726,16 @@ data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
 variable_desc <- skim(data_processed)
 
 ################################################################################
+# 10.5 Restrict dataset to those fulfilling the treatment strategy - after decision taken which treatment strategy is investigated
+################################################################################
+# data_processed <- data_processed %>%
+#   dplyr::filter(!is.na(exp_bin_treat))
+
+################################################################################
 # 11 Save output
 ################################################################################
 # the full data
-write_rds(data_processed, here::here("output", "data", "data_processed.rds"))
+arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # data for cumulative incidence plots re treatment regimen pattern
 write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 

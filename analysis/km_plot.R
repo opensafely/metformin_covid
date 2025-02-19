@@ -15,9 +15,9 @@ library(ggplot2)
 # Load the data
 ################################################################################
 # Name of the datasets
-file_names <- c("metfin", "metfin_mono", "insulin_mono", "sulfo_mono", 
-                "dpp4_mono", "sglt2_mono",  "glp1_mono"
-                #, "megli_mono", "agi_mono", "tzd_mono"
+file_names <- c("metfin", "metfin_mono", "insulin_mono", "sglt2_mono"
+                , "sulfo_mono", "dpp4_mono", "glp1_mono"
+                , "megli_mono", "agi_mono", "tzd_mono"
                 )
 
 # Load them into a list and assign their names
@@ -32,19 +32,6 @@ combined_data <- bind_rows(
     data_list[[i]] %>% mutate(group = file_names[i])
   })
 )
-
-# Take out the duplicates with 0 risk
-combined_data <- combined_data %>%
-  dplyr::filter((exp_bin_metfin_anytime == 1) |
-                  (exp_bin_metfin_mono_anytime == 1) |
-                  (exp_bin_dpp4_mono_anytime == 1) |
-                  # (exp_bin_tzd_mono_anytime == 1) |
-                  (exp_bin_sglt2_mono_anytime == 1) |
-                  (exp_bin_sulfo_mono_anytime == 1) |
-                  (exp_bin_glp1_mono_anytime == 1) |
-                  # (exp_bin_megli_mono_anytime == 1) |
-                  # (exp_bin_agi_mono_anytime == 1) |
-                  (exp_bin_insulin_mono_anytime == 1))
 
 ################################################################################
 # Create directories for output

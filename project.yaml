@@ -27,14 +27,6 @@ actions:
       highly_sensitive:
         dataset: output/data/data_processed_dm_algo.csv.gz
 
-  #generate_dataset:
-  #  run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
-  #  needs: 
-  #  - study_dates
-  #  outputs:
-  #    highly_sensitive:
-  #      dataset: output/dataset.arrow
-
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
     needs: 
@@ -44,18 +36,6 @@ actions:
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
-  
-  #data_process:
-  #  run: r:latest analysis/data_process.R
-  #  needs:
-  #  - generate_dataset
-  #  - data_process_dm_algo
-  #  outputs:
-  #    highly_sensitive:
-  #      rds: output/data/data_processed.rds
-  #      feather: output/data/data_plots.feather
-  #    moderately_sensitive:
-  #      csv: output/data_properties/*.csv
 
   data_process:
     run: r:latest analysis/data_process.R
@@ -63,8 +43,8 @@ actions:
     - generate_dataset
     outputs:
       highly_sensitive:
-        rds: output/data/data_processed.rds
-        feather: output/data/data_plots.feather
+        dataset: output/data/data_processed.arrow
+        dataset_plots: output/data/data_plots.feather
       moderately_sensitive:
         csv: output/data_properties/*.csv
 
@@ -72,7 +52,6 @@ actions:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/metfin
-      --exposure=exp_bin_metfin_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
       --censor_date=out_date_severecovid
@@ -88,7 +67,6 @@ actions:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/metfin_mono
-      --exposure=exp_bin_metfin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
       --censor_date=out_date_severecovid
@@ -116,43 +94,40 @@ actions:
       moderately_sensitive:
         output: output/dpp4_mono/*.csv
 
-  #km_estimates_tzd_mono:
-  #  run: r:latest analysis/km.R 
-  #    --df_input=output/data/data_plots.feather
-  #    --dir_output=output/tzd_mono
-  #    --exposure=exp_bin_tzd_mono_anytime
-  #    --origin_date=elig_date_t2dm
-  #    --event_date=exp_date_tzd_mono_anytime
-  #    --censor_date=out_date_severecovid
-  #    --max_fup=730
-  #    --plot=FALSE
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      output: output/tzd_mono/*.csv
+  km_estimates_tzd_mono:
+    run: r:latest analysis/km.R 
+      --df_input=output/data/data_plots.feather
+      --dir_output=output/tzd_mono
+      --exposure=exp_bin_tzd_mono_anytime
+      --origin_date=elig_date_t2dm
+      --event_date=exp_date_tzd_mono_anytime
+      --censor_date=out_date_severecovid
+      --max_fup=730
+      --plot=FALSE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        output: output/tzd_mono/*.csv
 
-  #km_estimates_tzd_mono:
-  #  run: kaplan-meier-function:v0.0.2 
+  #km_estimates_tzd_mono_RA:
+  #  run: kaplan-meier-function:v0.0.6 
   #    --df_input=output/data/data_plots.feather
   #    --dir_output=output/tzd_mono
-  #    --exposure=exp_bin_tzd_mono_anytime
   #    --origin_date=elig_date_t2dm
   #    --event_date=exp_date_tzd_mono_anytime
   #    --censor_date=out_date_severecovid
-  #    --max_fup=730
-  #    --plot=FALSE
+  #    --plot=F
   #  needs:
   #  - data_process
   #  outputs:
   #    moderately_sensitive:
-  #      output: output/tzd_mono/*.csv
+  #      output: output/tzd_mono/km_estimates_tzd_mono_RA.csv
 
   km_estimates_sglt2_mono:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/sglt2_mono
-      --exposure=exp_bin_sglt2_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
       --censor_date=out_date_severecovid
@@ -168,7 +143,6 @@ actions:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/sulfo_mono
-      --exposure=exp_bin_sulfo_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
       --censor_date=out_date_severecovid
@@ -184,7 +158,6 @@ actions:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/glp1_mono
-      --exposure=exp_bin_glp1_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
       --censor_date=out_date_severecovid
@@ -196,43 +169,40 @@ actions:
       moderately_sensitive:
         output: output/glp1_mono/*.csv
 
-  #km_estimates_megli_mono:
-  #  run: r:latest analysis/km.R 
-  #    --df_input=output/data/data_plots.feather
-  #    --dir_output=output/megli_mono
-  #    --exposure=exp_bin_megli_mono_anytime
-  #    --origin_date=elig_date_t2dm
-  #    --event_date=exp_date_megli_mono_anytime
-  #    --censor_date=out_date_severecovid
-  #    --max_fup=730
-  #    --plot=FALSE
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      output: output/megli_mono/*.csv
+  km_estimates_megli_mono:
+    run: r:latest analysis/km.R 
+      --df_input=output/data/data_plots.feather
+      --dir_output=output/megli_mono
+      --origin_date=elig_date_t2dm
+      --event_date=exp_date_megli_mono_anytime
+      --censor_date=out_date_severecovid
+      --max_fup=730
+      --plot=FALSE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        output: output/megli_mono/*.csv
 
-  #km_estimates_agi_mono:
-  #  run: r:latest analysis/km.R 
-  #    --df_input=output/data/data_plots.feather
-  #    --dir_output=output/agi_mono
-  #    --exposure=exp_bin_agi_mono_anytime
-  #    --origin_date=elig_date_t2dm
-  #    --event_date=exp_date_agi_mono_anytime
-  #    --censor_date=out_date_severecovid
-  #    --max_fup=730
-  #    --plot=FALSE
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      output: output/agi_mono/*.csv
+  km_estimates_agi_mono:
+    run: r:latest analysis/km.R 
+      --df_input=output/data/data_plots.feather
+      --dir_output=output/agi_mono
+      --origin_date=elig_date_t2dm
+      --event_date=exp_date_agi_mono_anytime
+      --censor_date=out_date_severecovid
+      --max_fup=730
+      --plot=FALSE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        output: output/agi_mono/*.csv
 
   km_estimates_insulin_mono:
     run: r:latest analysis/km.R 
       --df_input=output/data/data_plots.feather
       --dir_output=output/insulin_mono
-      --exposure=exp_bin_insulin_mono_anytime
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
       --censor_date=out_date_severecovid
@@ -250,13 +220,38 @@ actions:
     - km_estimates_metfin
     - km_estimates_metfin_mono
     - km_estimates_dpp4_mono
-    #- km_estimates_tzd_mono
+    - km_estimates_tzd_mono
     - km_estimates_sglt2_mono
     - km_estimates_sulfo_mono
     - km_estimates_glp1_mono
-    #- km_estimates_megli_mono
-    #- km_estimates_agi_mono
+    - km_estimates_megli_mono
+    - km_estimates_agi_mono
     - km_estimates_insulin_mono
     outputs:
       moderately_sensitive:
         plot: output/data_properties/*.png
+
+  table1:
+    run: r:latest analysis/table1.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        table1: output/data_properties/table1.csv
+
+  #km_treat:
+  #  run: kaplan-meier-function:v0.0.6 
+  #    --df_input=output/data/data_processed.arrow
+  #    --dir_output=output/treat
+  #    --exposure=exp_bin_treat
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=out_date_severecovid
+  #    --censor_date=qa_date_of_death
+  #    --max_fup=730
+  #    --plot=TRUE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      km_estimates: output/treat/*.csv
+  #      plot: output/treat/*.png

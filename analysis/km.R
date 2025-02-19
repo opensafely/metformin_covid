@@ -1,9 +1,11 @@
 
 # # # # # # # # # # # # # # # # # # # # #
-# Purpose: Get disclosure-safe Kaplan-Meier estimates.
-# The function requires an origin date, an event date, and a censoring date, which are converted into a (time , indicator) pair that is passed to `survival::Surv`
-# Estimates are stratified by the `exposure` variable, and additionally by any `subgroups`
-# Counts are rounded to midpoint values defined by `count_min`.
+# Purpose: Get disclosure-safe Kaplan-Meier estimates
+# This script was adapted on a previous version of https://github.com/opensafely-actions/kaplan-meier-function/blob/v0.0.6/analysis/km.R (version 0.0.2)
+# Adapted in order not to supply a subgroup variable
+# Ignored smoothing part and plot part
+# Counts are rounded to midpoint 6, by default
+# I will use the reusable action in future, since it has now been adapted: https://actions.opensafely.org/actions/kaplan-meier-function/v0.0.6/ 
 # # # # # # # # # # # # # # # # # # # # #
 
 # Preliminaries ----
@@ -30,7 +32,7 @@ if(length(args)==0){
   subgroups <- NULL
   origin_date <- "elig_date_t2dm"
   event_date <- "exp_date_metfin_anytime"
-  censor_date <- "out_date_covid19_severe"
+  censor_date <- "out_date_severecovid"
   min_count <- as.integer("6")
   method <- "linear"
   max_fup <- as.numeric("1000")
@@ -104,8 +106,8 @@ if(length(args)==0){
   plot <- opt$plot
 }
 
-exposure_sym <- sym(exposure)
-subgroup_syms <- syms(subgroups)
+#exposure_sym <- sym(exposure)
+#subgroup_syms <- syms(subgroups)
 
 
 # create output directories ----
@@ -203,8 +205,8 @@ data_tte <-
   data_patients %>%
   transmute(
     patient_id,
-    !!exposure_sym,
-    !!!subgroup_syms,
+    #!!exposure_sym,
+    #!!!subgroup_syms,
     event_date = as.Date(.data[[event_date]]),
     origin_date = as.Date(.data[[origin_date]]),
     censor_date = pmin(as.Date(.data[[censor_date]]), origin_date + max_fup, na.rm=TRUE),
@@ -263,7 +265,7 @@ if(!identical(as.integer(times_count), c(0L, 0L, nrow(data_tte)))) {
   # Create Kaplan-Meier survival analysis by exposure
   data_surv <- data_tte %>%
     # Group by exposure levels
-    dplyr::group_by(!!exposure_sym) %>%
+    #dplyr::group_by(!!exposure_sym) %>%
     # Nest the data for each exposure level
     tidyr::nest() %>%
     # Perform Kaplan-Meier survival analysis for each exposure level
@@ -284,7 +286,9 @@ if(!identical(as.integer(times_count), c(0L, 0L, nrow(data_tte)))) {
       })
     ) %>%
     # Select relevant columns
-    dplyr::select(!!exposure_sym, surv_obj_tidy) %>%
+    dplyr::select(
+      #!!exposure_sym, 
+                  surv_obj_tidy) %>%
     # Unnest the tidy survival results
     tidyr::unnest(surv_obj_tidy)
 
@@ -350,7 +354,7 @@ if(!identical(as.integer(times_count), c(0L, 0L, nrow(data_tte)))) {
       transmute(
         #.subgroup_var = subgroup_i,
         #.subgroup,
-        !!exposure_sym,
+        #!!exposure_sym,
         time, lagtime, interval,
         cml.event, cml.censor,
         n.risk, n.event, n.censor,
