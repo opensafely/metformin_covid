@@ -128,6 +128,19 @@ dataset.qa_bin_prostate_cancer = case(
 # diabetes variables defined in previous separate action/dataset definition
 ###
 
+## Any metformin prescription BEFORE T2DM diagnosis
+dataset.elig_date_metfin = first_matching_med_dmd_before(metformin_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_metfin_mono = first_matching_med_dmd_before(metformin_mono_dmd, dataset.elig_date_t2dm).date
+## Any other antidiabetic drug exposure BEFORE T2DM diagnosis
+dataset.elig_date_sulfo = first_matching_med_dmd_before(sulfonylurea_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_dpp4 = first_matching_med_dmd_before(dpp4_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_tzd = first_matching_med_dmd_before(tzd_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_sglt2 = first_matching_med_dmd_before(sglt2_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_glp1 = first_matching_med_dmd_before(glp1_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_megli = first_matching_med_dmd_before(meglitinides_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_agi = first_matching_med_dmd_before(agi_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, dataset.elig_date_t2dm).date
+
 ## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
 #dataset.elig_date_metfin_allergy_last = last_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm).date
 dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm).date

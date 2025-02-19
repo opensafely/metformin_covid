@@ -9,18 +9,10 @@
 # 0.0 Import libraries + functions
 ################################################################################
 library('arrow')
-library('readr')
 library('here')
-library('lubridate')
-library('dplyr')
-library('tidyr')
-library('purrr')
-library('forcats')
-library('ggplot2')
-library('jsonlite')
-library('skimr') # for skim
-## Import custom user functions and meta-dates
-source(here::here("analysis", "functions", "utility.R"))
+library('tidyverse')
+library('gtsummary')
+source(here::here("analysis", "functions", "utility.R")) # fn_roundmid_any
 
 ################################################################################
 # 0.1 Create directories for output
@@ -35,7 +27,7 @@ threshold <- 6
 ################################################################################
 # 1 Import the data
 ################################################################################
-data_processed <- readRDS(here("output", "data", "data_processed.rds"))
+data_processed <- read_feather(here("output", "data", "data_processed.arrow"))
 
 ################################################################################
 # 2 Label the data
@@ -50,7 +42,6 @@ var_labels <- list(
   cov_cat_ethnicity ~ "Ethnicity",
   cov_cat_deprivation_5 ~ "Deprivation",
   cov_cat_region ~ "Region",
-  cov_cat_stp ~ "STP",
   cov_cat_rural_urban ~ "Rural/urban",
   cov_cat_smoking_status ~ "Smoking status",
   cov_bin_carehome_status ~ "Care/nursing home resident",
@@ -78,17 +69,60 @@ var_labels <- list(
   cov_bin_healthcare_worker ~ "Healthcare worker",
   
   exp_bin_metfin_pandemicstart ~ "Any metformin prescription within 6m prior to pandemic start",
-  exp_bin_metfin_anytime ~ "Starting metformin anytime in control and anytime after landmark for intervention",
-  out_bin_severecovid ~ "COVID hosp or death",
+  exp_bin_metfin_anytime ~ "Starting metformin anytime (after landmark, respectively)",
+  out_bin_severecovid2 ~ "COVID hosp or death",
+  out_bin_covid_hosp ~ "COVID hosp",
+  out_bin_covid_death ~ "COVID death",
+  out_bin_covid ~ "Any covid diagnosis, pos test or hosp",
   out_bin_death_pandemicstart ~ "Death between landmark and pandemic start",
   out_bin_ltfu_pandemicstart ~ "LTFU between landmark and pandemic start"
 ) %>%
   set_names(., map_chr(., all.vars))
 
+################################################################################
+# 3 Create the table
+################################################################################
+table_1 <-
+  data_processed %>%
+  mutate(
+    N=1L,
+    exp_bin_treat = factor(exp_bin_treat_all, 
+                          levels = c(1,2,3,4), 
+                          labels = c("Metformin mono", "Nothing", "Other antidiabetic (no metformin combo)", "Other antidiabetic (incl. metformin combo)"))
+  ) %>%
+  select(
+    exp_bin_treat,
+    all_of(names(var_labels)),
+  ) %>%
+  tbl_summary(
+    by = exp_bin_treat,
+    label = unname(var_labels[names(.)]),
+    statistic = list(
+      N ~ "{N}",
+      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+    ),
+  )
 
+raw_stats <- table_1$meta_data %>%
+  select(var_label, df_stats) %>%
+  unnest(df_stats)
+
+raw_stats_redacted <- raw_stats %>%
+  mutate(
+    n = fn_roundmid_any(n, threshold),
+    N = fn_roundmid_any(N, threshold),
+    p = n / N,
+    N_miss = fn_roundmid_any(N_miss, threshold),
+    N_obs = fn_roundmid_any(N_obs, threshold),
+    p_miss = N_miss / N_obs,
+    N_nonmiss = fn_roundmid_any(N_nonmiss, threshold),
+    p_nonmiss = N_nonmiss / N_obs,
+    var_label = factor(var_label, levels = map_chr(var_labels[-c(1, 2)], ~ last(as.character(.)))),
+    variable_levels = replace_na(as.character(variable_levels), "")
+  )
 
 ################################################################################
-# 11 Save output
+# 4 Save output
 ################################################################################
 # the full data
-write_rds(data_processed, here::here("output", "data", "data_processed-test.rds"))
+write_csv(raw_stats_redacted, fs::path("output", "data_properties", "table1.csv"))

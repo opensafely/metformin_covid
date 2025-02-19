@@ -25,9 +25,25 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   # Apply the other eligibility criteria (Aged ≥ 18 years already applied in completeness criteria)
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
-      # Exclusion 2: metformin use prior to T2DM diagnosis
-      prior_metfin = (!is.na(exp_date_metfin_first) 
-                      & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      # Exclusion 2: metformin use prior to T2DM diagnosis (or any other antidiabetic!)
+      prior_metfin = (!is.na(elig_date_metfin) # includes metformin combo
+                      & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      # prior_sulfo_mono = (!is.na(elig_date_sulfo) 
+      #                 & elig_date_sulfo < elig_date_t2dm),
+      # prior_dpp4_mono = (!is.na(elig_date_dpp4) 
+      #                     & elig_date_dpp4 < elig_date_t2dm),
+      # prior_tzd_mono = (!is.na(elig_date_tzd) 
+      #                     & elig_date_tzd < elig_date_t2dm),
+      # prior_sglt2_mono = (!is.na(elig_date_sglt2) 
+      #                     & elig_date_sglt2 < elig_date_t2dm),
+      # prior_glp1_mono = (!is.na(elig_date_glp1) 
+      #                     & elig_date_glp1 < elig_date_t2dm),
+      # prior_megli_mono = (!is.na(elig_date_megli) 
+      #                     & elig_date_megli < elig_date_t2dm),
+      # prior_agi_mono = (!is.na(elig_date_agi) 
+      #                     & elig_date_agi < elig_date_t2dm),
+      # prior_insulin_mono = (!is.na(elig_date_insulin) 
+      #                   & elig_date_insulin < elig_date_t2dm),
       # Exclusion 3: metformin allergy prior to or on T2DM diagnosis
       prior_metfin_allergy = (!is.na(elig_date_metfin_allergy_first) 
                               & elig_date_metfin_allergy_first <= elig_date_t2dm), # count those diagnosed with allergy on day of diagnosis
@@ -75,6 +91,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   count <- data_filtered_T2DM %>%
     summarise(
       n_prior_metfin = sum(prior_metfin, na.rm = TRUE),
+      # n_prior_sulfo_mono = sum(prior_sulfo_mono, na.rm = TRUE),
+      # n_prior_dpp4_mono = sum(prior_dpp4_mono, na.rm = TRUE),
+      # n_prior_tzd_mono = sum(prior_tzd_mono, na.rm = TRUE),
+      # n_prior_sglt2_mono = sum(prior_sglt2_mono, na.rm = TRUE),
+      # n_prior_glp1_mono = sum(prior_glp1_mono, na.rm = TRUE),
+      # n_prior_megli_mono = sum(prior_megli_mono, na.rm = TRUE),
+      # n_prior_agi_mono = sum(prior_agi_mono, na.rm = TRUE),
+      # n_prior_insulin_mono = sum(prior_insulin_mono, na.rm = TRUE),
       n_prior_metfin_allergy = sum(prior_metfin_allergy, na.rm = TRUE),
       n_prior_ckd45 = sum(prior_ckd45, na.rm = TRUE),
       n_prior_cirrhosis = sum(prior_cirrhosis, na.rm = TRUE),
@@ -91,6 +115,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   data_filtered <- data_filtered_T2DM %>% # Output 1: filtered data
     filter(
       (!prior_metfin | is.na(prior_metfin)),
+      # (!prior_sulfo_mono | is.na(prior_sulfo_mono)),
+      # (!prior_dpp4_mono | is.na(prior_dpp4_mono)),
+      # (!prior_tzd_mono | is.na(prior_tzd_mono)),
+      # (!prior_sglt2_mono | is.na(prior_sglt2_mono)),
+      # (!prior_glp1_mono | is.na(prior_glp1_mono)),
+      # (!prior_megli_mono | is.na(prior_megli_mono)),
+      # (!prior_agi_mono | is.na(prior_agi_mono)),
+      # (!prior_insulin_mono | is.na(prior_insulin_mono)),
       (!prior_metfin_allergy | is.na(prior_metfin_allergy)),
       (!prior_ckd45 | is.na(prior_ckd45)),
       (!prior_cirrhosis | is.na(prior_cirrhosis)),
@@ -110,6 +142,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_before_exclusion_processing = nrow(data_processed),
     n_t2dm = n_t2dm, # counted among all data_processed
     n_prior_metfin = count$n_prior_metfin, # counted only among n_t2dm
+    # n_prior_sulfo_mono = count$n_prior_sulfo_mono, # counted only among n_t2dm
+    # n_prior_dpp4_mono = count$n_prior_dpp4_mono, # counted only among n_t2dm
+    # n_prior_tzd_mono = count$n_prior_tzd_mono, # counted only among n_t2dm
+    # n_prior_sglt2_mono = count$n_prior_sglt2_mono, # counted only among n_t2dm
+    # n_prior_glp1_mono = count$n_prior_glp1_mono, # counted only among n_t2dm
+    # n_prior_megli_mono = count$n_prior_megli_mono, # counted only among n_t2dm
+    # n_prior_agi_mono = count$n_prior_agi_mono, # counted only among n_t2dm
+    # n_prior_insulin_mono = count$n_prior_insulin_mono, # counted only among n_t2dm
     n_prior_metfin_allergy = count$n_prior_metfin_allergy, # counted only among n_t2dm
     n_prior_ckd45 = count$n_prior_ckd45, # counted only among n_t2dm
     n_prior_cirrhosis = count$n_prior_cirrhosis, # counted only among n_t2dm
@@ -134,6 +174,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
     n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold), # counted among all data_processed
     n_prior_metfin_midpoint6 = fn_roundmid_any(count$n_prior_metfin, threshold), # counted only among n_t2dm
+    # n_prior_sulfo_mono_midpoint6 = fn_roundmid_any(count$n_prior_sulfo_mono, threshold), # counted only among n_t2dm
+    # n_prior_dpp4_mono_midpoint6 = fn_roundmid_any(count$n_prior_dpp4_mono, threshold), # counted only among n_t2dm
+    # n_prior_tzd_mono_midpoint6 = fn_roundmid_any(count$n_prior_tzd_mono, threshold), # counted only among n_t2dm
+    # n_prior_sglt2_mono_midpoint6 = fn_roundmid_any(count$n_prior_sglt2_mono, threshold), # counted only among n_t2dm
+    # n_prior_glp1_mono_midpoint6 = fn_roundmid_any(count$n_prior_glp1_mono, threshold), # counted only among n_t2dm
+    # n_prior_megli_mono_midpoint6 = fn_roundmid_any(count$n_prior_megli_mono, threshold), # counted only among n_t2dm
+    # n_prior_agi_mono_midpoint6 = fn_roundmid_any(count$n_prior_agi_mono, threshold), # counted only among n_t2dm
+    # n_prior_insulin_mono_midpoint6 = fn_roundmid_any(count$n_prior_insulin_mono, threshold), # counted only among n_t2dm
     n_prior_metfin_allergy_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy, threshold), # counted only among n_t2dm
     n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold), # counted only among n_t2dm
     n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold), # counted only among n_t2dm
@@ -181,9 +229,25 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     # Apply the other eligibility criteria (Aged ≥ 18 years already applied in completeness criteria)
     data_filtered_T2DM <- data_filtered_T2DM %>%
       mutate(
-        # Exclusion 2: metformin use prior to T2DM diagnosis
-        prior_metfin = (!is.na(exp_date_metfin_first) 
-                        & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+        # Exclusion 2: metformin use prior to T2DM diagnosis (or any other antidiabetic!)
+        prior_metfin = (!is.na(elig_date_metfin) # includes metformin combo
+                        & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+        # prior_sulfo_mono = (!is.na(elig_date_sulfo) 
+        #                     & elig_date_sulfo < elig_date_t2dm),
+        # prior_dpp4_mono = (!is.na(elig_date_dpp4) 
+        #                    & elig_date_dpp4 < elig_date_t2dm),
+        # prior_tzd_mono = (!is.na(elig_date_tzd) 
+        #                   & elig_date_tzd < elig_date_t2dm),
+        # prior_sglt2_mono = (!is.na(elig_date_sglt2) 
+        #                     & elig_date_sglt2 < elig_date_t2dm),
+        # prior_glp1_mono = (!is.na(elig_date_glp1) 
+        #                    & elig_date_glp1 < elig_date_t2dm),
+        # prior_megli_mono = (!is.na(elig_date_megli) 
+        #                     & elig_date_megli < elig_date_t2dm),
+        # prior_agi_mono = (!is.na(elig_date_agi) 
+        #                   & elig_date_agi < elig_date_t2dm),
+        # prior_insulin_mono = (!is.na(elig_date_insulin) 
+        #                       & elig_date_insulin < elig_date_t2dm),
         # Exclusion 3: metformin allergy prior to or on T2DM diagnosis
         prior_metfin_allergy = (!is.na(elig_date_metfin_allergy_first) 
                                 & elig_date_metfin_allergy_first <= elig_date_t2dm), # count those diagnosed with allergy on day of diagnosis
@@ -231,6 +295,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     count <- data_filtered_T2DM %>%
       summarise(
         n_prior_metfin = sum(prior_metfin, na.rm = TRUE),
+        # n_prior_sulfo_mono = sum(prior_sulfo_mono, na.rm = TRUE),
+        # n_prior_dpp4_mono = sum(prior_dpp4_mono, na.rm = TRUE),
+        # n_prior_tzd_mono = sum(prior_tzd_mono, na.rm = TRUE),
+        # n_prior_sglt2_mono = sum(prior_sglt2_mono, na.rm = TRUE),
+        # n_prior_glp1_mono = sum(prior_glp1_mono, na.rm = TRUE),
+        # n_prior_megli_mono = sum(prior_megli_mono, na.rm = TRUE),
+        # n_prior_agi_mono = sum(prior_agi_mono, na.rm = TRUE),
+        # n_prior_insulin_mono = sum(prior_insulin_mono, na.rm = TRUE),
         n_prior_metfin_allergy = sum(prior_metfin_allergy, na.rm = TRUE),
         n_prior_ckd45 = sum(prior_ckd45, na.rm = TRUE),
         n_prior_cirrhosis = sum(prior_cirrhosis, na.rm = TRUE),
@@ -243,10 +315,18 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE)
       )
     
-    # Filter 2: apply inclusion & all exclusion criteria
+    # Filter 2: apply all exclusion criteria (inclusion criteria T2DM applied above)
     data_filtered <- data_filtered_T2DM %>% # Output 1: filtered data
       filter(
         (!prior_metfin | is.na(prior_metfin)),
+        # (!prior_sulfo_mono | is.na(prior_sulfo_mono)),
+        # (!prior_dpp4_mono | is.na(prior_dpp4_mono)),
+        # (!prior_tzd_mono | is.na(prior_tzd_mono)),
+        # (!prior_sglt2_mono | is.na(prior_sglt2_mono)),
+        # (!prior_glp1_mono | is.na(prior_glp1_mono)),
+        # (!prior_megli_mono | is.na(prior_megli_mono)),
+        # (!prior_agi_mono | is.na(prior_agi_mono)),
+        # (!prior_insulin_mono | is.na(prior_insulin_mono)),
         (!prior_metfin_allergy | is.na(prior_metfin_allergy)),
         (!prior_ckd45 | is.na(prior_ckd45)),
         (!prior_cirrhosis | is.na(prior_cirrhosis)),
@@ -266,6 +346,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_before_exclusion_processing = nrow(data_processed),
       n_t2dm = n_t2dm, # counted among all data_processed
       n_prior_metfin = count$n_prior_metfin, # counted only among n_t2dm
+      # n_prior_sulfo_mono = count$n_prior_sulfo_mono, # counted only among n_t2dm
+      # n_prior_dpp4_mono = count$n_prior_dpp4_mono, # counted only among n_t2dm
+      # n_prior_tzd_mono = count$n_prior_tzd_mono, # counted only among n_t2dm
+      # n_prior_sglt2_mono = count$n_prior_sglt2_mono, # counted only among n_t2dm
+      # n_prior_glp1_mono = count$n_prior_glp1_mono, # counted only among n_t2dm
+      # n_prior_megli_mono = count$n_prior_megli_mono, # counted only among n_t2dm
+      # n_prior_agi_mono = count$n_prior_agi_mono, # counted only among n_t2dm
+      # n_prior_insulin_mono = count$n_prior_insulin_mono, # counted only among n_t2dm
       n_prior_metfin_allergy = count$n_prior_metfin_allergy, # counted only among n_t2dm
       n_prior_ckd45 = count$n_prior_ckd45, # counted only among n_t2dm
       n_prior_cirrhosis = count$n_prior_cirrhosis, # counted only among n_t2dm
@@ -290,6 +378,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
       n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold), # counted among all data_processed
       n_prior_metfin_midpoint6 = fn_roundmid_any(count$n_prior_metfin, threshold), # counted only among n_t2dm
+      # n_prior_sulfo_mono_midpoint6 = fn_roundmid_any(count$n_prior_sulfo_mono, threshold), # counted only among n_t2dm
+      # n_prior_dpp4_mono_midpoint6 = fn_roundmid_any(count$n_prior_dpp4_mono, threshold), # counted only among n_t2dm
+      # n_prior_tzd_mono_midpoint6 = fn_roundmid_any(count$n_prior_tzd_mono, threshold), # counted only among n_t2dm
+      # n_prior_sglt2_mono_midpoint6 = fn_roundmid_any(count$n_prior_sglt2_mono, threshold), # counted only among n_t2dm
+      # n_prior_glp1_mono_midpoint6 = fn_roundmid_any(count$n_prior_glp1_mono, threshold), # counted only among n_t2dm
+      # n_prior_megli_mono_midpoint6 = fn_roundmid_any(count$n_prior_megli_mono, threshold), # counted only among n_t2dm
+      # n_prior_agi_mono_midpoint6 = fn_roundmid_any(count$n_prior_agi_mono, threshold), # counted only among n_t2dm
+      # n_prior_insulin_mono_midpoint6 = fn_roundmid_any(count$n_prior_insulin_mono, threshold), # counted only among n_t2dm
       n_prior_metfin_allergy_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy, threshold), # counted only among n_t2dm
       n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold), # counted only among n_t2dm
       n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold), # counted only among n_t2dm

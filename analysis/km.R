@@ -1,9 +1,11 @@
 
 # # # # # # # # # # # # # # # # # # # # #
-# Purpose: Get disclosure-safe Kaplan-Meier estimates.
-# The function requires an origin date, an event date, and a censoring date, which are converted into a (time , indicator) pair that is passed to `survival::Surv`
-# Estimates are stratified by the `exposure` variable, and additionally by any `subgroups`
-# Counts are rounded to midpoint values defined by `count_min`.
+# Purpose: Get disclosure-safe Kaplan-Meier estimates
+# This script was adapted on a previous version of https://github.com/opensafely-actions/kaplan-meier-function/blob/v0.0.6/analysis/km.R (version 0.0.2)
+# Adapted in order not to supply a subgroup variable
+# Ignored smoothing part and plot part
+# Counts are rounded to midpoint 6, by default
+# I will use the reusable action in future, since it has now been adapted: https://actions.opensafely.org/actions/kaplan-meier-function/v0.0.6/ 
 # # # # # # # # # # # # # # # # # # # # #
 
 # Preliminaries ----

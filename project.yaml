@@ -27,14 +27,6 @@ actions:
       highly_sensitive:
         dataset: output/data/data_processed_dm_algo.csv.gz
 
-  #generate_dataset:
-  #  run: ehrql:v1 generate-dataset analysis/dataset_definition_landmark.py --output output/dataset.arrow
-  #  needs: 
-  #  - study_dates
-  #  outputs:
-  #    highly_sensitive:
-  #      dataset: output/dataset.arrow
-
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
     needs: 
@@ -44,18 +36,6 @@ actions:
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
-  
-  #data_process:
-  #  run: r:latest analysis/data_process.R
-  #  needs:
-  #  - generate_dataset
-  #  - data_process_dm_algo
-  #  outputs:
-  #    highly_sensitive:
-  #      rds: output/data/data_processed.rds
-  #      feather: output/data/data_plots.feather
-  #    moderately_sensitive:
-  #      csv: output/data_properties/*.csv
 
   data_process:
     run: r:latest analysis/data_process.R
@@ -63,8 +43,8 @@ actions:
     - generate_dataset
     outputs:
       highly_sensitive:
-        rds: output/data/data_processed.rds
-        feather: output/data/data_plots.feather
+        dataset: output/data/data_processed.arrow
+        dataset_plots: output/data/data_plots.feather
       moderately_sensitive:
         csv: output/data_properties/*.csv
 
@@ -256,5 +236,22 @@ actions:
     needs:
     - data_process
     outputs:
-      highly_sensitive:
-        rds: output/data/*.rds
+      moderately_sensitive:
+        table1: output/data_properties/table1.csv
+
+  #km_treat:
+  #  run: kaplan-meier-function:v0.0.6 
+  #    --df_input=output/data/data_processed.arrow
+  #    --dir_output=output/treat
+  #    --exposure=exp_bin_treat
+  #    --origin_date=elig_date_t2dm
+  #    --event_date=out_date_severecovid
+  #    --censor_date=qa_date_of_death
+  #    --max_fup=730
+  #    --plot=TRUE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      km_estimates: output/treat/*.csv
+  #      plot: output/treat/*.png
