@@ -46,7 +46,7 @@ actions:
         dataset: output/data/data_processed.arrow
         dataset_plots: output/data/data_plots.feather
       moderately_sensitive:
-        csv: output/data_properties/*.csv
+        csv: output/data_description/*.csv
 
   km_estimates_metfin:
     run: r:latest analysis/km.R 
@@ -55,7 +55,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -70,7 +70,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -86,7 +86,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_dpp4_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -102,7 +102,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_tzd_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -131,7 +131,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -146,7 +146,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -161,7 +161,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -176,7 +176,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_megli_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -191,7 +191,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_agi_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -206,7 +206,7 @@ actions:
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
       --censor_date=out_date_severecovid
-      --max_fup=730
+      --max_fup=365
       --plot=FALSE
     needs:
     - data_process
@@ -229,7 +229,7 @@ actions:
     - km_estimates_insulin_mono
     outputs:
       moderately_sensitive:
-        plot: output/data_properties/*.png
+        plot: output/data_description/*.png
 
   table1:
     run: r:latest analysis/table1.R
@@ -237,7 +237,7 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        table1: output/data_properties/table1.csv
+        table1: output/data_description/table1_midpoint6.csv
 
   #km_treat:
   #  run: kaplan-meier-function:v0.0.6 
@@ -247,7 +247,7 @@ actions:
   #    --origin_date=elig_date_t2dm
   #    --event_date=out_date_severecovid
   #    --censor_date=qa_date_of_death
-  #    --max_fup=730
+  #    --max_fup=365
   #    --plot=TRUE
   #  needs:
   #  - data_process

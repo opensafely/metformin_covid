@@ -1,4 +1,3 @@
-
 # # # # # # # # # # # # # # # # # # # # #
 # Purpose: Get disclosure-safe Kaplan-Meier estimates
 # This script was adapted on a previous version of https://github.com/opensafely-actions/kaplan-meier-function/blob/v0.0.6/analysis/km.R (version 0.0.2)
@@ -367,7 +366,7 @@ if(!identical(as.integer(times_count), c(0L, 0L, nrow(data_tte)))) {
   #data_surv_unrounded <- round_km(data_surv, 1)
   data_surv_rounded <- round_km(data_surv, min_count)
   ## write to disk
-  write.csv(data_surv_rounded, fs::path(dir_output, glue("km_estimates.csv")))
+  write.csv(data_surv_rounded, fs::path(dir_output, glue("km_estimates_midpoint6.csv")))
 
   if(smooth){
 
@@ -488,7 +487,7 @@ if(!identical(as.integer(times_count), c(0L, 0L, nrow(data_tte)))) {
     }
 
     km_plot_rounded <- km_plot(data_surv_rounded)
-    ggsave(filename = fs::path(dir_output, glue("km_plot_rounded_.png")), km_plot_rounded, width = 20, height = 20, units = "cm")
+    ggsave(filename = fs::path(dir_output, glue("km_plot_rounded_midpoint6_.png")), km_plot_rounded, width = 20, height = 20, units = "cm")
 
     if(smooth){
       #km_plot_smoothed <- km_plot(data_surv_smoothed)

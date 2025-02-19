@@ -17,7 +17,7 @@ source(here::here("analysis", "functions", "utility.R")) # fn_roundmid_any
 ################################################################################
 # 0.1 Create directories for output
 ################################################################################
-fs::dir_create(here::here("output", "data_properties"))
+fs::dir_create(here::here("output", "data_description"))
 
 ################################################################################
 # 0.3 Define redaction threshold
@@ -46,8 +46,8 @@ var_labels <- list(
   cov_cat_smoking_status ~ "Smoking status",
   cov_bin_carehome_status ~ "Care/nursing home resident",
   cov_bin_obesity ~ "Body Mass Index > 40 kg/m^2",
-  cov_num_bmi ~ "Body Mass Index",
-  cov_cat_bmi_groups ~ "Body Mass Index, groups",
+  cov_cat_hba1c_mmol_mol ~ "HbA1c categories in mmol/mol",
+  cov_cat_tc_hdl_ratio ~ "TC/HDL ratio categories",
   cov_bin_ami ~ "History of acute myocardial infarct",
   cov_bin_all_stroke  ~ "History of stroke",
   cov_bin_other_arterial_embolism ~ "History of other arterial embolism",
@@ -69,7 +69,7 @@ var_labels <- list(
   cov_bin_healthcare_worker ~ "Healthcare worker",
   
   exp_bin_metfin_pandemicstart ~ "Any metformin prescription within 6m prior to pandemic start",
-  exp_bin_metfin_anytime ~ "Starting metformin anytime (after landmark, respectively)",
+  exp_bin_metfin_anytime ~ "Starting metformin anytime (after landmark, respectively; incl. combo)",
   out_bin_severecovid2 ~ "COVID hosp or death",
   out_bin_covid_hosp ~ "COVID hosp",
   out_bin_covid_death ~ "COVID death",
@@ -87,8 +87,8 @@ table_1 <-
   mutate(
     N=1L,
     exp_bin_treat = factor(exp_bin_treat_all, 
-                          levels = c(1,2,3,4), 
-                          labels = c("Metformin mono", "Nothing", "Other antidiabetic (no metformin combo)", "Other antidiabetic (incl. metformin combo)"))
+                          levels = c(1,2,3), 
+                          labels = c("Metformin mono", "Nothing", "Other antidiabetic (incl. combo with metformin)"))
   ) %>%
   select(
     exp_bin_treat,
@@ -125,4 +125,4 @@ raw_stats_redacted <- raw_stats %>%
 # 4 Save output
 ################################################################################
 # the full data
-write_csv(raw_stats_redacted, fs::path("output", "data_properties", "table1.csv"))
+write_csv(raw_stats_redacted, fs::path("output", "data_description", "table1_midpoint6.csv"))

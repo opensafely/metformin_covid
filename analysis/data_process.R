@@ -38,7 +38,7 @@ source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 # 0.1 Create directories for output
 ################################################################################
 fs::dir_create(here::here("output", "data"))
-fs::dir_create(here::here("output", "data_properties"))
+fs::dir_create(here::here("output", "data_description"))
 
 ################################################################################
 # 0.2 Import command-line arguments and dates
@@ -386,7 +386,7 @@ data_processed <- data_processed %>%
                                            & exp_bin_agi_mono == FALSE
                                            & exp_bin_insulin_mono == FALSE ~ TRUE,
                                            TRUE ~ FALSE),
-    ## OAD prescription (except metformin combo) UNTIL 6M after T2DM diagnosis (i.e. will not have metfin combo in control arm)
+    ## OAD prescription (except metformin combo) UNTIL 6M after T2DM diagnosis (i.e. will not count metfin combo, only oad mono stuff!)
     exp_bin_oad = case_when(exp_bin_metfin == FALSE # covers metfin_mono
                                               & (exp_bin_dpp4_mono == TRUE
                                                  | exp_bin_tzd_mono == TRUE 
@@ -534,7 +534,11 @@ data_processed <- data_processed %>%
                                    exp_bin_treat_nothing == TRUE ~ 2,
                                    exp_bin_oad == TRUE ~ 3,
                                    exp_bin_oad_metfincombo == TRUE ~ 4,
-                                   TRUE ~ NA_real_)
+                                   TRUE ~ NA_real_),
+         exp_bin_treat_3groups = case_when(exp_bin_metfin_mono == TRUE ~ 1, 
+                                       exp_bin_treat_nothing == TRUE ~ 2,
+                                       exp_bin_oad == TRUE | exp_bin_oad_metfincombo == TRUE ~ 3,
+                                       TRUE ~ NA_real_),
   )
 
 n_exp_out <- data_processed %>% 
@@ -740,13 +744,13 @@ arrow::write_feather(data_processed, here::here("output", "data", "data_processe
 write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # description of each variable in the dataset
-write.csv(variable_desc, file = here::here("output", "data_properties", "variable_skim.csv")) # for L4 reviewing only, not for release
+write.csv(variable_desc, file = here::here("output", "data_description", "variable_codebook.csv")) # for L4 reviewing only, not for release
 # flow chart eligibility criteria
-write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_properties", "n_elig_excluded_midpoint6.csv"))
-write.csv(n_elig_excluded, file = here::here("output", "data_properties", "n_elig_excluded.csv"))
+write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_description", "n_elig_excluded_midpoint6.csv"))
+write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_elig_excluded.csv"))
 # descriptive data re treatment patterns, events between index_date and pandemic start, and main outcome
-write.csv(n_exp_out_midpoint6, file = here::here("output", "data_properties", "n_exp_out_midpoint6.csv"))
-write.csv(n_exp_out, file = here::here("output", "data_properties", "n_exp_out.csv"))
+write.csv(n_exp_out_midpoint6, file = here::here("output", "data_description", "n_exp_out_midpoint6.csv"))
+write.csv(n_exp_out, file = here::here("output", "data_description", "n_exp_out.csv"))
 
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, output based on dummy data...")
@@ -757,9 +761,9 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running on real data...")
   
   # flow chart quality assurance
-  write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_properties", "n_qa_excluded_midpoint6.csv"))
+  write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
   # flow chart completeness criteria
-  write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_properties", "n_completeness_excluded_midpoint6.csv"))
+  write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_description", "n_completeness_excluded_midpoint6.csv"))
   
   message("Output successfully saved, based on real data")
 
@@ -769,7 +773,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 #   .x = n_elig_excluded_all_windows_midpoint6, 
 #   .y = paste0(names(n_elig_excluded_all_windows_midpoint6), ".csv"),
 #   .f = ~ write.csv(.x, 
-#                    file = here::here("output", "data_properties", .y), 
+#                    file = here::here("output", "data_description", .y), 
 #                    row.names = FALSE)
 # )
 # # Just to double-check re feasibility: Assign treatment/exposure and main outcome to above data frames going back 6 years
@@ -777,6 +781,6 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 #   .x = n_exp_severecovid_midpoint6, 
 #   .y = paste0(names(n_exp_severecovid_midpoint6), ".csv"),
 #   .f = ~ write.csv(.x, 
-#                    file = here::here("output", "data_properties", .y), 
+#                    file = here::here("output", "data_description", .y), 
 #                    row.names = FALSE)
 # )

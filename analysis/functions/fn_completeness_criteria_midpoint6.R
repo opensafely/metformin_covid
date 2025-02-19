@@ -39,14 +39,14 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   # Filter
   data_filtered <- data_processed %>% # Output 1: filtered data
     filter(
-      !not_alive_at_baseline,
-      !not_adult_at_baseline,
-      !nor_female_or_male,
-      !no_imd,
-      !is.na(no_region),
-      !not_registered,
-      #!not_alive_mid2018,
-      #!not_registered_mid2018
+      (!not_alive_at_baseline | is.na(not_alive_at_baseline)),
+      (!not_adult_at_baseline | is.na(not_adult_at_baseline)),
+      (!nor_female_or_male | is.na(nor_female_or_male)),
+      (!no_imd | is.na(no_imd)),
+      (!no_region | is.na(no_region)),
+      (!not_registered | is.na(not_registered)),
+      # (!not_alive_mid2018 | is.na(not_alive_mid2018)),
+      # (!not_registered_mid2018 | is.na(not_registered_mid2018)),
     )
   
   n_after_exclusion_processing <- nrow(data_filtered)

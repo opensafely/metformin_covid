@@ -22,7 +22,7 @@ file_names <- c("metfin", "metfin_mono", "insulin_mono", "sglt2_mono"
 
 # Load them into a list and assign their names
 data_list <- lapply(file_names, function(name) {
-  read_csv(here("output", name, "km_estimates.csv"))
+  read_csv(here("output", name, "km_estimates_midpoint6.csv"))
 })
 names(data_list) <- file_names
 
@@ -36,7 +36,7 @@ combined_data <- bind_rows(
 ################################################################################
 # Create directories for output
 ################################################################################
-fs::dir_create(here::here("output", "data_properties"))
+fs::dir_create(here::here("output", "data_description"))
 
 ################################################################################
 # Plot
@@ -139,5 +139,5 @@ cum_inc_plot_rounded_withCI <- combined_data %>%
 ################################################################################
 # Save output
 ################################################################################
-ggsave(filename = here::here("output", "data_properties", "cum_inc_plot_rounded.png"), cum_inc_plot_rounded, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "data_properties", "cum_inc_plot_rounded_withCI.png"), cum_inc_plot_rounded_withCI, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "cum_inc_plot_midpoint6.png"), cum_inc_plot_rounded, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "cum_inc_plot_withCI_midpoint6.png"), cum_inc_plot_rounded_withCI, width = 20, height = 20, units = "cm")
