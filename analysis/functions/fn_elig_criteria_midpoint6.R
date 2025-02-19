@@ -26,8 +26,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
       # Exclusion 2: metformin use prior to T2DM diagnosis (or any other antidiabetic!)
-      prior_metfin = (!is.na(elig_date_metfin) # includes metformin combo
-                      & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      prior_metfin = (!is.na(exp_date_metfin_first) # includes metformin combo, but update to elig_date_metfin later when new dataset available
+                      & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
       # prior_sulfo_mono = (!is.na(elig_date_sulfo) 
       #                 & elig_date_sulfo < elig_date_t2dm),
       # prior_dpp4_mono = (!is.na(elig_date_dpp4) 
@@ -230,8 +230,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     data_filtered_T2DM <- data_filtered_T2DM %>%
       mutate(
         # Exclusion 2: metformin use prior to T2DM diagnosis (or any other antidiabetic!)
-        prior_metfin = (!is.na(elig_date_metfin) # includes metformin combo
-                        & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+        prior_metfin = (!is.na(exp_date_metfin_first) # includes metformin combo, but update to elig_date_metfin later when new dataset available
+                        & exp_date_metfin_first < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
         # prior_sulfo_mono = (!is.na(elig_date_sulfo) 
         #                     & elig_date_sulfo < elig_date_t2dm),
         # prior_dpp4_mono = (!is.na(elig_date_dpp4) 
