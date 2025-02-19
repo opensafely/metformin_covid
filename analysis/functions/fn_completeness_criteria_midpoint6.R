@@ -36,7 +36,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
       #n_not_registered_mid2018 = sum(not_registered_mid2018, na.rm = TRUE)
     )
   
-  # Filter
+  # Output 1: filtered data
   data_filtered <- data_processed %>% # Output 1: filtered data
     filter(
       (!not_alive_at_baseline | is.na(not_alive_at_baseline)),
