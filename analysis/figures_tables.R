@@ -262,10 +262,10 @@ plot_6 <- ggplot(df_patterns6, aes(x = reorder(Variable, Proportion), y = Propor
 ################################################################################
 # Baseline table, based on direct output from table1.R
 ################################################################################
-df_tbl1
+# df_tbl1
 
 ################################################################################
 # Save output
 ################################################################################
-ggsave(filename = here::here("output", "data_description", "plot_6.png"), plot_6, width = 20, height = 20, units = "cm")
+# ggsave(filename = here::here("output", "data_description", "plot_6.png"), plot_6, width = 20, height = 20, units = "cm")
 

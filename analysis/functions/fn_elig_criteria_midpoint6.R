@@ -172,7 +172,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   # Output 3: Count for flowchart, with redaction, and including pre/post processing counts
   labels <- c(
     n_before_exclusion_processing_midpoint6 = "Before applying eligibility criteria",
-    n_t2dm_midpoint6 = "Total with T2DM",
+    n_t2dm_midpoint6 = "Total with T2DM between mid2018-mid2019",
     n_prior_metfin_midpoint6 = "Prior metformin use",
     n_prior_sulfo_mono_midpoint6 = "Prior sulfonylurea",
     n_prior_dpp4_mono_midpoint6 = "Prior DPP-4 inhibitor",
@@ -186,12 +186,12 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     n_prior_ckd45_midpoint6 = "Prior CKD stage 4/5",
     n_prior_cirrhosis_midpoint6 = "Prior cirrhosis",
     n_prior_interaction_midpoint6 = "Use of drugs with interaction potential in past 14 days",
-    n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy between baseline and landmark",
-    n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5 between baseline and landmark",
-    n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis between baseline and landmark",
-    n_prior_interaction_landmark_midpoint6 = "New drug interaction between baseline and landmark",
-    n_prior_death_landmark_midpoint6 = "New death between baseline and landmark",
-    n_prior_ltfu_landmark_midpoint6 = "New loss to follow-up between baseline and landmark",
+    n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy",
+    n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5",
+    n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis",
+    n_prior_interaction_landmark_midpoint6 = "New use of drugs with interaction potential in past 14 days",
+    n_prior_death_landmark_midpoint6 = "Death",
+    n_prior_ltfu_landmark_midpoint6 = "Deregistration",
     n_after_exclusion_processing_midpoint6 = "After applying eligibility criteria"
   )
   out_midpoint6 <- tibble(
