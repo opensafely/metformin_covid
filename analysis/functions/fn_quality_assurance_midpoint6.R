@@ -52,6 +52,17 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
   n_after_qa_processing <- nrow(data_filtered)
 
   # Output 2: Count for flowchart, incl. redaction and including pre/post processing counts
+  labels <- c(
+    n_before_qa_processing_midpoint6 = "Before applying the quality criteria",
+    n_yob_missing_midpoint6 = "Year of birth missing",
+    n_yob_after_yod_midpoint6 = "Year of birth after year of death",
+    n_yob_beforeNHS_afterstudyend_midpoint6 = "Year of birth before NHS or after today",
+    n_dod_invalid_midpoint6 = "Year of death is on or before 01/01/1900 or after today",
+    n_preg_men_midpoint6 = "Men with pregnancy codes",
+    n_hrt_men_midpoint6 = "Men with HRT/OCP codes",
+    n_prost_women_midpoint6 = "Women with prostate cancer",
+    n_after_qa_processing_midpoint6 = "After applying the quality criteria"
+  )
   out_midpoint6 <- tibble(
     n_before_qa_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
     n_yob_missing_midpoint6 = fn_roundmid_any(count$n_yob_missing, threshold),
@@ -68,7 +79,8 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       cols = everything(),
       names_to = "Variable",
       values_to = "Value"
-    )
+    ) %>%
+    mutate(Variable = labels[Variable])  # Replace variable names with labels
   
   # Return both outputs as a list
   return(list(

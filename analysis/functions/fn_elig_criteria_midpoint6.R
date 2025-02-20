@@ -170,6 +170,30 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
     )
   
   # Output 3: Count for flowchart, with redaction, and including pre/post processing counts
+  labels <- c(
+    n_before_exclusion_processing_midpoint6 = "Before applying eligibility criteria",
+    n_t2dm_midpoint6 = "Total with T2DM",
+    n_prior_metfin_midpoint6 = "Prior metformin use",
+    n_prior_sulfo_mono_midpoint6 = "Prior sulfonylurea",
+    n_prior_dpp4_mono_midpoint6 = "Prior DPP-4 inhibitor",
+    n_prior_tzd_mono_midpoint6 = "Prior Thiazolidinedione",
+    n_prior_sglt2_mono_midpoint6 = "Prior SGLT2 inhibitor",
+    n_prior_glp1_mono_midpoint6 = "Prior GLP-1 receptor agonist",
+    n_prior_megli_mono_midpoint6 = "Prior meglitinide",
+    n_prior_agi_mono_midpoint6 = "Prior alpha-glucosidase inhibitor",
+    n_prior_insulin_mono_midpoint6 = "Prior insulin",
+    n_prior_metfin_allergy_midpoint6 = "Prior metformin allergy",
+    n_prior_ckd45_midpoint6 = "Prior CKD stage 4/5",
+    n_prior_cirrhosis_midpoint6 = "Prior cirrhosis",
+    n_prior_interaction_midpoint6 = "Use of drugs with interaction potential in past 14 days",
+    n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy between baseline and landmark",
+    n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5 between baseline and landmark",
+    n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis between baseline and landmark",
+    n_prior_interaction_landmark_midpoint6 = "New drug interaction between baseline and landmark",
+    n_prior_death_landmark_midpoint6 = "New death between baseline and landmark",
+    n_prior_ltfu_landmark_midpoint6 = "New loss to follow-up between baseline and landmark",
+    n_after_exclusion_processing_midpoint6 = "After applying eligibility criteria"
+  )
   out_midpoint6 <- tibble(
     n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
     n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold), # counted among all data_processed
@@ -199,7 +223,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       cols = everything(),
       names_to = "Variable",
       values_to = "Value"
-    )
+    ) %>%
+    mutate(Variable = labels[Variable])  # Replace variable names with labels
   
   # Return outputs as a list
   return(list(
@@ -374,6 +399,30 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       )
     
     # Output 3: Count for flowchart, with redaction, and including pre/post processing counts
+    labels <- c(
+      n_before_exclusion_processing_midpoint6 = "Before applying eligibility criteria",
+      n_t2dm_midpoint6 = "Total with T2DM between mid2018-mid2019",
+      n_prior_metfin_midpoint6 = "Prior metformin use",
+      n_prior_sulfo_mono_midpoint6 = "Prior sulfonylurea",
+      n_prior_dpp4_mono_midpoint6 = "Prior DPP-4 inhibitor",
+      n_prior_tzd_mono_midpoint6 = "Prior Thiazolidinedione",
+      n_prior_sglt2_mono_midpoint6 = "Prior SGLT2 inhibitor",
+      n_prior_glp1_mono_midpoint6 = "Prior GLP-1 receptor agonist",
+      n_prior_megli_mono_midpoint6 = "Prior meglitinide",
+      n_prior_agi_mono_midpoint6 = "Prior alpha-glucosidase inhibitor",
+      n_prior_insulin_mono_midpoint6 = "Prior insulin",
+      n_prior_metfin_allergy_midpoint6 = "Prior metformin allergy",
+      n_prior_ckd45_midpoint6 = "Prior CKD stage 4/5",
+      n_prior_cirrhosis_midpoint6 = "Prior cirrhosis",
+      n_prior_interaction_midpoint6 = "Use of drugs with interaction potential in past 14 days",
+      n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy",
+      n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5",
+      n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis",
+      n_prior_interaction_landmark_midpoint6 = "New use of drugs with interaction potential in past 14 days",
+      n_prior_death_landmark_midpoint6 = "Death",
+      n_prior_ltfu_landmark_midpoint6 = "Deregistration",
+      n_after_exclusion_processing_midpoint6 = "After applying eligibility criteria"
+    )
     out_midpoint6 <- tibble(
       n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
       n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold), # counted among all data_processed
@@ -403,7 +452,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         cols = everything(),
         names_to = "Variable",
         values_to = "Value"
-      )
+      ) %>%
+      mutate(Variable = labels[Variable])  # Replace variable names with labels
     
     # Return outputs as a list
     return(list(

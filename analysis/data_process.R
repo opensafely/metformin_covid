@@ -336,7 +336,7 @@ data_processed <- data_processed %>%
     ## Let's investigate those who did not start any metfin COMBO UNTIL 6M LANDMARK, i.e. exp_bin_metfin == FALSE
     # Of course, they might initiate metfin later
     # DPP4 mono (or combo with SGLT2)
-    exp_bin_dpp4_mono = case_when(exp_bin_metfin == FALSE # if we use the _mono then we allow to count people who initiated DPP4 + metformin (add as well!!! important is to eventually have metformin MONO versus NOTHING at all)
+    exp_bin_dpp4_mono = case_when(exp_bin_metfin == FALSE # if we use the metfin_mono then we allow to count people who initiated DPP4 + metformin
                                   & exp_date_dpp4_first <= elig_date_t2dm + days(183)
                                   & exp_date_dpp4_first >= elig_date_t2dm ~ TRUE, # need to add this line since this was not an exclusion criteria
                                   TRUE ~ FALSE),
@@ -572,9 +572,9 @@ n_exp_out <- data_processed %>%
     n_exp_bin_megli_mono = sum(exp_bin_megli_mono),
     n_exp_bin_agi_mono = sum(exp_bin_agi_mono),
     n_exp_bin_insulin_mono = sum(exp_bin_insulin_mono),
-    n_exp_bin_treat_nothing = sum(exp_bin_treat_nothing),
     n_exp_bin_oad = sum(exp_bin_oad),
     n_exp_bin_oad_nothing = sum(exp_bin_oad_nothing),
+    n_exp_bin_treat_nothing = sum(exp_bin_treat_nothing),
     
     n_exp_bin_dpp4 = sum(exp_bin_dpp4),
     n_exp_bin_tzd = sum(exp_bin_tzd),
@@ -584,9 +584,9 @@ n_exp_out <- data_processed %>%
     n_exp_bin_megli = sum(exp_bin_megli),
     n_exp_bin_agi = sum(exp_bin_agi),
     n_exp_bin_insulin = sum(exp_bin_insulin),
-    n_exp_bin_treat_nothing2 = sum(exp_bin_treat_nothing2),
     n_exp_bin_oad_metfincombo = sum(exp_bin_oad_metfincombo),
     n_exp_bin_oad_metfincombo_nothing = sum(exp_bin_oad_metfincombo_nothing),
+    n_exp_bin_treat_nothing2 = sum(exp_bin_treat_nothing2),
     
     n_out_bin_severeCOVID = sum(out_bin_severecovid),
     n_out_bin_severeCOVID2 = sum(out_bin_severecovid2),
@@ -646,8 +646,8 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_megli_mono_midpoint6 = fn_roundmid_any(sum(exp_bin_megli_mono, na.rm = TRUE), threshold), 
     n_exp_bin_agi_mono_midpoint6 = fn_roundmid_any(sum(exp_bin_agi_mono, na.rm = TRUE), threshold), 
     n_exp_bin_insulin_mono_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin_mono, na.rm = TRUE), threshold), 
+    n_exp_bin_oad_midpoint6 = fn_roundmid_any(sum(exp_bin_oad, na.rm = TRUE), threshold),     
     n_exp_bin_treat_nothing_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing, na.rm = TRUE), threshold), 
-    n_exp_bin_oad_midpoint6 = fn_roundmid_any(sum(exp_bin_oad, na.rm = TRUE), threshold), 
     
     n_exp_bin_dpp4_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4, na.rm = TRUE), threshold), 
     n_exp_bin_tzd_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd, na.rm = TRUE), threshold), 
@@ -657,9 +657,9 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_megli_midpoint6 = fn_roundmid_any(sum(exp_bin_megli, na.rm = TRUE), threshold), 
     n_exp_bin_agi_midpoint6 = fn_roundmid_any(sum(exp_bin_agi, na.rm = TRUE), threshold), 
     n_exp_bin_insulin_midpoint6 = fn_roundmid_any(sum(exp_bin_insulin, na.rm = TRUE), threshold), 
-    n_exp_bin_treat_nothing2_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing2, na.rm = TRUE), threshold), 
     n_exp_bin_oad_metfincombo_midpoint6 = fn_roundmid_any(sum(exp_bin_oad_metfincombo, na.rm = TRUE), threshold),
     n_exp_bin_oad_metfincombo_nothing_midpoint6 = fn_roundmid_any(sum(exp_bin_oad_metfincombo_nothing, na.rm = TRUE), threshold),
+    n_exp_bin_treat_nothing2_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing2, na.rm = TRUE), threshold), 
     
     n_out_bin_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold), 
     n_out_bin_severeCOVID2_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid2, na.rm = TRUE), threshold), 
@@ -678,13 +678,79 @@ n_exp_out_midpoint6 <- data_processed %>%
     IQR_upper_tb_T2DMdiag_metfin_mono_anytime = quantile(tb_T2DMdiag_metfin_mono_anytime, 0.75, na.rm = TRUE)
     
   ) %>% 
-  
-  # pivot (for easier data review in L4)
   pivot_longer(
     cols = everything(),
     names_to = "Variable",
     values_to = "Value"
     )
+
+# Define labels
+labels <- c(
+  n_exp_bin_metfin_midpoint6 = "Metformin (combo) within 6m",
+  n_exp_bin_metfin_mono_midpoint6 = "Metformin mono within 6m",
+  n_exp_bin_metfin_pandemicstart_midpoint6 = "Metformin (combo) in 6m prior to pandemic start",
+  n_exp_bin_metfin_mono_pandemicstart_midpoint6 = "Metformin mono in 6m prior to pandemic start",
+  n_exp_bin_metfin_anytime_midpoint6 = "Metformin (combo) anytime",
+  n_exp_bin_metfin_anytime_3m_midpoint6 = "Metformin (combo) within 3m",
+  n_exp_bin_metfin_anytime_6m_midpoint6 = "Metformin (combo) within 6m",
+  n_exp_bin_metfin_mono_anytime_midpoint6 = "Metformin mono anytime",
+  n_exp_bin_metfin_mono_anytime_3m_midpoint6 = "Metformin mono within 3m",
+  n_exp_bin_metfin_mono_anytime_6m_midpoint6 = "Metformin mono within 6m",
+  
+  n_exp_bin_dpp4_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, DPP4",
+  n_exp_bin_tzd_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, TZD",
+  n_exp_bin_sglt2_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, SGLT2",
+  n_exp_bin_sulfo_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, sulfonylurea",
+  n_exp_bin_glp1_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, GLP1",
+  n_exp_bin_megli_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, meglitinide",
+  n_exp_bin_agi_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, alpha-glucosidase",
+  n_exp_bin_insulin_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, insulin",
+  n_exp_bin_treat_nothing_anytime_midpoint6 = "No metformin (combo) or any other antidiabetic anytime",
+  
+  n_exp_bin_dpp4_mono_midpoint6 = "Among those without metformin (combo) 6m, DPP4",
+  n_exp_bin_tzd_mono_midpoint6 = "Among those without metformin (combo) 6m, TZD",
+  n_exp_bin_sglt2_mono_midpoint6 = "Among those without metformin (combo) 6m, SGLT2",
+  n_exp_bin_sulfo_mono_midpoint6 = "Among those without metformin (combo) 6m, sulfonylurea",
+  n_exp_bin_glp1_mono_midpoint6 = "Among those without metformin (combo) 6m, GLP1",
+  n_exp_bin_megli_mono_midpoint6 = "Among those without metformin (combo) 6m, meglitinide",
+  n_exp_bin_agi_mono_midpoint6 = "Among those without metformin (combo) 6m, alpha-glucosidase",
+  n_exp_bin_insulin_mono_midpoint6 = "Among those without metformin (combo) 6m, insulin",
+  n_exp_bin_oad_midpoint6 = "Among those without metformin (combo) 6m, any antidiabetic (mono)",
+  n_exp_bin_treat_nothing_midpoint6 = "No metformin (combo) or any other antidiabetic within 6m",
+  
+  n_exp_bin_dpp4_midpoint6 = "Among those without metformin mono 6m, DPP4 (+/- metformin)",
+  n_exp_bin_tzd_midpoint6 = "Among those without metformin mono 6m, TZD (+/- metformin)",
+  n_exp_bin_sglt2_midpoint6 = "Among those without metformin mono 6m, SGLT2 (+/- metformin)",
+  n_exp_bin_sulfo_midpoint6 = "Among those without metformin mono 6m, sulfonylurea (+/- metformin)",
+  n_exp_bin_glp1_midpoint6 = "Among those without metformin mono 6m, GLP1 (+/- metformin)",
+  n_exp_bin_megli_midpoint6 = "Among those without metformin mono 6m, meglitinide (+/- metformin)",
+  n_exp_bin_agi_midpoint6 = "Among those without metformin mono 6m, alpha-glucosidase (+/- metformin)",
+  n_exp_bin_insulin_midpoint6 = "Among those without metformin mono 6m, insulin (+/- metformin)",
+  n_exp_bin_oad_metfincombo_midpoint6 = "Among those without metformin mono 6m, any antidiabetic (+/- metformin)",
+  n_exp_bin_oad_metfincombo_nothing_midpoint6 = "Among those without metformin mono 6m, any antidiabetic (+/- metformin) or nothing",
+  n_exp_bin_treat_nothing2_midpoint6 = "No metformin mono or any other antidiabetic (+/- metformin) within 6m",
+
+  n_out_bin_severeCOVID_midpoint6 = "COVID hosp or death (after pandemic start)",
+  n_out_bin_severeCOVID2_midpoint6 = "COVID hosp or death (after baseline)",
+  n_out_bin_covid_hosp_midpoint6 = "COVID hosp (after baseline)",
+  n_out_bin_covid_death_midpoint6 = "COVID death (after baseline)",
+  n_out_bin_covid_midpoint6 = "COVID diagnosis, pos test or hosp (after baseline)",
+  n_out_bin_death_pandemicstart_midpoint6 = "Deaths between landmark and pandemic start",
+  n_out_bin_ltfu_pandemicstart_midpoint6 = "LTFU between landmark and pandemic start",
+  
+  median_tb_T2DMdiag_metfin_anytime = "Median time from T2DM diagnosis to metformin (combo) start",
+  IQR_lower_tb_T2DMdiag_metfin_anytime = "IQR lower bound: T2DM diagnosis to metformin (combo)",
+  IQR_upper_tb_T2DMdiag_metfin_anytime = "IQR upper bound: T2DM diagnosis to metformin (combo)",
+  
+  median_tb_T2DMdiag_metfin_mono_anytime = "Median time from T2DM diagnosis to metformin mono start",
+  IQR_lower_tb_T2DMdiag_metfin_mono_anytime = "IQR lower bound: T2DM diagnosis to metformin mono",
+  IQR_upper_tb_T2DMdiag_metfin_mono_anytime = "IQR upper bound: T2DM diagnosis to metformin mono"
+)
+
+# Apply them
+n_exp_out_midpoint6 <- n_exp_out_midpoint6 %>%
+  mutate(Variable = labels[Variable])
+
 
 # n_exp_severecovid_midpoint6 <- map(
 #   .x = data_processed_all_windows,
