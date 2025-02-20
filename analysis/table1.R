@@ -34,7 +34,7 @@ data_processed <- read_feather(here("output", "data", "data_processed.arrow"))
 ################################################################################
 var_labels <- list(
   N  ~ "Total N",
-  exp_bin_treat ~ "Treatment",
+  exp_bin_treat_3groups ~ "Treatment",
   
   cov_num_age ~ "Age",
   cov_cat_age ~ "Age groups",
@@ -86,16 +86,16 @@ table_1 <-
   data_processed %>%
   mutate(
     N=1L,
-    exp_bin_treat = factor(exp_bin_treat_all, 
+    exp_bin_treat_3groups = factor(exp_bin_treat_3groups, 
                           levels = c(1,2,3), 
                           labels = c("Metformin mono", "Nothing", "Other antidiabetic (incl. combo with metformin)"))
   ) %>%
   select(
-    exp_bin_treat,
+    exp_bin_treat_3groups,
     all_of(names(var_labels)),
   ) %>%
   tbl_summary(
-    by = exp_bin_treat,
+    by = exp_bin_treat_3groups,
     label = unname(var_labels[names(.)]),
     statistic = list(
       N ~ "{N}",

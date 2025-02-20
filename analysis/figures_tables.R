@@ -8,7 +8,9 @@
 ################################################################################
 # Import libraries + functions
 ################################################################################
-library('tidyverse')
+library('dplyr')
+library('tidyr')
+library('stringr')
 library('here')
 library('DiagrammeR')
 library('ggplot2')
@@ -262,10 +264,70 @@ plot_6 <- ggplot(df_patterns6, aes(x = reorder(Variable, Proportion), y = Propor
 ################################################################################
 # Baseline table, based on direct output from table1.R
 ################################################################################
-# df_tbl1
+# Step 1: Format the stats and create one label
+df_table1 <- df_tbl1 %>%
+  mutate(var_label = case_when(is.na(var_label) ~ "Total N", TRUE ~ var_label)) %>%
+  mutate(
+    p = p * 100,
+    p = round(p, 2),
+    median = round(median, 2),
+    p25 = round(p25, 2),
+    p75 = round(p75, 2),
+    mean = round(mean, 2),
+    sd = round(sd, 2),
+    stat_label = case_when(
+      !is.na(median) ~ str_glue("{median} ({p25}, {p75}); {mean} ({sd})"),
+      !is.na(n) ~ str_glue("{n} ({p}%)"),
+      TRUE ~ ""
+    )
+  )
+
+# Step 2: Create 'Unknown' level for each variable and each level
+unknown_levels <- df_table1 %>%
+  group_by(var_label, by) %>%
+  summarise(variable_levels = "Unknown", stat_label = as.character(first(N_miss)), .groups = "drop")
+df_table1 <- df_table1 %>%
+  bind_rows(unknown_levels) %>%
+  arrange(var_label, variable_levels, by)
+
+# Step 3: Reshape the data to wide format
+baseline_table <- df_table1 %>% 
+  select(var_label, variable_levels, by, stat_label) %>% 
+  distinct() %>%  # Ensure unique rows before pivoting
+  pivot_wider(
+    names_from = by, 
+    values_from = stat_label,
+    values_fn = list(stat_label = first)  # Take the first value if duplicates exist
+  )
+
+# Step 4: Arrange and clean the output
+custom_order <- c("Total N", "Age", "Age groups", "Sex", "Ethnicity", "Deprivation", "Region", "Rural/urban", "Smoking status", "Care/nursing home resident",
+                  "Body Mass Index > 40 kg/m^2", "HbA1c categories in mmol/mol", "TC/HDL ratio categories",
+                  "History of acute myocardial infarct", "History of stroke", "History of other arterial embolism", "History of venous thromboembolism",
+                  "History of heart failure", "History of angina pectoris", "History of dementia", "History of cancer", "History of arterial hypertension",
+                  "History of depression", "History of COPD", "History of liver disease", "History of CKD", "History of PCOS", "History of prediabetes",
+                  "Diabetes complication", "HbA1c in mmol/mol", "TC/Chol ratio", "Healthcare worker",
+                  "Any metformin prescription within 6m prior to pandemic start", 
+                  "Starting metformin anytime (after landmark, respectively; incl. combo)",
+                  "COVID hosp or death", "COVID hosp", "COVID death", "Any covid diagnosis, pos test or hosp",
+                  "Death between landmark and pandemic start",
+                  "LTFU between landmark and pandemic start")
+baseline_table <- baseline_table %>%
+  # Replace NAs in variable_levels with a placeholder value before converting to factor and for correct ordering
+  mutate(variable_levels = ifelse(is.na(variable_levels), "NA", variable_levels)) %>%
+  mutate(var_label = factor(var_label, levels = custom_order)) %>%
+  # Move 'Unknown' to the bottom of 'variable_levels' within each 'var_label'
+  mutate(variable_levels = factor(variable_levels, levels = c(setdiff(unique(variable_levels), "Unknown"), "Unknown"))) %>%
+  # Now sort
+  arrange(var_label, variable_levels) %>%
+  ungroup() %>% 
+  # Hide NAs
+  mutate(variable_levels = recode(variable_levels, "NA" = "")) %>% 
+  # Drop Unknown rows where var_label has already Unknown as a level - and for the Total N
+  filter(!(var_label == "Deprivation" & variable_levels == "Unknown")) %>% 
+  filter(!(var_label == "Total N" & variable_levels == "Unknown"))
 
 ################################################################################
 # Save output
 ################################################################################
 # ggsave(filename = here::here("output", "data_description", "plot_6.png"), plot_6, width = 20, height = 20, units = "cm")
-

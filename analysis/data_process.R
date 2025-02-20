@@ -537,7 +537,7 @@ data_processed <- data_processed %>%
                                    TRUE ~ NA_real_),
          exp_bin_treat_3groups = case_when(exp_bin_metfin_mono == TRUE ~ 1, 
                                        exp_bin_treat_nothing == TRUE ~ 2,
-                                       exp_bin_oad == TRUE | exp_bin_oad_metfincombo == TRUE ~ 3,
+                                       exp_bin_oad == TRUE | exp_bin_metfin == TRUE ~ 3,
                                        TRUE ~ NA_real_),
   )
 
