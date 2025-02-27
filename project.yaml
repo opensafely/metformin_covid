@@ -54,6 +54,7 @@ actions:
       --dir_output=output/metfin
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -69,6 +70,7 @@ actions:
       --dir_output=output/metfin_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_metfin_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -84,6 +86,7 @@ actions:
       --dir_output=output/dpp4_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_dpp4_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -114,6 +117,7 @@ actions:
       --dir_output=output/tzd_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_tzd_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -129,6 +133,7 @@ actions:
       --dir_output=output/sglt2_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sglt2_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -144,6 +149,7 @@ actions:
       --dir_output=output/sulfo_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_sulfo_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -159,6 +165,7 @@ actions:
       --dir_output=output/glp1_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_glp1_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -174,6 +181,7 @@ actions:
       --dir_output=output/megli_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_megli_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -189,6 +197,7 @@ actions:
       --dir_output=output/agi_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_agi_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
@@ -204,6 +213,7 @@ actions:
       --dir_output=output/insulin_mono
       --origin_date=elig_date_t2dm
       --event_date=exp_date_insulin_mono_anytime
+      --censor_date=qa_date_of_death
       --max_fup=548
       --plot=TRUE
     needs:
