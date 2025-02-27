@@ -8,7 +8,6 @@
 library(tidyverse)
 library(here)
 library(arrow)
-library(plotly)
 library(ggplot2)
 
 ################################################################################
@@ -22,7 +21,7 @@ file_names <- c("metfin", "metfin_mono", "insulin_mono", "sglt2_mono"
 
 # Load them into a list and assign their names
 data_list <- lapply(file_names, function(name) {
-  read_csv(here("output", name, "km_estimates_midpoint6.csv"))
+  read_csv(here("output", name, "km_estimates.csv"))
 })
 names(data_list) <- file_names
 
@@ -41,52 +40,34 @@ fs::dir_create(here::here("output", "data_description"))
 ################################################################################
 # Plot
 ################################################################################
-# # Using plotly
-# # Create a custom color scale (rainbow)
-# custom_colors <- colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))(length(unique(combined_data$group)))
-# # Column for months (assuming 30.44 days per month)
-# combined_data$month <- combined_data$time / 30.44
-# # Plotly without confidence intervals and no area filling
-# cum_inc_plot_rounded1 <- plot_ly(data = combined_data, x = ~time, y = ~risk, color = ~group, type = 'scatter', mode = 'lines', colors = custom_colors) %>%
-#   layout(
-#     title = "Cumulative Incidence Curve by Group",
-#     xaxis = list(
-#       title = "Time (Days)",
-#       tickvals = seq(0, max(combined_data$time), by = 30),  # monthly ticks
-#       ticktext = seq(0, max(combined_data$time), by = 30)   # monthly ticks
-#     ),
-#     yaxis = list(title = "Cumulative Incidence"),
-#     showlegend = TRUE
-#   )
-
-# Using ggplot, exactly the same as Will's plot in km.R
+# Using ggplot, slightly adapt from the reusable action km.R plot: https://github.com/opensafely-actions/kaplan-meier-function/blob/main/analysis/km.R
 cum_inc_plot_rounded <- combined_data %>%
+  mutate(
+    lagtime = lag(time, 1, 0), # assumes the time-origin is zero
+  ) %>%
   group_modify(
     ~ add_row(
       .x,
-      time = 0, # assumes time origin is zero
+      time = 0,  # Ensure the origin is included
       lagtime = 0,
-      surv = 1,
-      surv.low = 1,
-      surv.high = 1,
-      risk = 0,
-      risk.low = 0,
-      risk.high = 0,
+      cmlinc = 0,
+      cmlinc.low = 0,
+      cmlinc.high = 0,
       .before = 0
     )
   ) %>%
   ggplot(aes(group = group, colour = group, fill = group)) +
-  geom_step(aes(x = time, y = risk), direction = "vh") +
-  geom_step(aes(x = time, y = risk), direction = "vh", linetype = "dashed", alpha = 0.5) +
-  # geom_rect(aes(xmin = lagtime, xmax = time, ymin = risk.low, ymax = risk.high), alpha = 0.1, colour = "transparent") +
+  geom_step(aes(x = time, y = cmlinc), direction = "vh") +
+  geom_step(aes(x = time, y = cmlinc), direction = "vh", linetype = "dashed", alpha = 0.5) +
+  # geom_rect(aes(xmin = lagtime, xmax = time, ymin = cmlinc.low, ymax = cmlinc.high), alpha = 0.1, colour = "transparent") + # Confidence interval
   scale_color_brewer(type = "qual", palette = "Set3", na.value = "grey") +
   scale_fill_brewer(type = "qual", palette = "Set3", guide = "none", na.value = "grey") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
-  scale_x_continuous(breaks = seq(0, max(combined_data$time), by = 30)) +  # Add ticks every 30 days
+  scale_x_continuous(breaks = seq(0, max(combined_data$time, na.rm = TRUE), by = 30)) +  # Add ticks every 30 days
   coord_cartesian(xlim = c(0, NA)) +
   labs(
     x = "Days since T2DM diagnosis",
-    y = "Kaplan-Meier estimate",
+    y = "Cumulative Incidence",
     colour = NULL,
     title = NULL
   ) +
@@ -99,32 +80,32 @@ cum_inc_plot_rounded <- combined_data %>%
   )
 
 cum_inc_plot_rounded_withCI <- combined_data %>%
+  mutate(
+    lagtime = lag(time, 1, 0), # assumes the time-origin is zero
+  ) %>%
   group_modify(
     ~ add_row(
       .x,
-      time = 0, # assumes time origin is zero
+      time = 0,  # Ensure the origin is included
       lagtime = 0,
-      surv = 1,
-      surv.low = 1,
-      surv.high = 1,
-      risk = 0,
-      risk.low = 0,
-      risk.high = 0,
+      cmlinc = 0,
+      cmlinc.low = 0,
+      cmlinc.high = 0,
       .before = 0
     )
   ) %>%
   ggplot(aes(group = group, colour = group, fill = group)) +
-  geom_step(aes(x = time, y = risk), direction = "vh") +
-  geom_step(aes(x = time, y = risk), direction = "vh", linetype = "dashed", alpha = 0.5) +
-  geom_rect(aes(xmin = lagtime, xmax = time, ymin = risk.low, ymax = risk.high), alpha = 0.1, colour = "transparent") +
+  geom_step(aes(x = time, y = cmlinc), direction = "vh") +
+  geom_step(aes(x = time, y = cmlinc), direction = "vh", linetype = "dashed", alpha = 0.5) +
+  geom_rect(aes(xmin = lagtime, xmax = time, ymin = cmlinc.low, ymax = cmlinc.high), alpha = 0.1, colour = "transparent") + # Confidence interval
   scale_color_brewer(type = "qual", palette = "Set3", na.value = "grey") +
   scale_fill_brewer(type = "qual", palette = "Set3", guide = "none", na.value = "grey") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
-  scale_x_continuous(breaks = seq(0, max(combined_data$time), by = 30)) +  # Add ticks every 30 days
+  scale_x_continuous(breaks = seq(0, max(combined_data$time, na.rm = TRUE), by = 30)) +  # Add ticks every 30 days
   coord_cartesian(xlim = c(0, NA)) +
   labs(
     x = "Days since T2DM diagnosis",
-    y = "Kaplan-Meier estimate",
+    y = "Cumulative Incidence",
     colour = NULL,
     title = NULL
   ) +

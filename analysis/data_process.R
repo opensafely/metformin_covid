@@ -777,29 +777,52 @@ data_plots <- data_processed %>%
                 exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
                 exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, 
                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
-                out_date_severecovid)
+                out_date_severecovid2)
 
-data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0 (especially important for dummy dataset, but ok to keep check in real data)
-  # dplyr::filter(!is.na(elig_date_t2dm)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < out_date_severecovid | is.na(out_date_severecovid))
+# Adapt dummy data:
+if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
+  message("Running locally, adapt dummy data...")
+  
+  data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
+    dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
+    dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime))
+  
+  message("...dummy data successfully adapted")
+}
 
 variable_desc <- skim(data_processed)
 
 ################################################################################
-# 10.5 Restrict dataset to those fulfilling the treatment strategy - after decision taken which treatment strategy is investigated
+# 10.5 Restrict dataset and adapt dummy data output
 ################################################################################
+# To those fulfilling the treatment strategy - after decision taken which treatment strategy is investigated:
 # data_processed <- data_processed %>%
 #   dplyr::filter(!is.na(exp_bin_treat))
+
+# Identify excluded rows
+# excluded_data <- data_processed %>%
+#   dplyr::filter(!is.na(qa_date_of_death) & elig_date_t2dm > qa_date_of_death |
+#                   !is.na(out_date_severecovid2) & elig_date_t2dm > out_date_severecovid2) %>% 
+#   select(elig_date_t2dm, out_date_severecovid2, qa_date_of_death)
+
+# Adapt dummy data:
+if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
+  message("Running locally, adapt dummy data...")
+  
+  data_processed <- data_processed %>% # to avoid event_time is == 0
+    dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death)) %>%
+    dplyr::filter(elig_date_t2dm < out_date_severecovid2 | is.na(out_date_severecovid2))
+  
+  message("...dummy data successfully adapted")
+}
 
 ################################################################################
 # 11 Save output
