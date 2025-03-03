@@ -13,7 +13,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
       # Rule 3: nor female or male
       nor_female_or_male = qa_bin_is_female_or_male == FALSE,
       # Rule 4: no imd at elig_date_t2dm
-      no_imd = qa_bin_known_imd == FALSE,
+      no_imd = qa_bin_known_imd == FALSE | cov_cat_deprivation_5 == "unknown",
       # Rule 5: no region at elig_date_t2dm
       no_region = is.na(cov_cat_region),
       # Rule 6: not registered elig_date_t2dm

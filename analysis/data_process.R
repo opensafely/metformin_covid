@@ -110,6 +110,7 @@ data_processed <- data_extracted %>%
     # Create one history of obesity variable
     cov_bin_obesity = fn_case_when(
       cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
+      cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
       TRUE ~ NA_character_),
     
     # Remove biologically implausible numerical BMI values
@@ -132,6 +133,9 @@ data_processed <- data_extracted %>%
       right = FALSE),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
+    ## remove HbA1c > 120
+    ## remove HbA1c below 0
+    cov_num_hba1c_mmol_mol = replace(cov_num_hba1c_mmol_mol, cov_num_hba1c_mmol_mol < 0.00 | cov_num_hba1c_mmol_mol > 120.00, NA_real_),
     cov_cat_hba1c_mmol_mol = cut(
       cov_num_hba1c_mmol_mol,
       breaks = c(0, 42, 53, 59, 76, 120), # 120 is upper limit, above NA
@@ -623,10 +627,10 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_metfin_mono_pandemicstart_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_pandemicstart, na.rm = TRUE), threshold), 
     n_exp_bin_metfin_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_anytime, na.rm = TRUE), threshold), 
     n_exp_bin_metfin_anytime_3m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_anytime_3m, na.rm = TRUE), threshold), 
-    n_exp_bin_metfin_anytime_6m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_anytime_6m, na.rm = TRUE), threshold), 
+    # n_exp_bin_metfin_anytime_6m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_anytime_6m, na.rm = TRUE), threshold), # matched with n_exp_bin_metfin_midpoint6: Correct
     n_exp_bin_metfin_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_anytime, na.rm = TRUE), threshold), 
     n_exp_bin_metfin_mono_anytime_3m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_anytime_3m, na.rm = TRUE), threshold), 
-    n_exp_bin_metfin_mono_anytime_6m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_anytime_6m, na.rm = TRUE), threshold),
+    # n_exp_bin_metfin_mono_anytime_6m_midpoint6 = fn_roundmid_any(sum(exp_bin_metfin_mono_anytime_6m, na.rm = TRUE), threshold), # matched with n_exp_bin_metfin_mono_midpoint6: Correct
     
     n_exp_bin_dpp4_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_dpp4_mono_anytime, na.rm = TRUE), threshold), 
     n_exp_bin_tzd_mono_anytime_midpoint6 = fn_roundmid_any(sum(exp_bin_tzd_mono_anytime, na.rm = TRUE), threshold), 
@@ -692,10 +696,10 @@ labels <- c(
   n_exp_bin_metfin_mono_pandemicstart_midpoint6 = "Metformin mono in 6m prior to pandemic start",
   n_exp_bin_metfin_anytime_midpoint6 = "Metformin (combo) anytime",
   n_exp_bin_metfin_anytime_3m_midpoint6 = "Metformin (combo) within 3m",
-  n_exp_bin_metfin_anytime_6m_midpoint6 = "Metformin (combo) within 6m",
+  # n_exp_bin_metfin_anytime_6m_midpoint6 = "Metformin (combo) within 6m", # matched with n_exp_bin_metfin_midpoint6: Correct
   n_exp_bin_metfin_mono_anytime_midpoint6 = "Metformin mono anytime",
   n_exp_bin_metfin_mono_anytime_3m_midpoint6 = "Metformin mono within 3m",
-  n_exp_bin_metfin_mono_anytime_6m_midpoint6 = "Metformin mono within 6m",
+  # n_exp_bin_metfin_mono_anytime_6m_midpoint6 = "Metformin mono within 6m", # matched with n_exp_bin_metfin_mono_midpoint6: Correct
   
   n_exp_bin_dpp4_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, DPP4",
   n_exp_bin_tzd_mono_anytime_midpoint6 = "Among those without metformin (combo) anytime, TZD",

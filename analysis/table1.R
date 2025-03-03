@@ -45,7 +45,7 @@ var_labels <- list(
   cov_cat_rural_urban ~ "Rural/urban",
   cov_cat_smoking_status ~ "Smoking status",
   cov_bin_carehome_status ~ "Care/nursing home resident",
-  cov_bin_obesity ~ "Body Mass Index > 40 kg/m^2",
+  cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",
   cov_cat_hba1c_mmol_mol ~ "HbA1c categories in mmol/mol",
   cov_cat_tc_hdl_ratio ~ "TC/HDL ratio categories",
   cov_bin_ami ~ "History of acute myocardial infarct",
