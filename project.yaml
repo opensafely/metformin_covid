@@ -28,7 +28,7 @@ actions:
   #      dataset: output/data/data_processed_dm_algo.csv.gz
 
   diabetes_algo:
-    run: diabetes-algo:v0.0.3
+    run: diabetes-algo:v0.0.4
     config:
      df_input: dataset_dm_algo.arrow
      remove_helper: TRUE
