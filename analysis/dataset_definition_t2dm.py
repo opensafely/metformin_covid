@@ -43,13 +43,13 @@ import json
 from datetime import date
 
 ## import diabetes algo created data
-@table_from_file("output/data/data_processed_dm_algo.csv.gz")
-class data_processed_dm_algo(PatientFrame):
+@table_from_file("output/data_processed.csv.gz")
+class data_processed(PatientFrame):
     #qa_num_birth_year = Series(int) # could import it, too, but creates friction with data formatting function
-    cov_cat_ethnicity = Series(str)
+    ethnicity_cat = Series(str)
     #elig_cat_diabetes = Series(str) # not needed for this study
     #elig_date_gestationaldm = Series(date) # not needed for this study
-    elig_date_t2dm = Series(date)
+    t2dm_date = Series(date)
     #elig_date_t1dm = Series(date) # not needed for this study
     #elig_date_otherdm = Series(date) # not needed for this study
 
@@ -69,7 +69,7 @@ dataset.define_population(patients.exists_for_patient())
 #######################################################################################
 # DEFINE the dates
 #######################################################################################
-dataset.elig_date_t2dm = data_processed_dm_algo.elig_date_t2dm
+dataset.elig_date_t2dm = data_processed.t2dm_date
 with open("output/study_dates.json") as f:
   study_dates = json.load(f)
 studyend_date = study_dates["studyend_date"]
@@ -205,7 +205,7 @@ dataset.cov_cat_sex = patients.sex
 dataset.cov_num_age = patients.age_on(dataset.elig_date_t2dm)
 
 ## Ethnicity (import from the diabetes algo data)
-dataset.cov_cat_ethnicity = data_processed_dm_algo.cov_cat_ethnicity
+dataset.cov_cat_ethnicity = data_processed.ethnicity_cat
 
 ## Index of Multiple Deprevation Rank (rounded down to nearest 100). 5 categories.
 imd_rounded = addresses.for_patient_on(dataset.elig_date_t2dm).imd_rounded
