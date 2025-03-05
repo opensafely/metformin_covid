@@ -19,20 +19,52 @@ actions:
       highly_sensitive:
         dataset: output/dataset_dm_algo.arrow
   
-  data_process_dm_algo:
-    run: r:latest analysis/data_process_dm_algo.R
+  #data_process_dm_algo:
+  #  run: r:latest analysis/data_process_dm_algo.R
+  #  needs:
+  #  - generate_dataset_dm_algo
+  #  outputs:
+  #    highly_sensitive:
+  #      dataset: output/data/data_processed_dm_algo.csv.gz
+
+  diabetes_algo:
+    run: diabetes-algo:v0.0.3
+    config:
+     df_input: dataset_dm_algo.arrow
+     remove_helper: TRUE
+     birth_date: qa_num_birth_year
+     ethnicity_cat: cov_cat_ethnicity
+     t1dm_date: elig_date_t1dm
+     tmp_t1dm_ctv3_date: tmp_elig_date_t1dm_ctv3
+     tmp_t1dm_count_num: tmp_elig_count_t1dm
+     t2dm_date: elig_date_t2dm
+     tmp_t2dm_ctv3_date: tmp_elig_date_t2dm_ctv3
+     tmp_t2dm_count_num: tmp_elig_count_t2dm
+     otherdm_date: elig_date_otherdm
+     tmp_otherdm_count_num: tmp_elig_count_otherdm
+     gestationaldm_date: elig_date_gestationaldm
+     tmp_poccdm_date: tmp_elig_date_poccdm
+     tmp_poccdm_ctv3_count_num: tmp_elig_count_poccdm_ctv3
+     tmp_max_hba1c_mmol_mol_num: tmp_elig_num_max_hba1c_mmol_mol
+     tmp_max_hba1c_date: tmp_elig_date_max_hba1c
+     tmp_insulin_dmd_date: tmp_elig_date_insulin_snomed
+     tmp_antidiabetic_drugs_dmd_date: tmp_elig_date_antidiabetic_drugs_snomed
+     tmp_nonmetform_drugs_dmd_date: tmp_elig_date_nonmetform_drugs_snomed
+     tmp_diabetes_medication_date: tmp_elig_date_diabetes_medication
+     tmp_first_diabetes_diag_date: tmp_elig_date_first_diabetes_diag
+     df_output: data_processed.csv.gz
     needs:
     - generate_dataset_dm_algo
     outputs:
       highly_sensitive:
-        dataset: output/data/data_processed_dm_algo.csv.gz
+        csv.gz: output/data_processed.csv.gz
 
   generate_dataset:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
     needs: 
     - study_dates
     - generate_dataset_dm_algo
-    - data_process_dm_algo
+    - diabetes_algo
     outputs:
       highly_sensitive:
         dataset: output/dataset.arrow
