@@ -347,13 +347,14 @@ baseline_table <- df_table1 %>%
   )
 
 # Step 4: Arrange and clean the output
-custom_order <- c("Total N", "Age", "Age groups", "Sex", "Ethnicity", "Deprivation", "Region", "Rural/urban", "Smoking status", "Care/nursing home resident"
-                  # , "Body Mass Index > 40 kg/m^2", "HbA1c in mmol/mol", "TC/Chol ratio",
+custom_order <- c("Total N", "Age", "Age groups", "Sex", "Ethnicity", "Deprivation", "Region", "Rural/urban", "Smoking status"
+                  , "Care/nursing home resident", "Healthcare worker", "Consultation rate in previous year", 
+                  , "Body Mass Index > 40 kg/m^2", "HbA1c in mmol/mol", "TC/Chol ratio",
                   , "HbA1c categories in mmol/mol", "TC/HDL ratio categories", 
                   "History of acute myocardial infarct", "History of stroke", "History of other arterial embolism", "History of venous thromboembolism",
                   "History of heart failure", "History of angina pectoris", "History of dementia", "History of cancer", "History of arterial hypertension",
                   "History of depression", "History of COPD", "History of liver disease", "History of CKD", "History of PCOS", "History of prediabetes",
-                  "Diabetes complication", "Healthcare worker",
+                  "Diabetes complication", 
                   "Any metformin prescription within 6m prior to pandemic start", 
                   "Starting metformin anytime (after landmark, respectively; incl. combo)",
                   "COVID hosp or death", "COVID hosp", "COVID death", "Any covid diagnosis, pos test or hosp",

@@ -26,8 +26,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
       # Exclusion 2: metformin use prior to T2DM diagnosis (or any other antidiabetic!)
-      prior_metfin = (!is.na(elig_date_metfin) # includes metformin combo, but update to elig_date_metfin later when new dataset available
-                      & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis & codelist allows for metformin including combo treatment
+      prior_metfin = (!is.na(elig_date_metfin) # codelist includes metformin combo
+                      & elig_date_metfin < elig_date_t2dm), # but don't count those who initiated on day of diagnosis
       prior_sulfo_mono = (!is.na(elig_date_sulfo)
                       & elig_date_sulfo < elig_date_t2dm),
       prior_dpp4_mono = (!is.na(elig_date_dpp4)
@@ -82,9 +82,9 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
                               & qa_date_of_death > elig_date_t2dm
                               & qa_date_of_death <= elig_date_t2dm + days(183)),
       # Exclusion 12: LTFU prior to landmark
-      prior_ltfu_landmark = (!is.na(out_date_dereg) 
-                             & out_date_dereg > elig_date_t2dm
-                             & out_date_dereg <= elig_date_t2dm + days(183))
+      prior_ltfu_landmark = (!is.na(cens_date_dereg) 
+                             & cens_date_dereg > elig_date_t2dm
+                             & cens_date_dereg <= elig_date_t2dm + days(183))
     )
 
   # Among these, count the exclusion criteria
@@ -311,9 +311,9 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
                                 & qa_date_of_death > elig_date_t2dm
                                 & qa_date_of_death <= elig_date_t2dm + days(183)),
         # Exclusion 12: LTFU prior to landmark
-        prior_ltfu_landmark = (!is.na(out_date_dereg) 
-                               & out_date_dereg > elig_date_t2dm
-                               & out_date_dereg <= elig_date_t2dm + days(183))
+        prior_ltfu_landmark = (!is.na(cens_date_dereg) 
+                               & cens_date_dereg > elig_date_t2dm
+                               & cens_date_dereg <= elig_date_t2dm + days(183))
       )
     
     # Among these, count the exclusion criteria

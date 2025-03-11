@@ -3,25 +3,37 @@
 ################################################################################
 fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
 
-  # Apply the rules
+  # Since elig_date_t2dm is now the baseline date and comes from diabetes-algo, establish this as main denominator first
   data_processed <- data_processed %>%
     mutate(
+      # Exclusion 1: no T2DM diagnosis
+      no_t2dm = is.na(elig_date_t2dm))
+
+  # Filter 1: main eligibility criteria: T2DM diagnosis
+  data_filtered_T2DM <- data_processed %>%
+    filter((!no_t2dm | is.na(no_t2dm)))
+  
+  n_t2dm <- nrow(data_filtered_T2DM)
+  
+  # Apply the rules
+  data_filtered_T2DM <- data_filtered_T2DM %>%
+    mutate(
       # Rule 1: not alive at elig_date_t2dm
-      not_alive_at_baseline = qa_bin_was_alive == FALSE, 
+      not_alive_at_baseline = qa_bin_was_alive == FALSE | is.na(qa_bin_was_alive), 
       # Rule 2: not adult at elig_date_t2dm
-      not_adult_at_baseline = qa_bin_was_adult == FALSE, 
+      not_adult_at_baseline = qa_bin_was_adult == FALSE | is.na(qa_bin_was_adult), 
       # Rule 3: nor female or male
-      nor_female_or_male = qa_bin_is_female_or_male == FALSE,
+      nor_female_or_male = qa_bin_is_female_or_male == FALSE | is.na(qa_bin_is_female_or_male),
       # Rule 4: no imd at elig_date_t2dm
       no_imd = qa_bin_known_imd == FALSE | cov_cat_deprivation_5 == "unknown",
       # Rule 5: no region at elig_date_t2dm
       no_region = is.na(cov_cat_region),
       # Rule 6: not registered elig_date_t2dm
-      not_registered = qa_bin_was_registered == FALSE
+      not_registered = qa_bin_was_registered == FALSE | is.na(qa_bin_was_registered)
     )
   
   # Count the rules
-  count <- data_processed %>%
+  count <- data_filtered_T2DM %>%
     summarise(
       n_not_alive_at_baseline = sum(not_alive_at_baseline, na.rm = TRUE),
       n_not_adult_at_baseline = sum(not_adult_at_baseline, na.rm = TRUE),
@@ -32,7 +44,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
     )
   
   # Output 1: filtered data
-  data_filtered <- data_processed %>% # Output 1: filtered data
+  data_filtered <- data_filtered_T2DM %>% # Output 1: filtered data
     filter(
       (!not_alive_at_baseline | is.na(not_alive_at_baseline)),
       (!not_adult_at_baseline | is.na(not_adult_at_baseline)),
@@ -47,6 +59,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   # Output 2: Count for flowchart, without redaction, including pre/post processing counts
   labels <- c(
     n_before_exclusion_processing = "Before applying the completeness criteria",
+    n_t2dm = "Total with T2DM",
     n_not_alive_at_baseline = "Not alive at baseline",
     n_not_adult_at_baseline = "Not adult at baseline",
     n_nor_female_or_male = "Neither female nor male",
@@ -57,12 +70,13 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   )
   out <- tibble(
     n_before_exclusion_processing = nrow(data_processed),
-    n_not_alive_at_baseline = count$n_not_alive_at_baseline,
-    n_not_adult_at_baseline = count$n_not_adult_at_baseline,
-    n_nor_female_or_male = count$n_nor_female_or_male,
-    n_no_imd = count$n_no_imd,
-    n_no_region = count$n_no_region,
-    n_not_registered = count$n_not_registered,
+    n_t2dm = n_t2dm, # counted among all data_processed
+    n_not_alive_at_baseline = count$n_not_alive_at_baseline, # counted only among all with a T2DM diagnosis
+    n_not_adult_at_baseline = count$n_not_adult_at_baseline, # counted only among all with a T2DM diagnosis
+    n_nor_female_or_male = count$n_nor_female_or_male, # counted only among all with a T2DM diagnosis
+    n_no_imd = count$n_no_imd, # counted only among all with a T2DM diagnosis
+    n_no_region = count$n_no_region, # counted only among all with a T2DM diagnosis
+    n_not_registered = count$n_not_registered, # counted only among all with a T2DM diagnosis
     n_after_exclusion_processing = n_after_exclusion_processing
   ) %>% 
     # pivot (for easier data review in L4)
@@ -76,6 +90,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   # Output 3: Count for flowchart, with redaction, including pre/post processing counts
   labels <- c(
     n_before_exclusion_processing_midpoint6 = "Before applying the completeness criteria",
+    n_t2dm_midpoint6 = "Total with T2DM",
     n_not_alive_at_baseline_midpoint6 = "Not alive at baseline",
     n_not_adult_at_baseline_midpoint6 = "Not adult at baseline",
     n_nor_female_or_male_midpoint6 = "Neither female nor male",
@@ -86,6 +101,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   )
   out_midpoint6 <- tibble(
     n_before_exclusion_processing_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold),
+    n_t2dm_midpoint6 = fn_roundmid_any(n_t2dm, threshold),
     n_not_alive_at_baseline_midpoint6 = fn_roundmid_any(count$n_not_alive_at_baseline, threshold),
     n_not_adult_at_baseline_midpoint6 = fn_roundmid_any(count$n_not_adult_at_baseline, threshold),
     n_nor_female_or_male_midpoint6 = fn_roundmid_any(count$n_nor_female_or_male, threshold),

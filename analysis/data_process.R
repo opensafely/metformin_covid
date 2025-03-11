@@ -1,21 +1,20 @@
-################################################################################
+####
 ## This script does the following:
-# 1. Import/extract feather dataset from OpenSAFELY 
+# 1. Import/extract feather dataset from OpenSAFELY
 # 2. Basic type formatting of variables -> fn_extract_data.R()
-# 3. Process some covariates
-# 4. Import the processed dataset with the DM variables (and ethnicity and qa_num_birth_year) and merge
-# 5. Detour depending if run locally or on real data
-# 6. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
-# 7. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
-# 8. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
-# 9. Assign treatment, various treatment regimen patterns and main outcome
-# 10. Output for cumulative incidence plots re treatment regimen pattern
-# 11. Save all output
-################################################################################
+# 3. Process covariates
+# 4. Detour depending if run locally or on real data
+# 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
+# 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
+# 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
+# 8. Add various treatment regimen patterns, assign treatment strategies, outcomes and ICEs
+# 9. Separate output for cumulative incidence plots re treatment regimen pattern
+# 10. Save all output
+####
 
-################################################################################
-# 0.0 Import libraries + functions
-################################################################################
+####
+# Import libraries and user functions ----
+####
 library('arrow')
 library('readr')
 library('here')
@@ -27,49 +26,48 @@ library('forcats')
 library('ggplot2')
 library('jsonlite')
 library('skimr') # for skim
-## Import custom user functions and meta-dates
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 
-################################################################################
-# 0.1 Create directories for output
-################################################################################
+####
+# Create directories for output ----
+####
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_description"))
 
-################################################################################
-# 0.2 Import command-line arguments and dates
-################################################################################
+####
+# Import command-line arguments and dates ----
+####
 # args <- commandArgs(trailingOnly=TRUE) # if needed at a later stage to define local testing
 # study_dates <- fromJSON(here::here("output", "study_dates.json")) # does not work locally, use below instead, try later
 source(here::here("analysis", "metadates.R"))
 # Convert the meta-dates into Date objects
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 
-################################################################################
-# 0.3 Define redaction threshold
-################################################################################
+####
+# Define redaction threshold ----
+####
 threshold <- 6
 
-################################################################################
-# 1 Import the dataset definition
-################################################################################
+####
+# Import the dataset definition ----
+####
 input_filename <- "dataset.arrow"
 
-################################################################################
-# 2 Reformat the imported data
-################################################################################
+####
+# Reformat the imported data ----
+####
 data_extracted <- fn_extract_data(input_filename)
 
-################################################################################
-# 3 Process the data
-################################################################################
+####
+# Process the data ----
+####
 data_processed <- data_extracted %>%
   mutate(
-    # POPULATION/DEMOGRAPHIC ----
+    # POPULATION/DEMOGRAPHIC
     cov_cat_age = cut(
       cov_num_age,
       breaks = c(18, 40, 60, 80, 110),
@@ -143,23 +141,16 @@ data_processed <- data_extracted %>%
       right = FALSE),
     )
 
-# ################################################################################
-# # 4 Import the processed DM algo dataset and merge
-# ################################################################################
-# data_processed_dm_algo <- readRDS(here::here("output", "data", "data_processed_dm_algo.rds"))
-# data_processed <- merge(data_processed, data_processed_dm_algo, 
-#                         by = "patient_id", 
-#                         all.x = TRUE)
-
-################################################################################
-# 5 If code is run locally, then do not run completeness and quality assurance and run adapted eligibility function (all to increase dummy data)
-################################################################################
+####
+# Apply flowchart functions, stratified by if code run locally or not ----
+####
+# if code run locally, do NOT run QA & completeness criteria to increase N of dummy data
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, producing dummy data...")
   
-  ################################################################################
-  # 8 Apply the eligibility criteria (slightly adapted for dummy data)
-  ################################################################################
+  ####
+  # Apply the eligibility criteria (slightly adapted for dummy data)
+  ####
   # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
   # => if so, use function with loop that can be mapped to other windows
   eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = TRUE)
@@ -173,24 +164,24 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 } else {
   message("Running on real data...")
   
-  ################################################################################
-  # 6 Apply the quality assurance criteria
-  ################################################################################
+  ####
+  # Apply the quality assurance criteria (Real Data)
+  ####
   qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
   n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
   data_processed <- qa$data_processed
   
-  ################################################################################
-  # 7 Apply the completeness criteria
-  ################################################################################
+  ####
+  # Apply the completeness criteria (Real Data)
+  ####
   completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
   n_completeness_excluded <- completeness$n_completeness_excluded
   n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
   data_processed <- completeness$data_processed
   
-  ################################################################################
-  # 8 Apply the eligibility criteria (Real Data)
-  ################################################################################
+  ####
+  # Apply the eligibility criteria (Real Data)
+  ####
   # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
   # => if so, use function with loop that can be mapped to other windows
   eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
@@ -201,29 +192,9 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Quality check, completeness and eligibility criteria applied on real data")
 }
 
-# # for feasibility check, apply the eligibility window for incident T2DM until mid2013
-# data_processed_feasibility <- data_processed # since input and output are both data_processed, the loop would otherwise take the output of previous loop as input
-# # count
-# n_elig_excluded_all_windows <- 
-#   map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
-#       .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$n_elig_excluded)
-# names(n_elig_excluded_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
-# # count_midpoint6
-# n_elig_excluded_all_windows_midpoint6 <- 
-#   map(.x = list(0, 366, 731, 1096, 1461, 1827), # define study window (mid_years 2018 until 2013)
-#       .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$n_elig_excluded_midpoint6)
-# names(n_elig_excluded_all_windows_midpoint6) <- c("elig_mid2018_midpoint6", "elig_mid2017_midpoint6", "elig_mid2016_midpoint6", "elig_mid2015_midpoint6", "elig_mid2014_midpoint6", "elig_mid2013_midpoint6")
-# 
-# # apply eligibility criteria
-# data_processed_all_windows <-
-#   map(.x = list(0, 366, 731, 1096, 1461, 1827),
-#       .f = ~ fn_elig_criteria_midpoint6(data_processed_feasibility, study_dates, years_in_days = .x)$data_processed)
-# names(data_processed_all_windows) <- c("elig_mid2018", "elig_mid2017", "elig_mid2016", "elig_mid2015", "elig_mid2014", "elig_mid2013")
-
-################################################################################
-# 9 Assign treatment/exposure and main outcome
-################################################################################
-# assign treatment/exposure and main outcome measure
+####
+# Assign treatment patterns, outcomes and treatment strategies ----
+####
 data_processed <- data_processed %>% 
   mutate(
     # started any metformin within 6 months after T2DM, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
@@ -493,15 +464,11 @@ data_processed <- data_processed %>%
                                         TRUE ~ FALSE)
     ) %>%
   
-  ## add outcomes
-  mutate(out_bin_severecovid = case_when(out_date_covid19_severe > study_dates$pandemicstart_date ~ TRUE, # severe covid outcome (hosp or death)
+  ## add outcomes and ICEs
+  mutate(out_bin_severecovid = case_when(out_date_covid19_severe > elig_date_t2dm ~ TRUE, # severe covid outcome (hosp or death)
                                          TRUE ~ FALSE),
          out_date_severecovid = case_when(out_bin_severecovid == TRUE ~ out_date_covid19_severe, 
                                              TRUE ~ as.Date(NA)),
-         out_bin_severecovid2 = case_when(out_date_covid19_severe > elig_date_t2dm ~ TRUE, # should give the same as above
-                                         TRUE ~ FALSE),
-         out_date_severecovid2 = case_when(out_bin_severecovid2 == TRUE ~ out_date_covid19_severe, 
-                                          TRUE ~ as.Date(NA)),
          out_bin_covid_hosp = case_when(out_date_covid19_hosp > elig_date_t2dm ~ TRUE,
                                           TRUE ~ FALSE),
          out_date_covid_hosp = case_when(out_bin_covid_hosp == TRUE ~ out_date_covid19_hosp, 
@@ -514,6 +481,18 @@ data_processed <- data_processed %>%
                                          TRUE ~ FALSE),
          out_date_covid = case_when(out_bin_covid == TRUE ~ out_date_covid19, 
                                           TRUE ~ as.Date(NA)),
+         out_bin_longcovid = case_when(out_date_long_covid19 > elig_date_t2dm ~ TRUE,
+                                   TRUE ~ FALSE),
+         out_date_longcovid = case_when(out_bin_longcovid == TRUE ~ out_date_long_covid19, 
+                                    TRUE ~ as.Date(NA)),
+         out_bin_virfat = case_when(out_date_viral_fatigue > elig_date_t2dm ~ TRUE,
+                                        TRUE ~ FALSE),
+         out_date_virfat = case_when(out_bin_virfat == TRUE ~ out_date_viral_fatigue, 
+                                         TRUE ~ as.Date(NA)),
+         out_bin_longcovid_virfat = case_when(out_date_long_fatigue > elig_date_t2dm ~ TRUE,
+                                     TRUE ~ FALSE),
+         out_date_longcovid_virfat = case_when(out_bin_longcovid_virfat == TRUE ~ out_date_long_fatigue, 
+                                      TRUE ~ as.Date(NA)),
          # deaths between landmark and pandemic start
          out_bin_death_pandemicstart = case_when(!is.na(qa_date_of_death)
                                                  & qa_date_of_death <= study_dates$pandemicstart_date 
@@ -522,18 +501,18 @@ data_processed <- data_processed %>%
          out_date_death_pandemicstart = case_when(out_bin_death_pandemicstart == TRUE ~ qa_date_of_death, 
                                            TRUE ~ as.Date(NA)),
          # LTFU between landmark and pandemic start
-         out_bin_ltfu_pandemicstart = case_when(!is.na(out_date_dereg)
-                                                & out_date_dereg <= study_dates$pandemicstart_date
-                                                & out_date_dereg > elig_date_t2dm + days(183) ~ TRUE,
+         out_bin_ltfu_pandemicstart = case_when(!is.na(cens_date_dereg)
+                                                & cens_date_dereg <= study_dates$pandemicstart_date
+                                                & cens_date_dereg > elig_date_t2dm + days(183) ~ TRUE,
                                                 TRUE ~ FALSE),
-         out_date_ltfu_pandemicstart = case_when(out_bin_ltfu_pandemicstart == TRUE ~ out_date_dereg, 
+         out_date_ltfu_pandemicstart = case_when(out_bin_ltfu_pandemicstart == TRUE ~ cens_date_dereg, 
                                                   TRUE ~ as.Date(NA))
      ) %>%
   
-  ## add main treatment variables
-  mutate(exp_bin_treat = case_when(exp_bin_metfin_mono == TRUE ~ TRUE, 
-                                   exp_bin_treat_nothing == TRUE ~ FALSE,
-                                   TRUE ~ NA),
+  ## add treatment strategy variables
+  mutate(exp_bin_treat = case_when(exp_bin_metfin_mono == TRUE ~ 1,
+                                   exp_bin_treat_nothing == TRUE ~ 2,
+                                   TRUE ~ NA_real_),
          exp_bin_treat_all = case_when(exp_bin_metfin_mono == TRUE ~ 1, 
                                    exp_bin_treat_nothing == TRUE ~ 2,
                                    exp_bin_oad == TRUE ~ 3,
@@ -542,7 +521,7 @@ data_processed <- data_processed %>%
          exp_bin_treat_3groups = case_when(exp_bin_metfin_mono == TRUE ~ 1, 
                                        exp_bin_treat_nothing == TRUE ~ 2,
                                        exp_bin_oad == TRUE | exp_bin_metfin == TRUE ~ 3,
-                                       TRUE ~ NA_real_),
+                                       TRUE ~ NA_real_)
   )
 
 n_exp_out <- data_processed %>% 
@@ -593,10 +572,12 @@ n_exp_out <- data_processed %>%
     n_exp_bin_treat_nothing2 = sum(exp_bin_treat_nothing2),
     
     n_out_bin_severeCOVID = sum(out_bin_severecovid),
-    n_out_bin_severeCOVID2 = sum(out_bin_severecovid2),
     n_out_bin_covid_hosp = sum(out_bin_covid_hosp),
     n_out_bin_covid_death = sum(out_bin_covid_death),
     n_out_bin_covid = sum(out_bin_covid),
+    n_out_bin_longcovid = sum(out_bin_longcovid),
+    n_out_bin_virfat = sum(out_bin_virfat),
+    n_out_bin_longcovid_virfat = sum(out_bin_longcovid_virfat),
     n_out_bin_death_pandemicstart = sum(out_bin_death_pandemicstart),
     n_out_bin_ltfu_pandemicstart = sum(out_bin_ltfu_pandemicstart),
     
@@ -666,10 +647,12 @@ n_exp_out_midpoint6 <- data_processed %>%
     n_exp_bin_treat_nothing2_midpoint6 = fn_roundmid_any(sum(exp_bin_treat_nothing2, na.rm = TRUE), threshold), 
     
     n_out_bin_severeCOVID_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid, na.rm = TRUE), threshold), 
-    n_out_bin_severeCOVID2_midpoint6 = fn_roundmid_any(sum(out_bin_severecovid2, na.rm = TRUE), threshold), 
     n_out_bin_covid_hosp_midpoint6 = fn_roundmid_any(sum(out_bin_covid_hosp, na.rm = TRUE), threshold), 
     n_out_bin_covid_death_midpoint6 = fn_roundmid_any(sum(out_bin_covid_death, na.rm = TRUE), threshold), 
     n_out_bin_covid_midpoint6 = fn_roundmid_any(sum(out_bin_covid, na.rm = TRUE), threshold), 
+    n_out_bin_longcovid_midpoint6 = fn_roundmid_any(sum(out_bin_longcovid, na.rm = TRUE), threshold), 
+    n_out_bin_virfat_midpoint6 = fn_roundmid_any(sum(out_bin_virfat, na.rm = TRUE), threshold), 
+    n_out_bin_longcovid_virfat_midpoint6 = fn_roundmid_any(sum(out_bin_longcovid_virfat, na.rm = TRUE), threshold),
     n_out_bin_death_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_death_pandemicstart, na.rm = TRUE), threshold), 
     n_out_bin_ltfu_pandemicstart_midpoint6 = fn_roundmid_any(sum(out_bin_ltfu_pandemicstart, na.rm = TRUE), threshold), 
     
@@ -734,11 +717,13 @@ labels <- c(
   n_exp_bin_oad_metfincombo_nothing_midpoint6 = "Among those without metformin mono 6m, any antidiabetic (+/- metformin) or nothing",
   n_exp_bin_treat_nothing2_midpoint6 = "No metformin mono or any other antidiabetic (+/- metformin) within 6m",
 
-  n_out_bin_severeCOVID_midpoint6 = "COVID hosp or death (after pandemic start)",
-  n_out_bin_severeCOVID2_midpoint6 = "COVID hosp or death (after baseline)",
+  n_out_bin_severeCOVID_midpoint6 = "COVID hosp or death (after baseline)",
   n_out_bin_covid_hosp_midpoint6 = "COVID hosp (after baseline)",
   n_out_bin_covid_death_midpoint6 = "COVID death (after baseline)",
   n_out_bin_covid_midpoint6 = "COVID diagnosis, pos test or hosp (after baseline)",
+  n_out_bin_longcovid_midpoint6 = "Long COVID diagnosis (after baseline)",
+  n_out_bin_virfat_midpoint6 = "Viral Fatigue (after baseline)",
+  n_out_bin_longcovid_virfat_midpoint6 = "Long COVID or Viral Fatigue (after baseline)",
   n_out_bin_death_pandemicstart_midpoint6 = "Deaths between landmark and pandemic start",
   n_out_bin_ltfu_pandemicstart_midpoint6 = "LTFU between landmark and pandemic start",
   
@@ -755,37 +740,20 @@ labels <- c(
 n_exp_out_midpoint6 <- n_exp_out_midpoint6 %>%
   mutate(Variable = labels[Variable])
 
-
-# n_exp_severecovid_midpoint6 <- map(
-#   .x = data_processed_all_windows,
-#   .f = ~ .x %>% 
-#     # main exposure
-#     mutate(exp_bin_treat = case_when(exp_date_metfin_first <= study_dates$pandemicstart_date 
-#                                      & exp_date_metfin_last >= study_dates$pandemicstart_date - days(183) ~ TRUE, # TRUE if started/treated/exposed and still on it
-#                                      TRUE ~ FALSE)) %>% # 0 if not started/treated/exposed until landmark or not on it anymore
-#     # summarise everything
-#     summarise(
-#       n_exp_bin_treat_midpoint6 = fn_roundmid_any(sum(exp_bin_treat, na.rm = TRUE), threshold), 
-#
-#       )
-#   )
-# names(n_exp_severecovid_midpoint6) <- c("treat_outcome_mid2018_midpoint6", "treat_outcome_mid2017_midpoint6", "treat_outcome_mid2016_midpoint6", "treat_outcome_mid2015_midpoint6", "treat_outcome_mid2014_midpoint6", "treat_outcome_mid2013_midpoint6")
-
-
-################################################################################
-# 10 Output for cumulative incidence plots re treatment regimen pattern and structure of entire dataset
-################################################################################
+####
+# Output for cumulative incidence plots re treatment regimen pattern and structure of entire dataset ----
+####
 data_plots <- data_processed %>%
-  dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime, 
-                exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime, 
+  dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime,
+                exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime,
                 exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
-                exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime, 
+                exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime,
                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
-                out_date_severecovid2, qa_date_of_death)
+                out_date_severecovid, qa_date_of_death)
 
 data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%    
+  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
@@ -793,38 +761,35 @@ data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
   dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>% 
+  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
   dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death))
 
+####
+# Structure of entire dataset to double-check variables ----
+####
 variable_desc <- skim(data_processed)
 
-################################################################################
-# 10.5 Restrict dataset and adapt dummy data output
-################################################################################
-# To those fulfilling the treatment strategy - after decision taken which treatment strategy is investigated:
-# data_processed <- data_processed %>%
-#   dplyr::filter(!is.na(exp_bin_treat))
+####
+# Restrict dataset and adapt dummy data output ----
+####
+# Include only those fulfilling the treatment strategy
+data_processed <- data_processed %>%
+  dplyr::filter(!is.na(exp_bin_treat))
 
-# Identify excluded rows
-# excluded_data <- data_processed %>%
-#   dplyr::filter(!is.na(qa_date_of_death) & elig_date_t2dm > qa_date_of_death |
-#                   !is.na(out_date_severecovid2) & elig_date_t2dm > out_date_severecovid2) %>% 
-#   select(elig_date_t2dm, out_date_severecovid2, qa_date_of_death)
-
-# Adapt dummy data:
+# Adapt dummy data to avoid event_time is == 0:
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data...")
   
   data_processed <- data_processed %>% # to avoid event_time is == 0
     dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death)) %>%
-    dplyr::filter(elig_date_t2dm < out_date_severecovid2 | is.na(out_date_severecovid2))
+    dplyr::filter(elig_date_t2dm < out_date_severecovid | is.na(out_date_severecovid))
   
   message("...dummy data successfully adapted")
 }
 
-################################################################################
-# 11 Save output
-################################################################################
+####
+# Save output ----
+####
 # the full data
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # data for cumulative incidence plots re treatment regimen pattern
@@ -855,19 +820,3 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Output successfully saved, based on real data")
 
 }
-
-# purrr::walk2(
-#   .x = n_elig_excluded_all_windows_midpoint6, 
-#   .y = paste0(names(n_elig_excluded_all_windows_midpoint6), ".csv"),
-#   .f = ~ write.csv(.x, 
-#                    file = here::here("output", "data_description", .y), 
-#                    row.names = FALSE)
-# )
-# # Just to double-check re feasibility: Assign treatment/exposure and main outcome to above data frames going back 6 years
-# purrr::walk2(
-#   .x = n_exp_severecovid_midpoint6, 
-#   .y = paste0(names(n_exp_severecovid_midpoint6), ".csv"),
-#   .f = ~ write.csv(.x, 
-#                    file = here::here("output", "data_description", .y), 
-#                    row.names = FALSE)
-# )

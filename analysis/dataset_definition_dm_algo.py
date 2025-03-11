@@ -80,9 +80,9 @@ dataset.elig_date_t1dm = minimum_of(
     (first_matching_event_apc_before(diabetes_type1_icd10, pandemicstart_date).admission_date)
 )
 # Count codes (individually and together, for diabetes algo)
-dataset.tmp_elig_count_t1dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, pandemicstart_date)
-dataset.tmp_elig_count_t1dm_hes = count_matching_event_apc_before(diabetes_type1_icd10, pandemicstart_date)
-dataset.tmp_elig_count_t1dm = dataset.tmp_elig_count_t1dm_ctv3 + dataset.tmp_elig_count_t1dm_hes
+tmp_elig_count_t1dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, pandemicstart_date)
+tmp_elig_count_t1dm_hes = count_matching_event_apc_before(diabetes_type1_icd10, pandemicstart_date)
+dataset.tmp_elig_count_t1dm = tmp_elig_count_t1dm_ctv3 + tmp_elig_count_t1dm_hes
 
 ## Type 2 Diabetes
 # First date from primary+secondary, but also primary care date separately for diabetes algo)
@@ -91,10 +91,11 @@ dataset.elig_date_t2dm = minimum_of(
     (first_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, pandemicstart_date).date),
     (first_matching_event_apc_before(diabetes_type2_icd10, pandemicstart_date).admission_date)
 )
+
 # Count codes (individually and together, for diabetes algo)
-dataset.tmp_elig_count_t2dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, pandemicstart_date)
-dataset.tmp_elig_count_t2dm_hes = count_matching_event_apc_before(diabetes_type2_icd10, pandemicstart_date)
-dataset.tmp_elig_count_t2dm = dataset.tmp_elig_count_t2dm_ctv3 + dataset.tmp_elig_count_t2dm_hes
+tmp_elig_count_t2dm_ctv3 = count_matching_event_clinical_ctv3_before(diabetes_type2_ctv3_clinical, pandemicstart_date)
+tmp_elig_count_t2dm_hes = count_matching_event_apc_before(diabetes_type2_icd10, pandemicstart_date)
+dataset.tmp_elig_count_t2dm = tmp_elig_count_t2dm_ctv3 + tmp_elig_count_t2dm_hes
 
 ## Diabetes unspecified/other
 # First date
