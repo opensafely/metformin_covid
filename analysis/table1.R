@@ -34,7 +34,7 @@ data_processed <- read_feather(here("output", "data", "data_processed.arrow"))
 ################################################################################
 var_labels <- list(
   N  ~ "Total N",
-  exp_bin_treat_3groups ~ "Treatment",
+  exp_bin_treat ~ "Treatment",
   
   cov_num_age ~ "Age",
   cov_cat_age ~ "Age groups",
@@ -45,6 +45,8 @@ var_labels <- list(
   cov_cat_rural_urban ~ "Rural/urban",
   cov_cat_smoking_status ~ "Smoking status",
   cov_bin_carehome_status ~ "Care/nursing home resident",
+  cov_bin_healthcare_worker ~ "Healthcare worker",
+  # cov_num_consrate ~ "Consultation rate in previous year",
   cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",
   cov_cat_hba1c_mmol_mol ~ "HbA1c categories in mmol/mol",
   cov_cat_tc_hdl_ratio ~ "TC/HDL ratio categories",
@@ -66,14 +68,16 @@ var_labels <- list(
   cov_bin_diabetescomp ~ "Diabetes complication",
   cov_num_hba1c_mmol_mol ~ "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio ~ "TC/Chol ratio",
-  cov_bin_healthcare_worker ~ "Healthcare worker",
   
   exp_bin_metfin_pandemicstart ~ "Any metformin prescription within 6m prior to pandemic start",
   exp_bin_metfin_anytime ~ "Starting metformin anytime (after landmark, respectively; incl. combo)",
-  out_bin_severecovid2 ~ "COVID hosp or death",
+  out_bin_severecovid ~ "COVID hosp or death",
   out_bin_covid_hosp ~ "COVID hosp",
   out_bin_covid_death ~ "COVID death",
   out_bin_covid ~ "Any covid diagnosis, pos test or hosp",
+  out_bin_longcovid ~ "Any Long COVID diagnosis",
+  out_bin_virfat ~ "Any Viral Fatigue diagnosis",
+  out_bin_longcovid_virfat ~ "Any Long COVID or Viral Fatigue diagnosis",
   out_bin_death_pandemicstart ~ "Death between landmark and pandemic start",
   out_bin_ltfu_pandemicstart ~ "LTFU between landmark and pandemic start"
 ) %>%
@@ -86,16 +90,16 @@ table_1 <-
   data_processed %>%
   mutate(
     N=1L,
-    exp_bin_treat_3groups = factor(exp_bin_treat_3groups, 
-                          levels = c(1,2,3), 
-                          labels = c("Metformin mono", "Nothing", "Other antidiabetic (incl. combo with metformin)"))
+    exp_bin_treat = factor(exp_bin_treat, 
+                          levels = c(1,2), 
+                          labels = c("Metformin mono", "Nothing"))
   ) %>%
   select(
-    exp_bin_treat_3groups,
+    exp_bin_treat,
     all_of(names(var_labels)),
   ) %>%
   tbl_summary(
-    by = exp_bin_treat_3groups,
+    by = exp_bin_treat,
     label = unname(var_labels[names(.)]),
     statistic = list(
       N ~ "{N}",
