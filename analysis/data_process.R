@@ -93,7 +93,7 @@ data_processed <- data_extracted %>%
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
       cov_cat_rural_urban %in% c(5,6,7,8) ~ "Rural town or village",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
     cov_cat_stp = as.factor(cov_cat_stp),
     
@@ -102,14 +102,13 @@ data_processed <- data_extracted %>%
       cov_cat_smoking_status == "S" ~ "Smoker",
       cov_cat_smoking_status == "E" ~ "Ever",
       cov_cat_smoking_status == "N" ~ "Never",
-      cov_cat_smoking_status == "M" ~ "Unknown",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
     # Create one history of obesity variable
     cov_bin_obesity = fn_case_when(
       cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
       cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
     # Remove biologically implausible numerical BMI values
     cov_num_bmi = case_when(cov_num_bmi > 70 | cov_num_bmi < 12 ~ NA_real_, TRUE ~ cov_num_bmi),
@@ -129,6 +128,8 @@ data_processed <- data_extracted %>%
       breaks = c(1, 3.5, 5.1, 50), # 50 is upper limit, see above -> NA
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
       right = FALSE),
+    cov_cat_tc_hdl_ratio = case_when(is.na(cov_num_tc_hdl_ratio) ~ factor("Unknown", 
+                                                                          levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
     ## remove HbA1c > 120
@@ -136,9 +137,11 @@ data_processed <- data_extracted %>%
     cov_num_hba1c_mmol_mol = replace(cov_num_hba1c_mmol_mol, cov_num_hba1c_mmol_mol < 0.00 | cov_num_hba1c_mmol_mol > 120.00, NA_real_),
     cov_cat_hba1c_mmol_mol = cut(
       cov_num_hba1c_mmol_mol,
-      breaks = c(0, 42, 53, 59, 76, 120), # 120 is upper limit, above NA
-      labels = c("below 42" ,"42-52", "53-58", "59-75", "above 75"),
+      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE),
+    cov_cat_hba1c_mmol_mol = case_when(is.na(cov_cat_hba1c_mmol_mol) ~ factor("Unknown", 
+                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_mmol_mol),
     )
 
 ####
@@ -741,28 +744,28 @@ n_exp_out_midpoint6 <- n_exp_out_midpoint6 %>%
   mutate(Variable = labels[Variable])
 
 ####
-# Output for cumulative incidence plots re treatment regimen pattern and structure of entire dataset ----
+# Output for cumulative incidence plots re treatment regimen pattern ----
 ####
-data_plots <- data_processed %>%
-  dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime,
-                exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime,
-                exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
-                exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime,
-                exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
-                out_date_severecovid, qa_date_of_death)
-
-data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death))
+# data_plots <- data_processed %>%
+#   dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime,
+#                 exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime,
+#                 exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
+#                 exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime,
+#                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
+#                 out_date_severecovid, qa_date_of_death)
+# 
+# data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0 (dummy data)
+#   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death))
 
 ####
 # Structure of entire dataset to double-check variables ----
@@ -770,21 +773,30 @@ data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
 variable_desc <- skim(data_processed)
 
 ####
-# Restrict dataset and adapt dummy data output ----
+# Restrict dataset ----
 ####
-# Include only those fulfilling the treatment strategy
+# Include only those fulfilling the decided treatment strategy
 data_processed <- data_processed %>%
-  dplyr::filter(!is.na(exp_bin_treat))
+  filter(!is.na(exp_bin_treat))
 
+# Drop unnecessary variables going forward
+data_processed <- data_processed %>% 
+  select(patient_id, elig_date_t2dm, qa_date_of_death,
+         starts_with("exp_"), # Exposures
+         starts_with("cov_"), # Covariates
+         starts_with("out_"), # Outcomes
+         starts_with("cens_"), # Censoring variables
+         contains("_landmark") # ICEs between baseline and landmark
+  )
+
+####
+# Modify dummy data ----
+####
 # Adapt dummy data to avoid event_time is == 0:
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data...")
-  
-  data_processed <- data_processed %>% # to avoid event_time is == 0
-    dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death)) %>%
-    dplyr::filter(elig_date_t2dm < out_date_severecovid | is.na(out_date_severecovid))
-  
-  message("...dummy data successfully adapted")
+  source("analysis/modify_dummy_data.R")
+  message("...dummy data successfully modified")
 }
 
 ####
@@ -793,7 +805,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 # the full data
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # data for cumulative incidence plots re treatment regimen pattern
-write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
+# write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 
 # description of each variable in the dataset
 write.csv(variable_desc, file = here::here("output", "data_description", "variable_codebook.csv")) # for L4 reviewing only, not for release
