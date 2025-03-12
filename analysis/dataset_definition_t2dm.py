@@ -251,6 +251,7 @@ dataset.cov_bin_healthcare_worker = (
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
 ### Consultation rate in 2019
+
 #tmp_cov_num_consrate = appointments.where(
 #    appointments.status.is_in([
 #        "Arrived",
