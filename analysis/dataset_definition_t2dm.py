@@ -251,21 +251,22 @@ dataset.cov_bin_healthcare_worker = (
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
 ### Consultation rate in 2019
-# tmp_cov_num_consrate = appointments.where(
-#     appointments.status.is_in([
-#         "Arrived",
-#         "In Progress",
-#         "Finished",
-#         "Visit",
-#         "Waiting",
-#         "Patient Walked Out",
-#         ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
-#         ).count_for_patient()    
 
-# dataset.cov_num_consrate = case(
-#     when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
-#     otherwise=365, # quality assurance
-# )
+#tmp_cov_num_consrate = appointments.where(
+#    appointments.status.is_in([
+#        "Arrived",
+#        "In Progress",
+#        "Finished",
+#        "Visit",
+#        "Waiting",
+#        "Patient Walked Out",
+#        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
+#        ).count_for_patient()    
+
+#dataset.cov_num_consrate = case(
+#    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
+#    otherwise=365, # quality assurance
+#)
 
 ## Obesity, on or before elig_date_t2dm
 dataset.cov_bin_obesity = (
@@ -477,8 +478,8 @@ dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid19, datase
 
 
 ### UPDATED eligibility and intercurrent events for potential censoring
-## Practice deregistration date 1: Based on registration at t2dm diagnosis date (including spanning 1-year back => in-line with eligibility and is based on the longest baseline registration)
-# However, it does count those who only switch TPP practices (yes, but at least it's based on the longest baseline registration)
+## Practice deregistration date 1: Based on registration at t2dm diagnosis date
+# However, it does count those who only switch TPP practices
 dataset.cens_date_dereg = registered.end_date
 
 ## Practice deregistration date 2: From Zoe. Is not directly linked to registration at baseline (benefit?), but still counts those who only switched TPP practices
