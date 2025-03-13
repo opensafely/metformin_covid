@@ -200,17 +200,15 @@ dataset.cov_cat_deprivation_5 = case(
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-#spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
-#ordered_regs = spanning_regs.sort_by(
-#    practice_registrations.start_date,
-#    practice_registrations.end_date,
-#    practice_registrations.practice_pseudo_id,
-#).last_for_patient()
+spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+ordered_regs = spanning_regs.sort_by(
+    practice_registrations.start_date,
+    practice_registrations.end_date,
+    practice_registrations.practice_pseudo_id,
+).last_for_patient()
 
-registered = practice_registrations.for_patient_on(dataset.elig_date_t2dm)
-
-dataset.cov_cat_region = registered.practice_nuts1_region_name ## Region
-dataset.cov_cat_stp = registered.practice_stp ## Practice
+dataset.cov_cat_region = ordered_regs.practice_nuts1_region_name ## Region
+dataset.cov_cat_stp = ordered_regs.practice_stp ## Practice
 dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification ## Rurality
 
 ## Smoking status at elig_date_t2dm
@@ -250,22 +248,21 @@ dataset.cov_bin_healthcare_worker = (
 )
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
-### Consultation rate in 2019
-#tmp_cov_num_consrate = appointments.where(
-#    appointments.status.is_in([
-#        "Arrived",
-#        "In Progress",
-#        "Finished",
-#        "Visit",
-#        "Waiting",
-#        "Patient Walked Out",
-#        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
-#        ).count_for_patient()    
+tmp_cov_num_consrate = appointments.where(
+    appointments.status.is_in([
+        "Arrived",
+        "In Progress",
+        "Finished",
+        "Visit",
+        "Waiting",
+        "Patient Walked Out",
+        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
+        ).count_for_patient()    
 
-#dataset.cov_num_consrate = case(
-#    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
-#    otherwise=365, # quality assurance
-#)
+dataset.cov_num_consrate = case(
+    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
+    otherwise=365, # quality assurance
+)
 
 ## Obesity, on or before elig_date_t2dm
 dataset.cov_bin_obesity = (
@@ -479,7 +476,7 @@ dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid19, datase
 ### UPDATED eligibility and intercurrent events for potential censoring
 ## Practice deregistration date 1: Based on registration at t2dm diagnosis date
 # However, it does count those who only switch TPP practices
-dataset.cens_date_dereg = registered.end_date
+dataset.cens_date_dereg = ordered_regs.end_date
 
 ## Practice deregistration date 2: From Zoe. Is not directly linked to registration at baseline (benefit?), but still counts those who only switched TPP practices
 #dataset.cens_date_dereg_2 = (
