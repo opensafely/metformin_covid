@@ -248,21 +248,21 @@ dataset.cov_bin_healthcare_worker = (
 )
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
-tmp_cov_num_consrate = appointments.where(
-    appointments.status.is_in([
-        "Arrived",
-        "In Progress",
-        "Finished",
-        "Visit",
-        "Waiting",
-        "Patient Walked Out",
-        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
-        ).count_for_patient()    
+#tmp_cov_num_consrate = appointments.where(
+#    appointments.status.is_in([
+#        "Arrived",
+#        "In Progress",
+#        "Finished",
+#        "Visit",
+#        "Waiting",
+#        "Patient Walked Out",
+#        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
+#        ).count_for_patient()    
 
-dataset.cov_num_consrate = case(
-    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
-    otherwise=365, # quality assurance
-)
+#dataset.cov_num_consrate = case(
+#    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
+#    otherwise=365, # quality assurance
+#)
 
 ## Obesity, on or before elig_date_t2dm
 dataset.cov_bin_obesity = (
