@@ -81,11 +81,6 @@ data_processed <- data_processed %>%
   mutate(cov_cat_region = sample(cov_cat_region_categories, n(), replace = TRUE, prob = cov_cat_region_prob)) %>%
   mutate(cov_cat_region = factor(cov_cat_region, levels = cov_cat_region_categories))
 
-# Modify dates ------------------------------------------------------------
-data_processed <- data_processed %>% # avoid event_time is == 0
-  filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death)) %>%
-  filter(elig_date_t2dm < out_date_severecovid | is.na(out_date_severecovid))
-
 # Increase the number treated ---------------------------------------------
 # Set to a 50:50 distribution, randomly set
 data_processed <- data_processed %>%
@@ -93,5 +88,5 @@ data_processed <- data_processed %>%
 
 # Increase sample size ----------------------------------------------------
 # Sample with replacement to generate more data
-n_new_rows <- 80000
-data_processed <- data_processed[sample(1:nrow(data_processed), n_new_rows, replace = TRUE), ]
+# n_new_rows <- 80000
+# data_processed <- data_processed[sample(1:nrow(data_processed), n_new_rows, replace = TRUE), ]
