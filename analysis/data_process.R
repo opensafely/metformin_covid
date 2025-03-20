@@ -77,7 +77,7 @@ data_processed <- data_extracted %>%
     cov_cat_sex = fn_case_when(
       cov_cat_sex == "female" ~ "Female",
       cov_cat_sex == "male" ~ "Male",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
     cov_cat_region = fct_collapse(
       cov_cat_region,
@@ -754,7 +754,7 @@ n_exp_out_midpoint6 <- n_exp_out_midpoint6 %>%
 #                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
 #                 out_date_severecovid, qa_date_of_death)
 # 
-# data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0 (dummy data)
+# data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
 #   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
 #   dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
 #   dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
@@ -792,6 +792,7 @@ data_processed <- data_processed %>%
 ####
 # Modify dummy data ----
 ####
+
 # Adapt dummy data to avoid event_time is == 0:
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data...")
