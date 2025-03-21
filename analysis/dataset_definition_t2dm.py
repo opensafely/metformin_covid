@@ -59,7 +59,7 @@ random.seed(19283) # random seed
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=5000)
+dataset.configure_dummy_data(population_size=8000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################
@@ -251,6 +251,7 @@ dataset.cov_bin_healthcare_worker = (
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
 ### Consultation rate in 2019
+
 #tmp_cov_num_consrate = appointments.where(
 #    appointments.status.is_in([
 #        "Arrived",
