@@ -16,7 +16,7 @@ library(ggfortify) # autoplot
 library(gtsummary) # tbl_regression
 
 # Create directories for output -------------------------------------------
-fs::dir_create(here::here("output", "te"))
+fs::dir_create(here::here("output", "te", "cox_scripted"))
 
 # Import the data ---------------------------------------------------------
 df <- read_feather(here("output", "data", "data_processed.arrow"))
@@ -117,4 +117,4 @@ cox_severecovid_df <- cox_severecovid %>%
 
 # Save output -------------------------------------------------------------
 # cox model table
-write.csv(cox_severecovid_df, file = here::here("output", "te", "cox_severecovid.csv"))
+write.csv(cox_severecovid_df, file = here::here("output", "te", "cox_scripted", "cox_severecovid.csv"))
