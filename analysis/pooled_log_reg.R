@@ -232,7 +232,7 @@ risk_estimates_from_plr_withoutCI <- function(df_long, plr_model, K, interval_ty
 
 # Create input list of ids (eligible persons)
 K <- 39 # Define total follow-up (currently, all is in months)
-R <- 5 # Define number of bootstraps
+R <- 2 # Define number of bootstraps
 study_ids <- data.frame(patient_id = df$patient_id)
 
 # Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 time point (e.g. overall risk)
@@ -325,7 +325,7 @@ risk_estimates_from_plr_tbl <- data.frame(
 # Marginal parametric cumulative incidence (risk) curves ------------------
 # Create input list of ids (eligible persons)
 K <- 39 # Define total follow-up (currently, all is in months)
-R <- 5 # Define number of bootstraps
+R <- 2 # Define number of bootstraps
 study_ids <- data.frame(patient_id = df$patient_id)
 
 # Bootstrap function
