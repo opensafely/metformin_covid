@@ -145,62 +145,45 @@ data_processed <- data_extracted %>%
     )
 
 ####
-# Apply flowchart functions, stratified by if code run locally or not ----
+# Modify dummy data ----
 ####
-# if code run locally, do NOT run QA & completeness criteria to increase N of dummy data
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, producing dummy data...")
-  
-  ####
-  # Apply the eligibility criteria (slightly adapted for dummy data)
-  ####
-  # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
-  # => if so, use function with loop that can be mapped to other windows
-  eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = TRUE)
-  n_elig_excluded <- eligibility$n_elig_excluded
-  n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
-  data_processed <- eligibility$data_processed
-  data_processed <- data_processed %>%
-    dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm)) # since no qual assurance applied for dummy data..
-  message("Eligibility criteria applied for dummy data")
-  
-} else {
-  message("Running on real data...")
-  
-  ####
-  # Apply the quality assurance criteria (Real Data)
-  ####
-  qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
-  n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
-  data_processed <- qa$data_processed
-  
-  ####
-  # Apply the completeness criteria (Real Data)
-  ####
-  completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
-  n_completeness_excluded <- completeness$n_completeness_excluded
-  n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-  data_processed <- completeness$data_processed
-  
-  ####
-  # Apply the eligibility criteria (Real Data)
-  ####
-  # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
-  # => if so, use function with loop that can be mapped to other windows
-  eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
-  n_elig_excluded <- eligibility$n_elig_excluded
-  n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
-  data_processed <- eligibility$data_processed
-  
-  message("Quality check, completeness and eligibility criteria applied on real data")
+  message("Running locally, adapt dummy data")
+  source("analysis/modify_dummy_data.R")
+  message("Dummy data successfully modified")
 }
+
+####
+# Apply the quality assurance criteria ----
+####
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
+
+####
+# Apply the completeness criteria ----
+####
+completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+n_completeness_excluded <- completeness$n_completeness_excluded
+n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+data_processed <- completeness$data_processed
+  
+####
+# Apply the eligibility criteria (Real Data)
+####
+# Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
+# => if so, use function with loop that can be mapped to other windows
+eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
+n_elig_excluded <- eligibility$n_elig_excluded
+n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
+data_processed <- eligibility$data_processed
 
 ####
 # Assign treatment patterns, outcomes and treatment strategies ----
 ####
 data_processed <- data_processed %>% 
   mutate(
-    # started any metformin within 6 months after T2DM, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
+    # started any metformin within 6 months after T2DM, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6 [and for dummy data: this was modified accordingly in modify_dummy_data])
     # combo
     exp_bin_metfin = case_when(exp_date_metfin_first <= elig_date_t2dm + days(183) ~ TRUE, 
                                      TRUE ~ FALSE),
@@ -790,24 +773,12 @@ data_processed <- data_processed %>%
   )
 
 ####
-# Modify dummy data ----
-####
-
-# Adapt dummy data to avoid event_time is == 0:
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, adapt dummy data...")
-  source("analysis/modify_dummy_data.R")
-  message("...dummy data successfully modified")
-}
-
-####
 # Save output ----
 ####
 # the full data
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # data for cumulative incidence plots re treatment regimen pattern
 # write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
-
 # description of each variable in the dataset
 write.csv(variable_desc, file = here::here("output", "data_description", "variable_codebook.csv")) # for L4 reviewing only, not for release
 # flow chart eligibility criteria
@@ -816,20 +787,7 @@ write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_el
 # descriptive data re treatment patterns, events between index_date and pandemic start, and main outcome
 write.csv(n_exp_out_midpoint6, file = here::here("output", "data_description", "n_exp_out_midpoint6.csv"))
 write.csv(n_exp_out, file = here::here("output", "data_description", "n_exp_out.csv"))
-
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, output based on dummy data...")
-  
-  message("Output successfully saved, based on dummy data")
-  
-} else {
-  message("Running on real data...")
-  
-  # flow chart quality assurance
-  write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
-  # flow chart completeness criteria
-  write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_description", "n_completeness_excluded_midpoint6.csv"))
-  
-  message("Output successfully saved, based on real data")
-
-}
+# flow chart quality assurance
+write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
+# flow chart completeness criteria
+write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_description", "n_completeness_excluded_midpoint6.csv"))
