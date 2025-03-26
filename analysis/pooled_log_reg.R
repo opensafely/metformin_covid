@@ -14,7 +14,7 @@ library(splines)
 
 library(sandwich) # for robust standard errors
 library(lmtest) # For hypothesis testing with robust SEs
-library(msm) # For delta method
+library(car) # For deltaMethod
 
 library(purrr) # for data wrangling
 library(boot)
