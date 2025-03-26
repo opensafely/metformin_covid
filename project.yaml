@@ -240,7 +240,7 @@ actions:
     outputs:
       moderately_sensitive:
         csv: output/te/pooled_log_reg/*.csv
-        plots: output/te/pooled_log_reg/*.png
+        #plots: output/te/pooled_log_reg/*.png
 
 
   # km_estimates_metfin_RA:

@@ -11,8 +11,14 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(splines)
-library(purrr)
+
+library(sandwich) # for robust standard errors
+library(lmtest) # For hypothesis testing with robust SEs
+library(msm) # For delta method
+
+library(purrr) # for data wrangling
 library(boot)
+
 library(ggplot2)
 # library(speedglm) # not available in OpenSAFELY
 
@@ -123,6 +129,8 @@ covariate_names <- names(df) %>%
 ## Pooled logistic regression models naturally allow for the parametric estimation of risks, and thus risk differences
 ## and risk ratios. Also, these models can be specified such that the effect of the treatment can vary over time, 
 ## as opposed to relying on a proportional hazards assumption.
+## We're modeling/simulating expected (counterfactual) risks over time under the assumption that individuals could have been followed until K-1, not individuals' observed data! Hence everyone has risk data until until K-1 
+## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
 
 ## Use standardization to adjust for time-fixed baseline confounding
 ## The standardized outcome among the treated and untreated groups is estimated by taking a weighted average of the conditional
@@ -147,71 +155,160 @@ plr_model_severecovid <- glm(plr_formula_severecovid,
                              data = df_long_months) 
 # summary(plr_model_severecovid)
 
-risk_estimates_from_plr_withoutCI <- function(df_long, plr_model, K, interval_type = "month") {
-  
-  # Determine column names based on interval type
-  interval_col <- ifelse(interval_type == "month", "month", "week")
-  interval_max <- K - 1  # Ensuring indexing starts from 0
-  interval_days <- ifelse(interval_type == "month", 30, 7)  # Fixed month length of 30 days, same as fn_expand_intervals
-  
-  # Expand dataset by creating time intervals 0 to K-1 for each individual
-  treat0 <- df_long %>%
-    filter(.data[[interval_col]] == 0) %>%
-    select(-all_of(interval_col)) %>%  # Remove interval column to re-add it (e.g. we used month in df_long_months, but re-create it again here)
-    crossing(!!interval_col := 0:interval_max)
-  
-  treat0 <- treat0 %>%
-    mutate(!!paste0(interval_col, "sqr") := .data[[interval_col]]^2) # re-create time squared
-  
-  # Create treatment groups (forcing treatment to 0 or 1)
-  treat0$exp_bin_treat <- 0
-  treat1 <- treat0
-  treat1$exp_bin_treat <- 1
-  
-  # Predict discrete-time hazards
-  treat0[[paste0("p.event0")]] <- predict(plr_model, treat0, type = "response")
-  treat1[[paste0("p.event1")]] <- predict(plr_model, treat1, type = "response")
-  
-  # Compute survival probabilities
-  treat0.surv <- treat0 %>%
-    group_by(patient_id) %>%
-    mutate(!!paste0("surv0") := cumprod(1 - .data[[paste0("p.event0")]])) %>%
-    ungroup()
-  
-  treat1.surv <- treat1 %>%
-    group_by(patient_id) %>%
-    mutate(!!paste0("surv1") := cumprod(1 - .data[[paste0("p.event1")]])) %>%
-    ungroup()
-  
-  # Compute risk as 1 - survival probability
-  treat0.surv <- treat0.surv %>%
-    mutate(!!paste0("risk0") := 1 - .data[[paste0("surv0")]])
-  
-  treat1.surv <- treat1.surv %>%
-    mutate(!!paste0("risk1") := 1 - .data[[paste0("surv1")]])
-  
-  # Aggregate risks by time point
-  risk0 <- aggregate(treat0.surv[c("exp_bin_treat", interval_col, "risk0")], # aggregate in addition by exp_bin_treat not needed, but does no hurt and useful for future trial emulation setup 
-                     by = list(treat0.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk0")]
-  
-  risk1 <- aggregate(treat1.surv[c("exp_bin_treat", interval_col, "risk1")],
-                     by = list(treat1.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk1")]
-  
-  # Merge risk estimates
-  graph.pred <- merge(risk0, risk1, by = interval_col)
-  
-  # Adjust time to reflect end of each interval
-  graph.pred$time_0 <- graph.pred[[interval_col]] + 1
-  zero <- data.frame(cbind(0, 0, 0, 1, 0, 0))
-  zero <- setNames(zero, names(graph.pred))
-  graph <- rbind(zero, graph.pred)
-  
-  # Compute risk differences and risk ratios
-  graph$rd <- graph$risk1 - graph$risk0
-  graph$rr <- graph$risk1 / graph$risk0
-  
-  return(graph)
-}
+
+# 95% CI using robust standard errors and the delta method for RD and RR----
+## Robust SEs (sandwich estimator): Accounts for heteroskedasticity and potential model misspecifications.
+## Delta method: Used for computing confidence intervals for functions of regression coefficients (RD, RR).
+
+# Create dataset with all time points for each individual under each treatment level
+df_pred <- df_long_months %>% filter(month == 0) %>% select(-month) %>% crossing(month = 0:(K-1))
+df_pred$monthsqr <- df_pred$month^2
+
+# Control group (everyone untreated)
+df_pred0 <- df_pred
+df_pred0$exp_bin_treat <- 0
+df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
+
+# Treatment group (everyone treated)
+df_pred1 <- df_pred
+df_pred1$exp_bin_treat <- 1
+df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
+# The above creates a person-time dataset where we have predicted discrete-time hazards
+
+# Obtain predicted survival probabilities from discrete-time hazards
+df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
+df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
+
+# Estimate risks from survival probabilities; compute risk at month K-1
+# Risk = 1 - S(t)
+df_pred0$risk0 <- 1 - df_pred0$surv0
+df_pred1$risk1 <- 1 - df_pred1$surv1
+
+# Get the mean in each treatment group at each month time point
+risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
+risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
+
+# Put all in 1 data frame (for a plot but also to extract specific time points)
+graph.pred <- merge(risk0, risk1, by=c("month"))
+# Edit data frame to reflect that risks are estimated at the END of each interval
+graph.pred$time_0 <- graph.pred$month + 1
+zero <- data.frame(cbind(0,0,0,1,0,0))
+zero <- setNames(zero,names(graph.pred))
+graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot (but without 95% CI, see below)
+
+# Add RD and RR
+graph$rd <- graph$risk1-graph$risk0
+graph$rr <- graph$risk1/graph$risk0
+
+# Extract overall risk estimate (end of follow-up)
+risk0 <- graph$risk0[which(graph$month==K-1)] 
+risk1 <- graph$risk1[which(graph$month==K-1)]
+rd <- graph$rd[which(graph$month==K-1)]
+rr <- graph$rr[which(graph$month==K-1)]
+
+# Compute robust standard errors
+vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
+robust_se <- sqrt(diag(vcov_robust))
+coefs <- coef(plr_model_severecovid)
+
+# Compute standard errors for the two arms
+se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
+se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
+
+# Compute confidence intervals for predicted risks using normal approximation
+ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
+ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
+
+# Formula for risk difference (RD)
+rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
+
+# Delta method for RD
+se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
+ci_rd_lower <- rd - 1.96 * se_rd
+ci_rd_upper <- rd + 1.96 * se_rd
+
+# Formula for risk ratio (RR)
+rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
+
+# Delta method for RR
+se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
+ci_rr_lower <- rr - 1.96 * se_rr
+ci_rr_upper <- rr + 1.96 * se_rr
+
+# Create results table
+risk_estimates_from_plr_rse_tbl <- data.frame(
+  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+  Estimate = c(risk0, risk1, rd, rr),
+  Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
+  Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
+)
+
+# SUPERSEDED 95% CI using bootstrapping ----------------------------------------
+# risk_estimates_from_plr_withoutCI <- function(df_long, plr_model, K, interval_type = "month") {
+#   
+#   # Determine column names based on interval type
+#   interval_col <- ifelse(interval_type == "month", "month", "week")
+#   interval_max <- K - 1  # Ensuring indexing starts from 0
+#   interval_days <- ifelse(interval_type == "month", 30, 7)  # Fixed month length of 30 days, same as fn_expand_intervals
+#   
+#   # Expand dataset by creating time intervals 0 to K-1 for each individual
+#   treat0 <- df_long %>%
+#     filter(.data[[interval_col]] == 0) %>%
+#     select(-all_of(interval_col)) %>%  # Remove interval column to re-add it (e.g. we used month in df_long_months, but re-create it again here)
+#     crossing(!!interval_col := 0:interval_max)
+#   
+#   treat0 <- treat0 %>%
+#     mutate(!!paste0(interval_col, "sqr") := .data[[interval_col]]^2) # re-create time squared
+#   
+#   # Create treatment groups (forcing treatment to 0 or 1)
+#   treat0$exp_bin_treat <- 0
+#   treat1 <- treat0
+#   treat1$exp_bin_treat <- 1
+#   
+#   # Predict discrete-time hazards
+#   treat0[[paste0("p.event0")]] <- predict(plr_model, treat0, type = "response")
+#   treat1[[paste0("p.event1")]] <- predict(plr_model, treat1, type = "response")
+#   
+#   # Compute survival probabilities
+#   treat0.surv <- treat0 %>%
+#     group_by(patient_id) %>%
+#     mutate(!!paste0("surv0") := cumprod(1 - .data[[paste0("p.event0")]])) %>%
+#     ungroup()
+#   
+#   treat1.surv <- treat1 %>%
+#     group_by(patient_id) %>%
+#     mutate(!!paste0("surv1") := cumprod(1 - .data[[paste0("p.event1")]])) %>%
+#     ungroup()
+#   
+#   # Compute risk as 1 - survival probability
+#   treat0.surv <- treat0.surv %>%
+#     mutate(!!paste0("risk0") := 1 - .data[[paste0("surv0")]])
+#   
+#   treat1.surv <- treat1.surv %>%
+#     mutate(!!paste0("risk1") := 1 - .data[[paste0("surv1")]])
+#   
+#   # Aggregate risks by time point
+#   risk0 <- aggregate(treat0.surv[c("exp_bin_treat", interval_col, "risk0")], # aggregate in addition by exp_bin_treat not needed, but does no hurt and useful for future trial emulation setup 
+#                      by = list(treat0.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk0")]
+#   
+#   risk1 <- aggregate(treat1.surv[c("exp_bin_treat", interval_col, "risk1")],
+#                      by = list(treat1.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk1")]
+#   
+#   # Merge risk estimates
+#   graph.pred <- merge(risk0, risk1, by = interval_col)
+#   
+#   # Adjust time to reflect end of each interval
+#   graph.pred$time_0 <- graph.pred[[interval_col]] + 1
+#   zero <- data.frame(cbind(0, 0, 0, 1, 0, 0))
+#   zero <- setNames(zero, names(graph.pred))
+#   graph <- rbind(zero, graph.pred)
+#   
+#   # Compute risk differences and risk ratios
+#   graph$rd <- graph$risk1 - graph$risk0
+#   graph$rr <- graph$risk1 / graph$risk0
+#   
+#   return(graph)
+# }
 
 # Generate risk estimates for 39 months follow-up duration. nice, but not needed, since bootstrap below returns also original point estimates
 # graph_months <- risk_estimates_from_plr_withoutCI(df_long_months, plr_model_severecovid, K = 39, interval_type = "month")
@@ -226,8 +323,8 @@ risk_estimates_from_plr_withoutCI <- function(df_long, plr_model, K, interval_ty
 # graph_months$rr[which(graph_months$month==K-1)]
 
 
-# Bootstrapping for 95% CI ------------------------------------------------ 
-# reduce dataset as input into bootstrap?
+# 95% CI using bootstrapping ----------------------------------------------
+# Reduce dataset as input into bootstrap?
 # Adapt in a second step to dynamically include weeks instead of months
 
 # Create input list of ids (eligible persons)
@@ -299,27 +396,27 @@ te_one_timepoint_rd_rr_withCI <- function(data, indices) {
 }
 
 # Run
-set.seed(423)
-te_one_timepoint_rd_rr_withCI <- boot(data = study_ids, statistic = te_one_timepoint_rd_rr_withCI, R = R)
+# set.seed(423)
+# te_one_timepoint_rd_rr_withCI <- boot(data = study_ids, statistic = te_one_timepoint_rd_rr_withCI, R = R)
 
 # Function to extract bootstrapped confidence intervals - but also add a column with original point estimates (without CI)
-extract_ci_boot <- function(boot_obj, index) {
-  ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
-  if (!is.null(ci$percent)) {
-    return(c(ci$percent[4], ci$percent[5]))  # Lower and Upper CI
-  } else {
-    return(c(NA, NA))  # If CI is not available
-  }
-}
-
-# Create results table
-risk_estimates_from_plr_tbl <- data.frame(
-  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate_original = te_one_timepoint_rd_rr_withCI$t0,  # Original estimates
-  Estimate_boot = colMeans(te_one_timepoint_rd_rr_withCI$t),  # Bootstrapped mean estimate
-  Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_one_timepoint_rd_rr_withCI, i)[1]),
-  Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_one_timepoint_rd_rr_withCI, i)[2])
-)
+# extract_ci_boot <- function(boot_obj, index) {
+#   ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
+#   if (!is.null(ci$percent)) {
+#     return(c(ci$percent[4], ci$percent[5]))  # Lower and Upper CI
+#   } else {
+#     return(c(NA, NA))  # If CI is not available
+#   }
+# }
+# 
+# # Create results table
+# risk_estimates_from_plr_boot_tbl <- data.frame(
+#   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+#   Estimate_original = te_one_timepoint_rd_rr_withCI$t0,  # Original estimates
+#   Estimate_boot = colMeans(te_one_timepoint_rd_rr_withCI$t),  # Bootstrapped mean estimate
+#   Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_one_timepoint_rd_rr_withCI, i)[1]),
+#   Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_one_timepoint_rd_rr_withCI, i)[2])
+# )
 
 
 # Marginal parametric cumulative incidence (risk) curves ------------------
@@ -386,8 +483,8 @@ te_all_timepoints_withCI <- function(data, indices) {
   return(c(graph$risk0, graph$risk1))
 }
 
-set.seed(423)
-te_all_timepoints_withCI <- boot(data = study_ids, statistic = te_all_timepoints_withCI, R = R)
+# set.seed(423)
+# te_all_timepoints_withCI <- boot(data = study_ids, statistic = te_all_timepoints_withCI, R = R)
 
 # Check the dimensions of the bootstrapped results
 # dim(te_all_timepoints_withCI$t)  # Should be (R, 2 * N=timepoints) because risk0 and risk1 are concatenated
@@ -395,77 +492,90 @@ te_all_timepoints_withCI <- boot(data = study_ids, statistic = te_all_timepoints
 # te_all_timepoints_withCI$t[1, ]
 
 # Create an empty data frame to store the structured output for the plot
-risk_graph <- data.frame(
-  time = 0:K,
-  mean.0 = numeric(K+1),
-  ll.0 = numeric(K+1),
-  ul.0 = numeric(K+1),
-  mean.1 = numeric(K+1),
-  ll.1 = numeric(K+1),
-  ul.1 = numeric(K+1)
-)
+# risk_graph <- data.frame(
+#   time = 0:K,
+#   mean.0 = numeric(K+1),
+#   ll.0 = numeric(K+1),
+#   ul.0 = numeric(K+1),
+#   mean.1 = numeric(K+1),
+#   ll.1 = numeric(K+1),
+#   ul.1 = numeric(K+1)
+# )
+# 
+# # Calculate the mean and confidence intervals for control group (mean_risk0) and treatment group (mean_risk1)
+# # We assume that `te_all_timepoints_withCI$t` holds the bootstrapped estimates
+# 
+# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:40], 2, mean)  # Mean for control group
+# mean_risk1 <- apply(te_all_timepoints_withCI$t[, 41:80], 2, mean) # Mean for treatment group
+# K <- 39
+# 
+# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, mean)  # Mean for control group; 1:40 (first half contains risk0)
+# mean_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, mean) # Mean for treatment group; 41:80 (second half contains risk1)
+# 
+# # Calculate 2.5th and 97.5th percentiles (CI) for control and treatment groups
+# ll_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025)) # Lower bound CI for control
+# ul_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975)) # Upper bound CI for control
+# 
+# ll_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025)) # Lower bound CI for treatment
+# ul_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975)) # Upper bound CI for treatment
+# 
+# # Populate the `risk.boot.graph` data frame
+# risk_graph$mean.0 <- mean_risk0
+# risk_graph$ll.0 <- ll_risk0
+# risk_graph$ul.0 <- ul_risk0
+# risk_graph$mean.1 <- mean_risk1
+# risk_graph$ll.1 <- ll_risk1
+# risk_graph$ul.1 <- ul_risk1
+# 
+# # Create plot
+# plot_cum_risk <- ggplot(risk_graph,
+#                       aes(x=time)) +
+#   geom_line(aes(y = mean.1, # create line for intervention group
+#                 color = "Metformin"), linewidth = 1.5) +
+#   geom_ribbon(aes(ymin = ll.1, ymax = ul.1, fill = "Metformin"), alpha = 0.4) +
+#   geom_line(aes(y = mean.0, # create line for control group
+#                 color = "No Metformin"), linewidth = 1.5) +
+#   geom_ribbon(aes(ymin = ll.0, ymax = ul.0, fill = "No Metformin"), alpha=0.4) +
+#   xlab("Months") +
+#   # scale_x_continuous(limits = c(0, 39), # format x axis
+#   #                    breaks=c(0, 6, 12, 24, 36, 39)) +
+#   ylab("Cumulative Incidence (%)") + # label y axis
+#   # scale_y_continuous(limits=c(0, 0.125), # format y axis
+#   #                    breaks=c(0, 0.025, 0.05, 0.075, 0.1, 0.125),
+#   #                    labels=c("0.0%", "2.5%", "5.0%",
+#   #                             "7.5%", "10.0%", "12.5%")) +
+#   theme_minimal()+
+#   theme(axis.text = element_text(size=14), legend.position.inside = c(0.2, 0.8),
+#         axis.line = element_line(colour = "black"),
+#         legend.title = element_blank(),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         panel.grid.major.y = element_blank())+
+#   scale_color_manual(values=c("#E7B800", # set colors
+#                               "#2E9FDF"),
+#                      breaks=c('No Metformin',
+#                               'Metformin')) +
+#   scale_fill_manual(values=c("#E7B800", # set colors
+#                              "#2E9FDF"),
+#                     breaks=c('No Metformin',
+#                              'Metformin'))
 
-# Calculate the mean and confidence intervals for control group (mean_risk0) and treatment group (mean_risk1)
-# We assume that `te_all_timepoints_withCI$t` holds the bootstrapped estimates
-
-mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:40], 2, mean)  # Mean for control group
-mean_risk1 <- apply(te_all_timepoints_withCI$t[, 41:80], 2, mean) # Mean for treatment group
-K <- 39
-
-mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, mean)  # Mean for control group; 1:40 (first half contains risk0)
-mean_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, mean) # Mean for treatment group; 41:80 (second half contains risk1)
-
-# Calculate 2.5th and 97.5th percentiles (CI) for control and treatment groups
-ll_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025)) # Lower bound CI for control
-ul_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975)) # Upper bound CI for control
-
-ll_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025)) # Lower bound CI for treatment
-ul_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975)) # Upper bound CI for treatment
-
-# Populate the `risk.boot.graph` data frame
-risk_graph$mean.0 <- mean_risk0
-risk_graph$ll.0 <- ll_risk0
-risk_graph$ul.0 <- ul_risk0
-risk_graph$mean.1 <- mean_risk1
-risk_graph$ll.1 <- ll_risk1
-risk_graph$ul.1 <- ul_risk1
-
-# Create plot
-plot_cum_risk <- ggplot(risk_graph,
-                      aes(x=time)) +
-  geom_line(aes(y = mean.1, # create line for intervention group
-                color = "Metformin"), linewidth = 1.5) +
-  geom_ribbon(aes(ymin = ll.1, ymax = ul.1, fill = "Metformin"), alpha = 0.4) +
-  geom_line(aes(y = mean.0, # create line for control group
-                color = "No Metformin"), linewidth = 1.5) +
-  geom_ribbon(aes(ymin = ll.0, ymax = ul.0, fill = "No Metformin"), alpha=0.4) +
-  xlab("Months") +
-  # scale_x_continuous(limits = c(0, 39), # format x axis
-  #                    breaks=c(0, 6, 12, 24, 36, 39)) +
-  ylab("Cumulative Incidence (%)") + # label y axis
-  # scale_y_continuous(limits=c(0, 0.125), # format y axis
-  #                    breaks=c(0, 0.025, 0.05, 0.075, 0.1, 0.125),
-  #                    labels=c("0.0%", "2.5%", "5.0%",
-  #                             "7.5%", "10.0%", "12.5%")) +
-  theme_minimal()+
-  theme(axis.text = element_text(size=14), legend.position.inside = c(0.2, 0.8),
-        axis.line = element_line(colour = "black"),
-        legend.title = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid.major.y = element_blank())+
-  scale_color_manual(values=c("#E7B800", # set colors
-                              "#2E9FDF"),
-                     breaks=c('No Metformin',
-                              'Metformin')) +
-  scale_fill_manual(values=c("#E7B800", # set colors
-                             "#2E9FDF"),
-                    breaks=c('No Metformin',
-                             'Metformin'))
+# Use TrialEmulation package instead -------------------------------------
+# library(TrialEmulation)
+# risk_estimates_from_plr_package <- trial_msm(
+#   data = df_long_months, 
+#   estimand_type = "ITT", 
+#   outcome_cov = covariate_names,
+#   model_var = "exp_bin_treat", 
+#   glm_function = "parglm", 
+#   use_sample_weights = FALSE, 
+#   analysis_weights = "unweighted" # no artificial censoring weights
+# )
 
 # Save output -------------------------------------------------------------
 # Risk estimates from plr model
-write.csv(risk_estimates_from_plr_tbl, file = here::here("output", "te", "pooled_log_reg", "risk_estimates_from_plr_severecovid.csv"))
+write.csv(risk_estimates_from_plr_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "risk_estimates_from_plr_rse_severecovid.csv"))
+# write.csv(risk_estimates_from_plr_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "risk_estimates_from_plr_boot_severecovid.csv"))
 # Marginal parametric cumulative incidence (risk) curves from plr model, with 95% CI
-ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_severecovid.png"), plot_cum_risk, width = 20, height = 20, units = "cm")
+# ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_severecovid.png"), plot_cum_risk, width = 20, height = 20, units = "cm")
