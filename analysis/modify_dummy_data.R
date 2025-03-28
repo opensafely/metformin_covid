@@ -13,6 +13,7 @@ library(dplyr)
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
+mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
 
 # Set seed ----------------------------------------------------------------
 set.seed(36)
@@ -103,19 +104,13 @@ data_processed <- data_processed %>%
   mutate(cov_bin_obesity = factor(cov_bin_obesity, levels = cov_bin_obesity_categories))
 
 # Modify dates ------------------------------------------------------------
-# 1) Ensure they all have a diabetes and elig_date_t2dm are in window
-## Replace missing dates by sampling from available dates
-start_date_elig_date_t2dm <- as.Date("2018-09-01")
-end_date_elig_date_t2dm <- as.Date("2019-05-01")
-
+# 1) Ensure they all have a diabetes and elig_date_t2dm are in the window (mid2018 to mid2019)
+# Define the range (mid2018 is taken from metadates.R)
+end_date_elig_date_t2dm <- as.Date("2019-07-01")
+# Replace missing elig_date_t2dm values with random dates
 data_processed <- data_processed %>%
-  mutate(elig_date_t2dm = if_else(
-    is.na(elig_date_t2dm),
-    sample(elig_date_t2dm[!is.na(elig_date_t2dm)], size = 1, replace = TRUE),
-    elig_date_t2dm
-  ))
-data_processed <- data_processed %>%
-  mutate(elig_date_t2dm = as.Date(pmin(pmax(elig_date_t2dm, start_date_elig_date_t2dm), end_date_elig_date_t2dm), origin = "1970-01-01"))
+  mutate(elig_date_t2dm = sample(seq(mid2018_date, end_date_elig_date_t2dm, by = "day"), 
+                                 n(), replace = TRUE))
 
 # 2) Ensure all exposure and outcome dates are after baseline date (elig_date_t2dm)
 ## If the date is NA, leave it as NA.
@@ -147,7 +142,7 @@ data_processed <- data_processed %>%
   ungroup() %>%
   mutate(across(all_of(date_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
-# Treat cens_date_dereg separately: It is completely missing; impute 5% of values
+# Treat cens_date_dereg separately since it is completely missing; impute 5% of values
 generate_cens_date_dereg <- function(elig_date, studyend_date) {
   if (runif(1) <= 0.05) {  # 5% chance to impute a random date
     if (as.Date(elig_date) + 1 <= as.Date(studyend_date)) {
