@@ -101,10 +101,6 @@ actions:
       --censor_date=cox_date_severecovid
       --max_fup=990
       --plot=TRUE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
         km_treat_estimates: output/te/km/*.csv
         png: output/te/km/*.png
 
@@ -115,7 +111,6 @@ actions:
     outputs:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
-  
 
 
   
