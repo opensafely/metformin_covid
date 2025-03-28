@@ -126,24 +126,40 @@ covariate_names <- names(df) %>%
 # print(covariate_names)
 
 # Pooled logistic regression ----------------------------------------------
+### Pooled logistic regression
 ## Pooled logistic regression models naturally allow for the parametric estimation of risks, and thus risk differences
 ## and risk ratios. Also, these models can be specified such that the effect of the treatment can vary over time, 
 ## as opposed to relying on a proportional hazards assumption.
-## We're modeling/simulating expected (counterfactual) risks over time under the assumption that individuals could have been followed until K-1, not individuals' observed data! Hence everyone has risk data until until K-1 
+## We're modeling/simulating expected (counterfactual) risks over time under the assumption that 
+## individuals could have been followed until K-1. Hence everyone has risk data until until K-1.
 ## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
+## Some general details regarding the PLR model:
+## Age is included with splines
+## CAVE: Make sure not to include follow-up time AFTER censoring event (here it is ok, see above, fn_expand_intervals)
+## CAVE: Currently cov_cat_region is included as any other confounder - however in protocol we specified cov_cat_region as a stratification. Discuss, rethink.
+## In this case our max follow-up is: K = 39 months or K = 169 weeks (from earliest possible landmark_date (01.01.2019) to study end (01.04.2022))
 
-## Use standardization to adjust for time-fixed baseline confounding
+### Adjustment for baseline confounding
+## Adjustment for baseline confounding, which can be conceptualized as an attempt to emulate randomization in an observational analysis, 
+## can be accomplished using a variety of methods. 
+## I will use (i) standardization and (ii) inverse probability weighting (IPW) and (iii) their combination (to obtain more precise estimates)
+
+## (i) Standardization
 ## The standardized outcome among the treated and untreated groups is estimated by taking a weighted average of the conditional
-## outcomes, using the prevalence of the baseline confounders in the observed study population as weights.
+## outcomes, using the prevalence of the baseline confounders in the observed study population as weights. This entails:
 ## (1) fitting an outcome regression model conditional on the confounders listed above and 
 ## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
-## Model follow-up time in the outcome regression model using linear and quadratic terms. Include product terms between the treatment group indicator and follow-up time only. 
+## We model the follow-up time in the outcome regression model using linear and quadratic terms and include product terms between the treatment group indicator and follow-up time.
+## Other follow-up time modelling is possible (cubic, splines).
 
-## Fit pooled logistic regression model with covariates
-## Age is included with splines
-## CAVE: Make sure not to include follow-up time AFTER censoring event (here it is ok, see above how fn_expand_intervals is used)
-## CAVE: Included cov_cat_region as any other confounder! Rethink
-## In this case our max follow-up is: K = 39 months or K = 169 weeks (from earliest possible landmark_date (01.01.2019) to study end (01.04.2022))
+## (ii) IPW
+## Like standardization, IPW can also be used to obtain marginal estimates of causal effects. 
+## Briefly, IPW can be used to create a pseudopopulation (i.e.,a hypothetical population) in which treatment is independent of the measured confounders.
+## Informally, the denominator of the inverse probability weight for each individual is the probability of receiving their observed treatment value, given their confounder history.
+
+
+# Standardization ---------------------------------------------------------
+
 
 # MONTH
 K <- 39 # Define total follow-up (currently, all is in months)
