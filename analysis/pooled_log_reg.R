@@ -1,9 +1,17 @@
 ####
 ## This script does the following:
 # 1. Import processed data
-# 2. Runs the pooled logistic regression
-# 3. Saves all output
+# 2. Restructure the one-person-per-row data into a multiple-event-per-person data
+# 3. Estimate adjusted but marginal risks per group, risk differences, risk ratios using (i) standardization and (ii) inverse probability weighting (IPW), 
+#    with the help of pooled logistic regression, and derive 95% CI via robust standard error/delta method and bootstrapping
+# 4. Create marginal parametric cumulative incidence (risk) curves incl. 95% CI (via bootstrapping)
+# 5. Save all output
 ####
+
+
+# ToDo --------------------------------------------------------------------
+# a) Adapt all functions to use months or weeks dynamically
+
 
 # Import libraries and functions ------------------------------------------
 library(arrow)
@@ -11,24 +19,23 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(splines)
-
+library(purrr)
 library(sandwich) # for robust standard errors
-library(lmtest) # For hypothesis testing with robust SEs
+library(lmtest) # For hypothesis testing with robust standard errors
 library(car) # For deltaMethod
-
-library(purrr) # for data wrangling
 library(boot)
-
 library(ggplot2)
-# library(speedglm) # not available in OpenSAFELY
-
+# library(speedglm) # not available in OpenSAFELY !
 source(here::here("analysis", "functions", "fn_expand_intervals.R"))
+
 
 # Create directories for output -------------------------------------------
 fs::dir_create(here::here("output", "te", "pooled_log_reg"))
 
+
 # Import the data ---------------------------------------------------------
 df <- read_feather(here("output", "data", "data_processed.arrow"))
+
 
 # Import dates ------------------------------------------------------------
 source(here::here("analysis", "metadates.R"))
@@ -36,11 +43,13 @@ source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
+
 # Add splines ------------------------------------------------------------- ## define in data_process
 # Compute knot locations based on percentiles, according to study protocol
 age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 df <- df %>%
   mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
+
 
 # Create the data setup needed for pooled log reg -------------------------
 df <- df %>% 
@@ -94,22 +103,23 @@ df <- df %>% # add this to data_process
 stop_date_columns <- c("out_date_severecovid_afterlandmark", "out_date_death_afterlandmark", "out_date_ltfu_afterlandmark")
 outcome_date_variable <- "out_date_severecovid_afterlandmark"
 
-# Apply the function, choose either weeks or months
-df_long_weeks <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "week")
+# Apply the function, choose either weeks or months, currently only using months, but works for both.
+# df_long_weeks <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "week")
 df_long_months <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "month")
-
-# double-check
+# double-check:
 # df_long_months %>%
 #   select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
 #          out_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome,
 #          qa_date_of_death, cov_cat_sex, cov_num_age, cov_cat_deprivation_5) %>%
 #   View()
 
+
 # Define treatment variable -------------------------------------------------- ## define in data_process
 # Keep it at 1 and 0 for model below
 df <- df %>% 
   mutate(exp_bin_treat = case_when(exp_bin_treat == 2 ~ 0,
                                    exp_bin_treat == 1 ~ 1))
+
 
 # Define covariates ----------------------------------------------------------
 covariate_names <- names(df) %>%
@@ -125,21 +135,21 @@ covariate_names <- names(df) %>%
             , "cov_cat_age", "cov_num_age")) 
 # print(covariate_names)
 
-# Pooled logistic regression ----------------------------------------------
-### Pooled logistic regression
+
+# Background description -----------------------------------------------------
+### a) Pooled logistic regression
 ## Pooled logistic regression models naturally allow for the parametric estimation of risks, and thus risk differences
 ## and risk ratios. Also, these models can be specified such that the effect of the treatment can vary over time, 
 ## as opposed to relying on a proportional hazards assumption.
 ## We're modeling/simulating expected (counterfactual) risks over time under the assumption that 
 ## individuals could have been followed until K-1. Hence everyone has risk data until until K-1.
 ## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
-## Some general details regarding the PLR model:
+## Some general details regarding the PLR data setup/model:
 ## Age is included with splines
-## CAVE: Make sure not to include follow-up time AFTER censoring event (here it is ok, see above, fn_expand_intervals)
-## CAVE: Currently cov_cat_region is included as any other confounder - however in protocol we specified cov_cat_region as a stratification. Discuss, rethink.
-## In this case our max follow-up is: K = 39 months or K = 169 weeks (from earliest possible landmark_date (01.01.2019) to study end (01.04.2022))
+## I made sure not to include follow-up time AFTER censoring event (see above, fn_expand_intervals)
+## I currently include cov_cat_region as another confounder - however, in protocol we specified cov_cat_region as a stratification. Discuss, rethink.
 
-### Adjustment for baseline confounding
+### b) Adjustment for baseline confounding
 ## Adjustment for baseline confounding, which can be conceptualized as an attempt to emulate randomization in an observational analysis, 
 ## can be accomplished using a variety of methods. 
 ## I will use (i) standardization and (ii) inverse probability weighting (IPW) and (iii) their combination (to obtain more precise estimates)
@@ -158,11 +168,15 @@ covariate_names <- names(df) %>%
 ## Informally, the denominator of the inverse probability weight for each individual is the probability of receiving their observed treatment value, given their confounder history.
 
 
-# Standardization ---------------------------------------------------------
+# Define interval data set and number of bootstraps ----------------------------
+## I currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
+## If weeks, then K = 169 weeks
+K <- 39 # Total follow-up
+R <- 2 # Total bootstraps (ideally >500)
 
 
-# MONTH
-K <- 39 # Define total follow-up (currently, all is in months)
+# (i) Standardization ---------------------------------------------------------
+## (1) fitting an outcome regression model conditional on the confounders listed above
 df_long_months$monthsqr <- df_long_months$month^2
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
                                             paste(covariate_names, collapse = " + ")))
@@ -171,11 +185,7 @@ plr_model_severecovid <- glm(plr_formula_severecovid,
                              data = df_long_months) 
 # summary(plr_model_severecovid)
 
-
-# 95% CI using robust standard errors and the delta method for RD and RR----
-## Robust SEs (sandwich estimator): Accounts for heteroskedasticity and potential model misspecifications.
-## Delta method: Used for computing confidence intervals for functions of regression coefficients (RD, RR).
-
+## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
 # Create dataset with all time points for each individual under each treatment level
 df_pred <- df_long_months %>% filter(month == 0) %>% select(-month) %>% crossing(month = 0:(K-1))
 df_pred$monthsqr <- df_pred$month^2
@@ -204,34 +214,37 @@ df_pred1$risk1 <- 1 - df_pred1$surv1
 risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
 risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
 
-# Put all in 1 data frame (for a plot but also to extract specific time points)
+# Put all in 1 data frame
 graph.pred <- merge(risk0, risk1, by=c("month"))
+
 # Edit data frame to reflect that risks are estimated at the END of each interval
 graph.pred$time_0 <- graph.pred$month + 1
 zero <- data.frame(cbind(0,0,0,1,0,0))
 zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot (but without 95% CI, see below)
+graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
 
 # Add RD and RR
 graph$rd <- graph$risk1-graph$risk0
 graph$rr <- graph$risk1/graph$risk0
 
-# Extract overall risk estimate (end of follow-up)
+# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
 risk0 <- graph$risk0[which(graph$month==K-1)] 
 risk1 <- graph$risk1[which(graph$month==K-1)]
 rd <- graph$rd[which(graph$month==K-1)]
 rr <- graph$rr[which(graph$month==K-1)]
 
+
+# (i) Standardization incl. 95% CI using robust standard errors and the delta method for RD and RR ----
 # Compute robust standard errors
 vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
 robust_se <- sqrt(diag(vcov_robust))
 coefs <- coef(plr_model_severecovid)
 
-# Compute standard errors for the two arms
+# standard errors for the two arms
 se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
 se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
 
-# Compute confidence intervals for predicted risks using normal approximation
+# confidence intervals for predicted risks using normal approximation
 ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
 ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
 
@@ -259,96 +272,11 @@ risk_estimates_from_plr_rse_tbl <- data.frame(
   Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
 )
 
-# SUPERSEDED 95% CI using bootstrapping ----------------------------------------
-# risk_estimates_from_plr_withoutCI <- function(df_long, plr_model, K, interval_type = "month") {
-#   
-#   # Determine column names based on interval type
-#   interval_col <- ifelse(interval_type == "month", "month", "week")
-#   interval_max <- K - 1  # Ensuring indexing starts from 0
-#   interval_days <- ifelse(interval_type == "month", 30, 7)  # Fixed month length of 30 days, same as fn_expand_intervals
-#   
-#   # Expand dataset by creating time intervals 0 to K-1 for each individual
-#   treat0 <- df_long %>%
-#     filter(.data[[interval_col]] == 0) %>%
-#     select(-all_of(interval_col)) %>%  # Remove interval column to re-add it (e.g. we used month in df_long_months, but re-create it again here)
-#     crossing(!!interval_col := 0:interval_max)
-#   
-#   treat0 <- treat0 %>%
-#     mutate(!!paste0(interval_col, "sqr") := .data[[interval_col]]^2) # re-create time squared
-#   
-#   # Create treatment groups (forcing treatment to 0 or 1)
-#   treat0$exp_bin_treat <- 0
-#   treat1 <- treat0
-#   treat1$exp_bin_treat <- 1
-#   
-#   # Predict discrete-time hazards
-#   treat0[[paste0("p.event0")]] <- predict(plr_model, treat0, type = "response")
-#   treat1[[paste0("p.event1")]] <- predict(plr_model, treat1, type = "response")
-#   
-#   # Compute survival probabilities
-#   treat0.surv <- treat0 %>%
-#     group_by(patient_id) %>%
-#     mutate(!!paste0("surv0") := cumprod(1 - .data[[paste0("p.event0")]])) %>%
-#     ungroup()
-#   
-#   treat1.surv <- treat1 %>%
-#     group_by(patient_id) %>%
-#     mutate(!!paste0("surv1") := cumprod(1 - .data[[paste0("p.event1")]])) %>%
-#     ungroup()
-#   
-#   # Compute risk as 1 - survival probability
-#   treat0.surv <- treat0.surv %>%
-#     mutate(!!paste0("risk0") := 1 - .data[[paste0("surv0")]])
-#   
-#   treat1.surv <- treat1.surv %>%
-#     mutate(!!paste0("risk1") := 1 - .data[[paste0("surv1")]])
-#   
-#   # Aggregate risks by time point
-#   risk0 <- aggregate(treat0.surv[c("exp_bin_treat", interval_col, "risk0")], # aggregate in addition by exp_bin_treat not needed, but does no hurt and useful for future trial emulation setup 
-#                      by = list(treat0.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk0")]
-#   
-#   risk1 <- aggregate(treat1.surv[c("exp_bin_treat", interval_col, "risk1")],
-#                      by = list(treat1.surv[[interval_col]]), FUN = mean)[c("exp_bin_treat", interval_col, "risk1")]
-#   
-#   # Merge risk estimates
-#   graph.pred <- merge(risk0, risk1, by = interval_col)
-#   
-#   # Adjust time to reflect end of each interval
-#   graph.pred$time_0 <- graph.pred[[interval_col]] + 1
-#   zero <- data.frame(cbind(0, 0, 0, 1, 0, 0))
-#   zero <- setNames(zero, names(graph.pred))
-#   graph <- rbind(zero, graph.pred)
-#   
-#   # Compute risk differences and risk ratios
-#   graph$rd <- graph$risk1 - graph$risk0
-#   graph$rr <- graph$risk1 / graph$risk0
-#   
-#   return(graph)
-# }
 
-# Generate risk estimates for 39 months follow-up duration. nice, but not needed, since bootstrap below returns also original point estimates
-# graph_months <- risk_estimates_from_plr_withoutCI(df_long_months, plr_model_severecovid, K = 39, interval_type = "month")
-
-### Use pooled logistic regression estimates to compute causal estimates, but only point estimates
-# end of follow-up estimates (i.e. "the overall risk")
-
-# K <- 39 # total follow-up (here, months)
-# graph_months$risk0[which(graph_months$month==K-1)]
-# graph_months$risk1[which(graph_months$month==K-1)]
-# graph_months$rd[which(graph_months$month==K-1)]
-# graph_months$rr[which(graph_months$month==K-1)]
-
-
-# 95% CI using bootstrapping ----------------------------------------------
-# Reduce dataset as input into bootstrap?
-# Adapt in a second step to dynamically include weeks instead of months
-
-# Create input list of ids (eligible persons)
-K <- 39 # Define total follow-up (currently, all is in months)
-R <- 2 # Define number of bootstraps
+# (i) Standardization incl. 95% CI bootstrapping ---------------
 study_ids <- data.frame(patient_id = df$patient_id)
 
-# Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 time point (e.g. overall risk)
+# Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 risk time point
 te_one_timepoint_rd_rr_withCI <- function(data, indices) {
   # Select individuals into each bootstrapped sample
   ids <- data$patient_id
@@ -402,7 +330,6 @@ te_one_timepoint_rd_rr_withCI <- function(data, indices) {
   zero <- data.frame(cbind(0,0,0,1,0,0))
   zero <- setNames(zero,names(graph.pred))
   graph <- rbind(zero, graph.pred)
-  
   graph$rd <- graph$risk1-graph$risk0
   graph$rr <- graph$risk1/graph$risk0
   return(c(graph$risk0[which(graph$month==K-1)], # adapt time point if necessary
@@ -415,17 +342,17 @@ te_one_timepoint_rd_rr_withCI <- function(data, indices) {
 # set.seed(423)
 # te_one_timepoint_rd_rr_withCI <- boot(data = study_ids, statistic = te_one_timepoint_rd_rr_withCI, R = R)
 
-# Function to extract bootstrapped confidence intervals - but also add a column with original point estimates (without CI)
-# extract_ci_boot <- function(boot_obj, index) {
-#   ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
-#   if (!is.null(ci$percent)) {
-#     return(c(ci$percent[4], ci$percent[5]))  # Lower and Upper CI
-#   } else {
-#     return(c(NA, NA))  # If CI is not available
-#   }
-# }
-# 
-# # Create results table
+# Function to extract bootstrapped confidence intervals - and keep a column with the original point estimates (without CI)
+extract_ci_boot <- function(boot_obj, index) {
+  ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
+  if (!is.null(ci$percent)) {
+    return(c(ci$percent[4], ci$percent[5])) # Lower and Upper CI for the bootstrapped values
+  } else {
+    return(c(NA, NA)) # for the original value
+  }
+}
+
+# # Create the results table
 # risk_estimates_from_plr_boot_tbl <- data.frame(
 #   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
 #   Estimate_original = te_one_timepoint_rd_rr_withCI$t0,  # Original estimates
@@ -435,13 +362,9 @@ te_one_timepoint_rd_rr_withCI <- function(data, indices) {
 # )
 
 
-# Marginal parametric cumulative incidence (risk) curves ------------------
-# Create input list of ids (eligible persons)
-K <- 39 # Define total follow-up (currently, all is in months)
-R <- 2 # Define number of bootstraps
+# (i) Standardization, marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping ----
 study_ids <- data.frame(patient_id = df$patient_id)
-
-# Bootstrap function
+# same function as above, except that a) it returns all risk timepoints incl. 95% CI, and b) no RD and RR
 te_all_timepoints_withCI <- function(data, indices) {
   # Select individuals into each bootstrapped sample
   ids <- data$patient_id
@@ -503,7 +426,7 @@ te_all_timepoints_withCI <- function(data, indices) {
 # te_all_timepoints_withCI <- boot(data = study_ids, statistic = te_all_timepoints_withCI, R = R)
 
 # Check the dimensions of the bootstrapped results
-# dim(te_all_timepoints_withCI$t)  # Should be (R, 2 * N=timepoints) because risk0 and risk1 are concatenated
+# dim(te_all_timepoints_withCI$t) # Should be (R, 2 * N=timepoints) because risk0 and risk1 are concatenated
 # Inspect the first bootstrap iteration's results
 # te_all_timepoints_withCI$t[1, ]
 
@@ -518,22 +441,18 @@ te_all_timepoints_withCI <- function(data, indices) {
 #   ul.1 = numeric(K+1)
 # )
 # 
-# # Calculate the mean and confidence intervals for control group (mean_risk0) and treatment group (mean_risk1)
-# # We assume that `te_all_timepoints_withCI$t` holds the bootstrapped estimates
+# # Calculate the mean and confidence intervals
+# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:40], 2, mean)
+# mean_risk1 <- apply(te_all_timepoints_withCI$t[, 41:80], 2, mean)
 # 
-# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:40], 2, mean)  # Mean for control group
-# mean_risk1 <- apply(te_all_timepoints_withCI$t[, 41:80], 2, mean) # Mean for treatment group
-# K <- 39
+# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, mean) # Mean for control group across 1:40 (first half contains risk0)
+# mean_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, mean) # Mean for treatment group across 41:80 (second half contains risk1)
 # 
-# mean_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, mean)  # Mean for control group; 1:40 (first half contains risk0)
-# mean_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, mean) # Mean for treatment group; 41:80 (second half contains risk1)
+# ll_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025))
+# ul_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975))
 # 
-# # Calculate 2.5th and 97.5th percentiles (CI) for control and treatment groups
-# ll_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025)) # Lower bound CI for control
-# ul_risk0 <- apply(te_all_timepoints_withCI$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975)) # Upper bound CI for control
-# 
-# ll_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025)) # Lower bound CI for treatment
-# ul_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975)) # Upper bound CI for treatment
+# ll_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025))
+# ul_risk1 <- apply(te_all_timepoints_withCI$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975))
 # 
 # # Populate the `risk.boot.graph` data frame
 # risk_graph$mean.0 <- mean_risk0
@@ -577,17 +496,6 @@ te_all_timepoints_withCI <- function(data, indices) {
 #                     breaks=c('No Metformin',
 #                              'Metformin'))
 
-# Use TrialEmulation package instead -------------------------------------
-# library(TrialEmulation)
-# risk_estimates_from_plr_package <- trial_msm(
-#   data = df_long_months, 
-#   estimand_type = "ITT", 
-#   outcome_cov = covariate_names,
-#   model_var = "exp_bin_treat", 
-#   glm_function = "parglm", 
-#   use_sample_weights = FALSE, 
-#   analysis_weights = "unweighted" # no artificial censoring weights
-# )
 
 # Save output -------------------------------------------------------------
 # Risk estimates from plr model
