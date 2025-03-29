@@ -99,20 +99,6 @@ df <- df %>% # add this to data_process
                                             TRUE ~ as.Date(NA))
   )
 
-# Expand the dataset into intervals and assign primary outcome (out_date_severecovid_afterlandmark), while censoring at the other pre-defined event date
-stop_date_columns <- c("out_date_severecovid_afterlandmark", "out_date_death_afterlandmark", "out_date_ltfu_afterlandmark")
-outcome_date_variable <- "out_date_severecovid_afterlandmark"
-
-# Apply the function, choose either weeks or months, currently only using months, but works for both.
-# df_long_weeks <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "week")
-df_long_months <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "month")
-# double-check:
-# df_long_months %>%
-#   select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
-#          out_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome,
-#          qa_date_of_death, cov_cat_sex, cov_num_age, cov_cat_deprivation_5) %>%
-#   View()
-
 
 # Define treatment variable -------------------------------------------------- ## define in data_process
 # Keep it at 1 and 0 for model below
@@ -136,6 +122,22 @@ covariate_names <- names(df) %>%
 # print(covariate_names)
 
 
+# Expand the dataset ------------------------------------------------------
+# Expand the dataset into intervals and assign primary outcome (out_date_severecovid_afterlandmark), while censoring at the other pre-defined event date
+stop_date_columns <- c("out_date_severecovid_afterlandmark", "out_date_death_afterlandmark", "out_date_ltfu_afterlandmark")
+outcome_date_variable <- "out_date_severecovid_afterlandmark"
+
+# Apply the function, choose either weeks or months, currently only using months, but works for both.
+# df_long_weeks <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "week")
+df_long_months <- fn_expand_intervals(df, studyend_date, stop_date_columns, outcome_date_variable, interval_type = "month")
+# double-check:
+# df_long_months %>%
+#   select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
+#          out_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome,
+#          qa_date_of_death, cov_cat_sex, cov_num_age, cov_cat_deprivation_5) %>%
+#   View()
+
+
 # Background description -----------------------------------------------------
 ### a) Pooled logistic regression
 ## Pooled logistic regression models naturally allow for the parametric estimation of risks, and thus risk differences
@@ -147,12 +149,12 @@ covariate_names <- names(df) %>%
 ## Some general details regarding the PLR data setup/model:
 ## Age is included with splines
 ## I made sure not to include follow-up time AFTER censoring event (see above, fn_expand_intervals)
-## I currently include cov_cat_region as another confounder - however, in protocol we specified cov_cat_region as a stratification. Discuss, rethink.
+## I currently include cov_cat_region as another confounder - however, in the protocol we specified cov_cat_region as a stratification. Discuss, rethink.
 
 ### b) Adjustment for baseline confounding
 ## Adjustment for baseline confounding, which can be conceptualized as an attempt to emulate randomization in an observational analysis, 
 ## can be accomplished using a variety of methods. 
-## I will use (i) standardization and (ii) inverse probability weighting (IPW) and (iii) their combination (to obtain more precise estimates)
+## I will use (i) standardization and (ii) inverse probability weighting (IPW) and (iii) their combination
 
 ## (i) Standardization
 ## The standardized outcome among the treated and untreated groups is estimated by taking a weighted average of the conditional
@@ -160,12 +162,18 @@ covariate_names <- names(df) %>%
 ## (1) fitting an outcome regression model conditional on the confounders listed above and 
 ## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
 ## We model the follow-up time in the outcome regression model using linear and quadratic terms and include product terms between the treatment group indicator and follow-up time.
-## Other follow-up time modelling is possible (cubic, splines).
+## Other follow-up time modelling would be possible (cubic, splines), I will stick to linear and quadratic term.
 
 ## (ii) IPW
 ## Like standardization, IPW can also be used to obtain marginal estimates of causal effects. 
 ## Briefly, IPW can be used to create a pseudopopulation (i.e.,a hypothetical population) in which treatment is independent of the measured confounders.
 ## Informally, the denominator of the inverse probability weight for each individual is the probability of receiving their observed treatment value, given their confounder history.
+## Unstabilized and stabilized weights can be used, I will focus on stabilized
+## Truncation/trimming can be applied to avoid extreme weights, I will explore this in addition.
+
+## (iii) Combination of above, useful when:
+## If we need to adjust for additional baseline confounding that can't be included when creating IPW (e.g. baseline calendar week/month in sequential trial setup), then we can create IPW first and then standardize to the empirical distribution of baseline calendar week/month in the dataset
+## If we want to incorporate time-varying confounding, e.g. censoring weights or adherence weights (per protocol analysis), then standardization alone is not possible anymore, while IPW can be easily multiplied and incoporate time-varying covariates
 
 
 # Define interval data set and number of bootstraps ----------------------------
@@ -495,6 +503,21 @@ te_all_timepoints_withCI <- function(data, indices) {
 #                              "#2E9FDF"),
 #                     breaks=c('No Metformin',
 #                              'Metformin'))
+
+
+# (ii) IPW ----------------------------------------------------------------
+## RETHINK about including region as stratification factor! 
+## RETHINK about bootstrapping by arm
+## In this scenario IPTW is very simple: 
+## The denominator of the IPW for each individual is the probability of receiving their observed(!) treatment value, given their confounder history.
+## Similar to PS, but "probability of receiving their observed(!) treatment value", i.e. 0 or 1, not only 1 like in a PS
+## If we run sequential trials, then we will want to include calendar time (and sqr) as baseline confounder - and in the outcome model => that requires standardization over calendar period afterwards. On our scenario, simpler, without calendar week/month as confounder. 
+iptw_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + ")))
+ipw.denom.usw <- glm(iptw_formula, 
+                    family = binomial(link = 'logit'),
+                    data = df_long_months) 
+# summary(plr_model_severecovid)
+table(df_long_months$exp_bin_treat)
 
 
 # Save output -------------------------------------------------------------
