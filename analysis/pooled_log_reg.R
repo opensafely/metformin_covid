@@ -210,7 +210,7 @@ df_long_months <- fn_expand_intervals(df,
 ## I currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
 ## If weeks, then K = 169 weeks
 K <- 39 # Total follow-up
-R <- 2 # Total bootstraps (ideally >500)
+R <- 10 # Total bootstraps (ideally >500)
 
 
 # (i) Standardization ---------------------------------------------------------
@@ -517,7 +517,7 @@ te_all_timepoints_withCI <- function(data, indices) {
 #   #                    labels=c("0.0%", "2.5%", "5.0%",
 #   #                             "7.5%", "10.0%", "12.5%")) +
 #   theme_minimal()+
-#   theme(axis.text = element_text(size=14), legend.position.inside = c(0.2, 0.8),
+#   theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
 #         axis.line = element_line(colour = "black"),
 #         legend.title = element_blank(),
 #         panel.grid.major.x = element_blank(),
@@ -715,7 +715,7 @@ plot_cum_risk_iptw <- ggplot(graph,
   #                    labels=c("0.0%", "2.5%", "5.0%",
   #                             "7.5%", "10.0%", "12.5%")) +
   theme_minimal()+ # set plot theme elements
-  theme(axis.text = element_text(size=14), legend.position.inside = c(0.2, 0.8),
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
         axis.line = element_line(colour = "black"),
         legend.title = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -906,7 +906,7 @@ plot_cum_risk_iptw_ipcw <- ggplot(graph,
   #                    labels=c("0.0%", "2.5%", "5.0%",
   #                             "7.5%", "10.0%", "12.5%")) +
   theme_minimal()+ # set plot theme elements
-  theme(axis.text = element_text(size=14), legend.position.inside = c(0.2, 0.8),
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
         axis.line = element_line(colour = "black"),
         legend.title = element_blank(),
         panel.grid.major.x = element_blank(),
