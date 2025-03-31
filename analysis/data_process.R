@@ -71,7 +71,7 @@ data_processed <- data_extracted %>%
     cov_cat_age = cut(
       cov_num_age,
       breaks = c(18, 40, 60, 80, 110),
-      labels = c("18-39", "40-59", "60-79", "80+"),
+      labels = c("18-39", "40-59", "60-79", "80 or older"),
       right = FALSE),
     
     cov_cat_sex = fn_case_when(
@@ -79,23 +79,29 @@ data_processed <- data_extracted %>%
       cov_cat_sex == "male" ~ "Male",
       TRUE ~ "Unknown"),
     
-    cov_cat_region = fct_collapse(
-      cov_cat_region,
-      `East of England` = "East",
-      `London` = "London",
-      `Midlands` = c("West Midlands", "East Midlands"),
-      `North East and Yorkshire` = c("Yorkshire and The Humber", "North East"),
-      `North West` = "North West",
-      `South East` = "South East",
-      `South West` = "South West"),
+    cov_cat_deprivation_5 = fn_case_when(
+      cov_cat_deprivation_5 == "1 (most deprived)" ~ "1 (most deprived)",
+      cov_cat_deprivation_5 == "2" ~ "2",
+      cov_cat_deprivation_5 == "3" ~ "3",
+      cov_cat_deprivation_5 == "4" ~ "4",
+      cov_cat_deprivation_5 == "5 (least deprived)" ~ "5 (least deprived)",
+      TRUE ~ "Unknown"),
+    
+    cov_cat_region = fn_case_when(
+      cov_cat_region == "East" ~ "East",
+      cov_cat_region == "London" ~ "London",
+      cov_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
+      cov_cat_region %in% c("Yorkshire and The Humber", "North East") ~ "North East and Yorkshire",
+      cov_cat_region == "North West" ~ "North West",
+      cov_cat_region == "South East" ~ "South East",
+      cov_cat_region == "South West" ~ "South West",
+      TRUE ~ "Unknown"),
     
     cov_cat_rural_urban = fn_case_when(
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
       cov_cat_rural_urban %in% c(5,6,7,8) ~ "Rural town or village",
       TRUE ~ "Unknown"),
-    
-    cov_cat_stp = as.factor(cov_cat_stp),
     
     # Finalize smoking status
     cov_cat_smoking_status = fn_case_when(
@@ -110,9 +116,6 @@ data_processed <- data_extracted %>%
       cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
       TRUE ~ "Unknown"),
     
-    # Remove biologically implausible numerical BMI values
-    cov_num_bmi = case_when(cov_num_bmi > 70 | cov_num_bmi < 12 ~ NA_real_, TRUE ~ cov_num_bmi),
-    
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     ## remove TC < 1.75 or > 20
     ## remove HDL < 0.4 or > 5
@@ -125,7 +128,7 @@ data_processed <- data_extracted %>%
     # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
     cov_cat_tc_hdl_ratio = cut(
       cov_num_tc_hdl_ratio,
-      breaks = c(1, 3.5, 5.1, 50), # 50 is upper limit, see above -> NA
+      breaks = c(1, 3.5, 5.11, 50), # 50 is upper limit, see above -> NA
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
       right = FALSE),
     cov_cat_tc_hdl_ratio = case_when(is.na(cov_num_tc_hdl_ratio) ~ factor("Unknown", 

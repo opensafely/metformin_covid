@@ -385,10 +385,10 @@ bmi_measurement = most_recent_bmi(
 )
 dataset.cov_num_bmi = bmi_measurement.numeric_value
 dataset.cov_cat_bmi_groups = case(
-    when(dataset.cov_num_bmi < 18.5).then("Underweight"),
+    when((dataset.cov_num_bmi < 18.5) & (dataset.cov_num_bmi >= 12.0)).then("Underweight"), # Set minimum to avoid any impossibly extreme values being classified as underweight
     when((dataset.cov_num_bmi >= 18.5) & (dataset.cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
     when((dataset.cov_num_bmi >= 25.0) & (dataset.cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
-    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi < 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
+    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi <= 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
     otherwise = "missing", 
 )
 
