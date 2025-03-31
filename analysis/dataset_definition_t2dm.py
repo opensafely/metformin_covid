@@ -407,19 +407,19 @@ dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_betwee
 #######################################################################################
 ### COVID-related HOSPITALIZAION
 ## First covid-19 related hospital admission, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid19_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date, only_prim_diagnoses=True).admission_date
+dataset.out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date, only_prim_diagnoses=True).admission_date
 ## First covid-19 related emergency attendance, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid19_emergency = first_matching_event_ec_snomed_between(covid_emergency, dataset.elig_date_t2dm, studyend_date).arrival_date
+dataset.out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, dataset.elig_date_t2dm, studyend_date).arrival_date
 # combined: First covid-19 related hospitalization
-dataset.out_date_covid19_hosp = minimum_of(dataset.out_date_covid19_hes, dataset.out_date_covid19_emergency)
+dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid_hes, dataset.out_date_covid_emergency)
 
 ### COVID-related DEATH
 ## Between elig_date_t2dm and studyend_date (incl. those dates), stated anywhere on any of the 15 death certificate options
 tmp_out_bin_death_covid = matching_death_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date)
-dataset.out_date_covid19_death = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
+dataset.out_date_covid_death = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
 
 ### COVID-related HOSPITALIZAION or DEATH
-dataset.out_date_covid19_severe = minimum_of(dataset.out_date_covid19_death, dataset.out_date_covid19_hosp)
+dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, dataset.out_date_covid_hosp)
 
 ### COVID-related EVENT/DIAGNOSIS
 ## First COVID-19 diagnosis in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
@@ -433,16 +433,16 @@ tmp_covid19_sgss_date = (
   .specimen_taken_date
 )
 ## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 death, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid19 = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid19_hosp, dataset.out_date_covid19_death)
+dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid_hosp, dataset.out_date_covid_death)
 
 
 ### LONG COVID
 ## First Long COVID code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-dataset.out_date_long_covid19 = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
+dataset.out_date_longcovid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
 ## First Viral fatigue code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
-dataset.out_date_viral_fatigue = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
+dataset.out_date_virfat = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
 # combined: First Long COVID code or Viral Fatigue code after elig_date_t2dm = primary outcome
-dataset.out_date_long_fatigue = minimum_of(dataset.out_date_long_covid19, dataset.out_date_viral_fatigue)
+dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_virfat)
 
 ## Long COVID signs and symptoms, first code in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
 #dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, dataset.elig_date_t2dm, studyend_date).date

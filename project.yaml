@@ -68,10 +68,20 @@ actions:
     outputs:
       highly_sensitive:
         dataset: output/data/data_processed.arrow
-        #dataset_plots: output/data/data_plots.feather
       moderately_sensitive:
-        csv: output/data_description/*.csv
+        flowchart_tbls: output/data_description/*.csv
 
+  treat_strat_feasibility:
+    run: r:latest analysis/treat_strat_feasibility.R
+    needs:
+    - data_process
+    outputs:
+      highly_sensitive:
+        dataset_plots: output/data/data_plots.feather
+      moderately_sensitive:
+        desc_tbl1: output/data_description/n_exp_out_midpoint6.csv
+        desc_tbl2: output/data_description/n_exp_out.csv
+  
   table1:
     run: r:latest analysis/table1.R
     needs:
@@ -79,6 +89,23 @@ actions:
     outputs:
       moderately_sensitive:
         table1: output/data_description/table1_midpoint6.csv
+
+  km_treat:
+    run: kaplan-meier-function:v0.0.17 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/treat
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_severecovid
+      --censor_date=qa_date_of_death
+      --max_fup=548
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/treat/*.csv
+        png: output/treat/*.png
 
   #ps:
   #  run: r:latest analysis/ps.R
@@ -95,12 +122,12 @@ actions:
   #     --df_input=output/data/data_plots.feather
   #     --dir_output=output/metfin
   #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_metfin_anytime
+  #     --event_date=exp_date_metfin_first
   #     --censor_date=qa_date_of_death
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/metfin/*.csv
@@ -111,12 +138,12 @@ actions:
   #     --df_input=output/data/data_plots.feather
   #     --dir_output=output/metfin_mono
   #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_metfin_mono_anytime
+  #     --event_date=exp_date_metfin_mono_first
   #     --censor_date=qa_date_of_death
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/metfin_mono/*.csv
@@ -132,7 +159,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/dpp4_mono/*.csv
@@ -148,7 +175,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/tzd_mono/*.csv
@@ -164,7 +191,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/sglt2_mono/*.csv
@@ -180,7 +207,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/sulfo_mono/*.csv
@@ -196,7 +223,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/glp1_mono/*.csv
@@ -212,7 +239,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/megli_mono/*.csv
@@ -228,7 +255,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/agi_mono/*.csv
@@ -244,7 +271,7 @@ actions:
   #     --max_fup=548
   #     --plot=TRUE
   #   needs:
-  #   - data_process
+  #   - treat_strat_feasibility
   #   outputs:
   #     moderately_sensitive:
   #       km_estimates: output/insulin_mono/*.csv
@@ -266,20 +293,3 @@ actions:
   #   outputs:
   #     moderately_sensitive:
   #       plot: output/data_description/*.png
-
-  # km_treat:
-  #   run: kaplan-meier-function:v0.0.8 
-  #     --df_input=output/data/data_processed.arrow
-  #     --dir_output=output/treat
-  #     --exposure=exp_bin_treat
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=out_date_severecovid
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - data_process
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_treat_estimates: output/treat/*.csv
-  #       png: output/treat/*.png
