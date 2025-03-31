@@ -71,48 +71,50 @@ data_processed <- data_extracted %>%
     cov_cat_age = cut(
       cov_num_age,
       breaks = c(18, 40, 60, 80, 110),
-      labels = c("18-39", "40-59", "60-79", "80+"),
+      labels = c("18-39", "40-59", "60-79", "80 or older"),
       right = FALSE),
     
     cov_cat_sex = fn_case_when(
       cov_cat_sex == "female" ~ "Female",
       cov_cat_sex == "male" ~ "Male",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
-    cov_cat_region = fct_collapse(
-      cov_cat_region,
-      `East of England` = "East",
-      `London` = "London",
-      `Midlands` = c("West Midlands", "East Midlands"),
-      `North East and Yorkshire` = c("Yorkshire and The Humber", "North East"),
-      `North West` = "North West",
-      `South East` = "South East",
-      `South West` = "South West"),
+    cov_cat_deprivation_5 = fn_case_when(
+      cov_cat_deprivation_5 == "1 (most deprived)" ~ "1 (most deprived)",
+      cov_cat_deprivation_5 == "2" ~ "2",
+      cov_cat_deprivation_5 == "3" ~ "3",
+      cov_cat_deprivation_5 == "4" ~ "4",
+      cov_cat_deprivation_5 == "5 (least deprived)" ~ "5 (least deprived)",
+      TRUE ~ "Unknown"),
+    
+    cov_cat_region = fn_case_when(
+      cov_cat_region == "East" ~ "East",
+      cov_cat_region == "London" ~ "London",
+      cov_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
+      cov_cat_region %in% c("Yorkshire and The Humber", "North East") ~ "North East and Yorkshire",
+      cov_cat_region == "North West" ~ "North West",
+      cov_cat_region == "South East" ~ "South East",
+      cov_cat_region == "South West" ~ "South West",
+      TRUE ~ "Unknown"),
     
     cov_cat_rural_urban = fn_case_when(
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
       cov_cat_rural_urban %in% c(5,6,7,8) ~ "Rural town or village",
-      TRUE ~ NA_character_),
-    
-    cov_cat_stp = as.factor(cov_cat_stp),
+      TRUE ~ "Unknown"),
     
     # Finalize smoking status
     cov_cat_smoking_status = fn_case_when(
       cov_cat_smoking_status == "S" ~ "Smoker",
       cov_cat_smoking_status == "E" ~ "Ever",
       cov_cat_smoking_status == "N" ~ "Never",
-      cov_cat_smoking_status == "M" ~ "Unknown",
-      TRUE ~ NA_character_),
+      TRUE ~ "Unknown"),
     
     # Create one history of obesity variable
     cov_bin_obesity = fn_case_when(
       cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
       cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
-      TRUE ~ NA_character_),
-    
-    # Remove biologically implausible numerical BMI values
-    cov_num_bmi = case_when(cov_num_bmi > 70 | cov_num_bmi < 12 ~ NA_real_, TRUE ~ cov_num_bmi),
+      TRUE ~ "Unknown"),
     
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     ## remove TC < 1.75 or > 20
@@ -126,9 +128,11 @@ data_processed <- data_extracted %>%
     # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
     cov_cat_tc_hdl_ratio = cut(
       cov_num_tc_hdl_ratio,
-      breaks = c(1, 3.5, 5.1, 50), # 50 is upper limit, see above -> NA
+      breaks = c(1, 3.5, 5.11, 50), # 50 is upper limit, see above -> NA
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
       right = FALSE),
+    cov_cat_tc_hdl_ratio = case_when(is.na(cov_num_tc_hdl_ratio) ~ factor("Unknown", 
+                                                                          levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
     ## remove HbA1c > 120
@@ -136,68 +140,53 @@ data_processed <- data_extracted %>%
     cov_num_hba1c_mmol_mol = replace(cov_num_hba1c_mmol_mol, cov_num_hba1c_mmol_mol < 0.00 | cov_num_hba1c_mmol_mol > 120.00, NA_real_),
     cov_cat_hba1c_mmol_mol = cut(
       cov_num_hba1c_mmol_mol,
-      breaks = c(0, 42, 53, 59, 76, 120), # 120 is upper limit, above NA
-      labels = c("below 42" ,"42-52", "53-58", "59-75", "above 75"),
+      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE),
+    cov_cat_hba1c_mmol_mol = case_when(is.na(cov_cat_hba1c_mmol_mol) ~ factor("Unknown", 
+                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_mmol_mol),
     )
 
 ####
-# Apply flowchart functions, stratified by if code run locally or not ----
+# Modify dummy data ----
 ####
-# if code run locally, do NOT run QA & completeness criteria to increase N of dummy data
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, producing dummy data...")
-  
-  ####
-  # Apply the eligibility criteria (slightly adapted for dummy data)
-  ####
-  # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
-  # => if so, use function with loop that can be mapped to other windows
-  eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = TRUE)
-  n_elig_excluded <- eligibility$n_elig_excluded
-  n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
-  data_processed <- eligibility$data_processed
-  data_processed <- data_processed %>%
-    dplyr::filter(elig_date_t2dm < as.Date("2020-02-01") | is.na(elig_date_t2dm)) # since no qual assurance applied for dummy data..
-  message("Eligibility criteria applied for dummy data")
-  
-} else {
-  message("Running on real data...")
-  
-  ####
-  # Apply the quality assurance criteria (Real Data)
-  ####
-  qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
-  n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
-  data_processed <- qa$data_processed
-  
-  ####
-  # Apply the completeness criteria (Real Data)
-  ####
-  completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
-  n_completeness_excluded <- completeness$n_completeness_excluded
-  n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
-  data_processed <- completeness$data_processed
-  
-  ####
-  # Apply the eligibility criteria (Real Data)
-  ####
-  # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
-  # => if so, use function with loop that can be mapped to other windows
-  eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
-  n_elig_excluded <- eligibility$n_elig_excluded
-  n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
-  data_processed <- eligibility$data_processed
-  
-  message("Quality check, completeness and eligibility criteria applied on real data")
+  message("Running locally, adapt dummy data")
+  source("analysis/modify_dummy_data.R")
+  message("Dummy data successfully modified")
 }
+
+####
+# Apply the quality assurance criteria ----
+####
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
+
+####
+# Apply the completeness criteria ----
+####
+completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
+n_completeness_excluded <- completeness$n_completeness_excluded
+n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
+data_processed <- completeness$data_processed
+  
+####
+# Apply the eligibility criteria (Real Data)
+####
+# Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
+# => if so, use function with loop that can be mapped to other windows
+eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
+n_elig_excluded <- eligibility$n_elig_excluded
+n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
+data_processed <- eligibility$data_processed
 
 ####
 # Assign treatment patterns, outcomes and treatment strategies ----
 ####
 data_processed <- data_processed %>% 
   mutate(
-    # started any metformin within 6 months after T2DM, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6)
+    # started any metformin within 6 months after T2DM, among those with a T2DM diagnosis, mid2018 onwards (those with exp_bin_metfin_first before mid2018 were already excluded above via fn_elig_criteria_midpoint6 [and for dummy data: this was modified accordingly in modify_dummy_data])
     # combo
     exp_bin_metfin = case_when(exp_date_metfin_first <= elig_date_t2dm + days(183) ~ TRUE, 
                                      TRUE ~ FALSE),
@@ -741,28 +730,28 @@ n_exp_out_midpoint6 <- n_exp_out_midpoint6 %>%
   mutate(Variable = labels[Variable])
 
 ####
-# Output for cumulative incidence plots re treatment regimen pattern and structure of entire dataset ----
+# Output for cumulative incidence plots re treatment regimen pattern ----
 ####
-data_plots <- data_processed %>%
-  dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime,
-                exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime,
-                exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
-                exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime,
-                exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
-                out_date_severecovid, qa_date_of_death)
-
-data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
-  dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death))
+# data_plots <- data_processed %>%
+#   dplyr::select(patient_id, elig_date_t2dm, exp_date_metfin_anytime, exp_bin_metfin_anytime, exp_date_metfin_mono_anytime, exp_bin_metfin_mono_anytime,
+#                 exp_date_dpp4_mono_anytime, exp_bin_dpp4_mono_anytime, exp_date_tzd_mono_anytime, exp_bin_tzd_mono_anytime,
+#                 exp_date_sglt2_mono_anytime, exp_bin_sglt2_mono_anytime, exp_date_sulfo_mono_anytime, exp_bin_sulfo_mono_anytime,
+#                 exp_date_glp1_mono_anytime, exp_bin_glp1_mono_anytime, exp_date_megli_mono_anytime, exp_bin_megli_mono_anytime,
+#                 exp_date_agi_mono_anytime, exp_bin_agi_mono_anytime, exp_date_insulin_mono_anytime, exp_bin_insulin_mono_anytime,
+#                 out_date_severecovid, qa_date_of_death)
+# 
+# data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
+#   dplyr::filter(elig_date_t2dm < exp_date_metfin_anytime | is.na(exp_date_metfin_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_metfin_mono_anytime | is.na(exp_date_metfin_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_dpp4_mono_anytime | is.na(exp_date_dpp4_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_tzd_mono_anytime | is.na(exp_date_tzd_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_sglt2_mono_anytime | is.na(exp_date_sglt2_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_sulfo_mono_anytime | is.na(exp_date_sulfo_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_glp1_mono_anytime | is.na(exp_date_glp1_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_megli_mono_anytime | is.na(exp_date_megli_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_agi_mono_anytime | is.na(exp_date_agi_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < exp_date_insulin_mono_anytime | is.na(exp_date_insulin_mono_anytime)) %>%
+#   dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death))
 
 ####
 # Structure of entire dataset to double-check variables ----
@@ -770,22 +759,21 @@ data_plots <- data_plots %>% # double-check for plot to avoid event_time is == 0
 variable_desc <- skim(data_processed)
 
 ####
-# Restrict dataset and adapt dummy data output ----
+# Restrict dataset ----
 ####
-# Include only those fulfilling the treatment strategy
+# Include only those fulfilling the decided treatment strategy
 data_processed <- data_processed %>%
-  dplyr::filter(!is.na(exp_bin_treat))
+  filter(!is.na(exp_bin_treat))
 
-# Adapt dummy data to avoid event_time is == 0:
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, adapt dummy data...")
-  
-  data_processed <- data_processed %>% # to avoid event_time is == 0
-    dplyr::filter(elig_date_t2dm < qa_date_of_death | is.na(qa_date_of_death)) %>%
-    dplyr::filter(elig_date_t2dm < out_date_severecovid | is.na(out_date_severecovid))
-  
-  message("...dummy data successfully adapted")
-}
+# Drop unnecessary variables going forward
+data_processed <- data_processed %>% 
+  select(patient_id, elig_date_t2dm, qa_date_of_death,
+         starts_with("exp_"), # Exposures
+         starts_with("cov_"), # Covariates
+         starts_with("out_"), # Outcomes
+         starts_with("cens_"), # Censoring variables
+         contains("_landmark") # ICEs between baseline and landmark
+  )
 
 ####
 # Save output ----
@@ -793,8 +781,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 # the full data
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # data for cumulative incidence plots re treatment regimen pattern
-write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
-
+# write_feather(data_plots, here::here("output", "data", "data_plots.feather"))
 # description of each variable in the dataset
 write.csv(variable_desc, file = here::here("output", "data_description", "variable_codebook.csv")) # for L4 reviewing only, not for release
 # flow chart eligibility criteria
@@ -803,20 +790,7 @@ write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_el
 # descriptive data re treatment patterns, events between index_date and pandemic start, and main outcome
 write.csv(n_exp_out_midpoint6, file = here::here("output", "data_description", "n_exp_out_midpoint6.csv"))
 write.csv(n_exp_out, file = here::here("output", "data_description", "n_exp_out.csv"))
-
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, output based on dummy data...")
-  
-  message("Output successfully saved, based on dummy data")
-  
-} else {
-  message("Running on real data...")
-  
-  # flow chart quality assurance
-  write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
-  # flow chart completeness criteria
-  write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_description", "n_completeness_excluded_midpoint6.csv"))
-  
-  message("Output successfully saved, based on real data")
-
-}
+# flow chart quality assurance
+write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
+# flow chart completeness criteria
+write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_description", "n_completeness_excluded_midpoint6.csv"))

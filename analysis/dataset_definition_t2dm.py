@@ -59,7 +59,7 @@ random.seed(19283) # random seed
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=5000)
+dataset.configure_dummy_data(population_size=8000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################
@@ -251,6 +251,7 @@ dataset.cov_bin_healthcare_worker = (
 
 ## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
 ### Consultation rate in 2019
+
 #tmp_cov_num_consrate = appointments.where(
 #    appointments.status.is_in([
 #        "Arrived",
@@ -384,10 +385,10 @@ bmi_measurement = most_recent_bmi(
 )
 dataset.cov_num_bmi = bmi_measurement.numeric_value
 dataset.cov_cat_bmi_groups = case(
-    when(dataset.cov_num_bmi < 18.5).then("Underweight"),
+    when((dataset.cov_num_bmi < 18.5) & (dataset.cov_num_bmi >= 12.0)).then("Underweight"), # Set minimum to avoid any impossibly extreme values being classified as underweight
     when((dataset.cov_num_bmi >= 18.5) & (dataset.cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
     when((dataset.cov_num_bmi >= 25.0) & (dataset.cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
-    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi < 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
+    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi <= 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
     otherwise = "missing", 
 )
 
