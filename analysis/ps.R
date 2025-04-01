@@ -29,8 +29,9 @@ age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 # PS model ----------------------------------------------------------------
 # Set format and reference to ensure proper logistic regression modeling
 df$exp_bin_treat <- factor(df$exp_bin_treat, 
-                                       levels = c(2, 1), # Reference first
+                                       levels = c(0, 1), # Reference first
                                        labels = c("nothing", "metformin"))
+
 # Define the covariates included in the PS model
 covariate_names <- names(df) %>%
   grep("^cov_", ., value = TRUE) %>% 
