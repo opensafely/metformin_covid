@@ -128,7 +128,7 @@ actions:
   cox_primary_RA:
     run: cox-ipw:v0.0.33
     config:
-     df_input: output/data/data_processed.arrow
+     df_input: data/data_processed.arrow
      ipw: FALSE
      exposure: exp_date_metfin_mono_first
      outcome: out_date_severecovid_afterlandmark
