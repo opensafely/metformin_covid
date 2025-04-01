@@ -91,22 +91,22 @@ actions:
       moderately_sensitive:
         table1: output/data_description/table1_midpoint6.csv
 
-  #km_treat:
-  #  run: kaplan-meier-function:v0.0.17 
-  #    --df_input=output/data/data_processed.arrow
-  #    --dir_output=output/treat
-  #    --exposure=exp_bin_treat
-  #    --origin_date=landmark_date
-  #    --event_date=out_date_severecovid
-  #    --censor_date=qa_date_of_death
-  #    --max_fup=548
-  #    --plot=TRUE
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      km_treat_estimates: output/treat/*.csv
-  #      png: output/treat/*.png
+  km_primary:
+    run: kaplan-meier-function:v0.0.17 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/te/km
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_severecovid_afterlandmark
+      --censor_date=cox_date_severecovid_censor
+      --max_fup=990
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/te/km/*.csv
+        png: output/te/km/*.png
 
   #ps:
   #  run: r:latest analysis/ps.R
@@ -125,51 +125,32 @@ actions:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
 
-  # cox_primary_RA:
-  #   run: cox-ipw:v0.0.33
-  #   config:
-  #    df_input: data_processed.arrow
-  #    ipw: FALSE
-  #    exposure: landmark_date
-  #    outcome: out_date_severecovid_afterlandmark
-  #    strata: cov_cat_region
-  #    covariate_sex: cov_cat_sex
-  #    covariate_age: cov_num_age
-  #    covariate_other: cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_cat_smoking_status;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_bin_obesity;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_cat_tc_hdl_ratio;cov_cat_hba1c_mmol_mol
-  #    cox_start: landmark_date
-  #    cox_stop: cox_date_severecovid
-  #    study_start: 
-  #    study_stop: 
-  #    cut_points: 1;7;14;28;56;84;183;365;730
-  #    age_spline: TRUE
-  #    df_output: results.csv
-  #   needs:
-  #   - data_process
-  #   outputs:
-  #     moderately_sensitive:
-  #       arguments: output/te/cox_ra/args-results.csv
-  #       estimates: output/te/cox_ra/results.csv
+  cox_primary_RA:
+    run: cox-ipw:v0.0.33
+    config:
+     df_input: data_processed.arrow
+     ipw: FALSE
+     exposure: landmark_date
+     outcome: out_date_severecovid_afterlandmark
+     strata: cov_cat_region
+     covariate_sex: cov_cat_sex
+     covariate_age: cov_num_age
+     covariate_other: cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_cat_smoking_status;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_bin_obesity;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_cat_tc_hdl_ratio;cov_cat_hba1c_mmol_mol
+     cox_start: landmark_date
+     cox_stop: cox_date_severecovid
+     study_start:
+     study_stop: 
+     cut_points: 1;7;14;28;56;84;183;365;730
+     age_spline: TRUE
+     df_output: results.csv
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        arguments: output/te/cox_ra/args-results.csv
+        estimates: output/te/cox_ra/results.csv
 
-  # km_primary:
-  #   run: kaplan-meier-function:v0.0.16 
-  #     --df_input=output/data/data_processed.arrow
-  #     --dir_output=output/te/km
-  #     --exposure=exp_bin_treat
-  #     --origin_date=landmark_date
-  #     --event_date=out_date_severecovid_afterlandmark
-  #     --censor_date=cox_date_severecovid_censor
-  #     --max_fup=990
-  #     --plot=TRUE
-  #   needs:
-  #   - data_process
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_treat_estimates: output/te/km/*.csv
-  #       png: output/te/km/*.png
-
-
-
-
+  
 
   # km_estimates_metfin_RA:
   #   run: kaplan-meier-function:v0.0.8
