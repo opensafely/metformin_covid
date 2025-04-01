@@ -1,37 +1,27 @@
-################################################################################
+####
 ## This script does the following:
 # 1. Import processed data
 # 2. Create table 1
 # 3. Save all output
-################################################################################
+####
 
-################################################################################
-# 0.0 Import libraries + functions
-################################################################################
+# Import libraries and user functions -------------------------------------
 library('arrow')
 library('here')
 library('tidyverse')
 library('gtsummary')
 source(here::here("analysis", "functions", "utility.R")) # fn_roundmid_any
 
-################################################################################
-# 0.1 Create directories for output
-################################################################################
+# Create directories for output -------------------------------------------
 fs::dir_create(here::here("output", "data_description"))
 
-################################################################################
-# 0.3 Define redaction threshold
-################################################################################
+# Define redaction threshold ----------------------------------------------
 threshold <- 6
 
-################################################################################
-# 1 Import the data
-################################################################################
-data_processed <- read_feather(here("output", "data", "data_processed.arrow"))
+# Import the data ---------------------------------------------------------
+df <- read_feather(here("output", "data", "data_processed.arrow"))
 
-################################################################################
-# 2 Label the data
-################################################################################
+# Label the data ---------------------------------------------------------
 var_labels <- list(
   N  ~ "Total N",
   exp_bin_treat ~ "Treatment",
@@ -69,29 +59,27 @@ var_labels <- list(
   cov_num_hba1c_mmol_mol ~ "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio ~ "TC/Chol ratio",
   
-  exp_bin_metfin_pandemicstart ~ "Any metformin prescription within 6m prior to pandemic start",
-  exp_bin_metfin_anytime ~ "Starting metformin anytime (after landmark, respectively; incl. combo)",
-  out_bin_severecovid ~ "COVID hosp or death",
-  out_bin_covid_hosp ~ "COVID hosp",
-  out_bin_covid_death ~ "COVID death",
-  out_bin_covid ~ "Any covid diagnosis, pos test or hosp",
-  out_bin_longcovid ~ "Any Long COVID diagnosis",
-  out_bin_virfat ~ "Any Viral Fatigue diagnosis",
-  out_bin_longcovid_virfat ~ "Any Long COVID or Viral Fatigue diagnosis",
-  out_bin_death_pandemicstart ~ "Death between landmark and pandemic start",
-  out_bin_ltfu_pandemicstart ~ "LTFU between landmark and pandemic start"
+  out_bin_severecovid_afterlandmark ~ "COVID hosp or death",
+  out_bin_covid_hosp_afterlandmark ~ "COVID hosp",
+  out_bin_covid_death_afterlandmark ~ "COVID death",
+  out_bin_covid_afterlandmark ~ "Any covid diagnosis, pos test or hosp",
+  out_bin_longcovid_afterlandmark ~ "Any Long COVID diagnosis",
+  out_bin_virfat_afterlandmark ~ "Any Viral Fatigue diagnosis",
+  out_bin_longcovid_virfat_afterlandmark ~ "Any Long COVID or Viral Fatigue diagnosis",
+  out_bin_death_afterlandmark ~ "Any death after landmark",
+  cens_bin_ltfu_afterlandmark ~ "Any LTFU after landmark",
+  cens_bin_metfin_pandemicstart ~ "INT: Any metformin prescription within 6m prior to pandemic start",
+  cens_bin_metfin_start_cont ~ "CONT: Any metformin start in control"
 ) %>%
   set_names(., map_chr(., all.vars))
 
-################################################################################
-# 3 Create the table
-################################################################################
+# Create the table ---------------------------------------------------------
 table_1 <-
-  data_processed %>%
+  df %>%
   mutate(
     N=1L,
     exp_bin_treat = factor(exp_bin_treat, 
-                          levels = c(1,2), 
+                          levels = c(1,0), 
                           labels = c("Metformin mono", "Nothing"))
   ) %>%
   select(
@@ -125,8 +113,6 @@ raw_stats_redacted <- raw_stats %>%
     variable_levels = replace_na(as.character(variable_levels), "")
   )
 
-################################################################################
-# 4 Save output
-################################################################################
-# the full data
+
+# Save output -------------------------------------------------------------
 write_csv(raw_stats_redacted, fs::path("output", "data_description", "table1_midpoint6.csv"))

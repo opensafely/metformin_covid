@@ -102,7 +102,7 @@ data_processed <- data_processed %>%
   mutate(elig_date_t2dm = sample(seq(mid2018_date, pandemicstart_date - days(183), by = "day"), 
                                  n(), replace = TRUE))
 
-# (2) Ensure all exposure and outcome dates are between baseline date (elig_date_t2dm) and studyend date
+# (2) Ensure all exposure dates are between baseline date (elig_date_t2dm) and studyend date
 ## If the date is NA, leave it as NA.
 ## If the date is before elig_date_t2dm, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
@@ -110,16 +110,28 @@ date_vars <- c(
   "exp_date_metfin_first", "exp_date_metfin_mono_first", "exp_date_sulfo_first",
   "exp_date_dpp4_first", "exp_date_tzd_first", "exp_date_sglt2_first",
   "exp_date_glp1_first", "exp_date_megli_first", "exp_date_agi_first",
-  "exp_date_insulin_first", "out_date_covid19_hosp", "out_date_covid19_death",
-  "out_date_covid19_severe", "out_date_covid19", "out_date_long_covid19",
-  "out_date_viral_fatigue", "out_date_long_fatigue")
+  "exp_date_insulin_first")
 data_processed <- data_processed %>%
   rowwise() %>%
   mutate(across(all_of(date_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm, studyend_date))) %>%
   ungroup() %>%
   mutate(across(all_of(date_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
-# (3) Ensure all censoring dates are afterbetween baseline date (elig_date_t2dm) and studyend date
+# (3) Ensure all outcome dates are between landmark date and studyend date
+## If the date is NA, leave it as NA.
+## If the date is before landmark, replace it with a random valid date.
+## If the date is valid, keep it unchanged.
+date_vars <- c(
+  "out_date_covid_hosp", "out_date_covid_death",
+  "out_date_severecovid", "out_date_covid", "out_date_longcovid",
+  "out_date_virfat", "out_date_longcovid_virfat", "qa_date_of_death")
+data_processed <- data_processed %>%
+  rowwise() %>%
+  mutate(across(all_of(date_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm + days(183), studyend_date))) %>%
+  ungroup() %>%
+  mutate(across(all_of(date_vars), ~ as.Date(.x, origin = "1970-01-01")))
+
+# (4) Ensure all censoring dates are afterbetween baseline date (elig_date_t2dm) and studyend date
 ## cens_date_dereg is completely missing in the current dummy data, so replace all
 ## but impute only 5% of cens_date_dereg date variables
 data_processed$cens_date_dereg <- sapply(data_processed$elig_date_t2dm, function(baseline_date) {
