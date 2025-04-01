@@ -50,7 +50,7 @@ covariate_names <- names(df) %>%
     ## take out cov_cat_region since it's used as a stratification variable instead
     setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol"
               , "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age", "cov_cat_region")) 
-# print(covariate_names)
+print(covariate_names)
 
 # Checks before proceeding to Cox model -----------------------------------
 if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {

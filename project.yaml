@@ -130,7 +130,7 @@ actions:
     config:
      df_input: data/data_processed.arrow
      ipw: FALSE
-     exposure: exp_date_metfin_mono_first
+     exposure: cox_date_metfin_start_within6m
      outcome: out_date_severecovid_afterlandmark
      strata: cov_cat_region
      covariate_sex: cov_cat_sex
