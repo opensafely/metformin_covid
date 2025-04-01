@@ -91,33 +91,34 @@ actions:
       moderately_sensitive:
         table1: output/data_description/table1_midpoint6.csv
 
-  #km_treat:
-  #  run: kaplan-meier-function:v0.0.17 
-  #    --df_input=output/data/data_processed.arrow
-  #    --dir_output=output/treat
-  #    --exposure=exp_bin_treat
-  #    --origin_date=landmark_date
-  #    --event_date=out_date_severecovid
-  #    --censor_date=qa_date_of_death
-  #    --max_fup=548
-  #    --plot=TRUE
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      km_treat_estimates: output/treat/*.csv
-  #      png: output/treat/*.png
+  km_primary:
+    run: kaplan-meier-function:v0.0.17 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/te/km
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_severecovid_afterlandmark
+      --censor_date=cox_date_severecovid
+      --max_fup=990
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/te/km/*.csv
+        png: output/te/km/*.png
 
-  #ps:
-  #  run: r:latest analysis/ps.R
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      csv: output/ps/*.csv
-  #      plots: output/ps/*.png
+  cox_primary_scripted:
+    run: r:latest analysis/cox_analysis.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        csv: output/te/cox_scripted/*.csv
+  
 
 
+  
   # km_estimates_metfin_RA:
   #   run: kaplan-meier-function:v0.0.8
   #     --df_input=output/data/data_plots.feather

@@ -95,10 +95,7 @@ data_processed <- data_extracted %>%
       cov_cat_smoking_status == "N" ~ "Never",
       TRUE ~ "Unknown"),
     
-    cov_bin_obesity = fn_case_when(
-      cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
-      cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
-      TRUE ~ "Unknown"),
+    cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     ## remove TC < 1.75 or > 20; remove HDL < 0.4 or > 5; remove ratios < 1 or > 50
@@ -169,29 +166,29 @@ data_processed <- data_processed %>%
     ## (1) Starting metformin within 6 months after T2DM, among those with a T2DM diagnosis, 
     # mid2018 onwards (those with exp_bin_metfin_first before mid2018 were excluded above)
     # metformin combo
-    exp_bin_metfin = exp_date_metfin_first <= landmark_date,
+    exp_bin_metfin = !is.na(exp_date_metfin_first) & exp_date_metfin_first <= landmark_date,
     # metformin mono
-    exp_bin_metfin_mono = exp_date_metfin_mono_first <= landmark_date,
-
+    exp_bin_metfin_mono = !is.na(exp_date_metfin_mono_first) & exp_date_metfin_mono_first <= landmark_date,
+                                    
     ## (2) Let's investigate those who did not start any metformin until 6 month landmark, i.e. exp_bin_metfin == FALSE
     # We include exp_bin_metfin == FALSE to avoid counting people who initiated metfin and shortly after DPP4 (clinically rare but possible)
     # We use exp_bin_metfin to cover all metfin prescriptions (combo and mono), otherwise we would allow to count people who initiated DPP4 + metformin
     # DPP4 mono (or combo with SGLT2, but no combo with metfin)
-    exp_bin_dpp4_mono = exp_bin_metfin == FALSE & exp_date_dpp4_first <= landmark_date, 
+    exp_bin_dpp4_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_dpp4_first) & exp_date_dpp4_first <= landmark_date), 
     # TZD mono
-    exp_bin_tzd_mono = exp_bin_metfin == FALSE & exp_date_tzd_first <= landmark_date,
+    exp_bin_tzd_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_tzd_first) & exp_date_tzd_first <= landmark_date), 
     # SGLT2 mono (or combo with DPP4)
-    exp_bin_sglt2_mono = exp_bin_metfin == FALSE & exp_date_sglt2_first <= landmark_date,
+    exp_bin_sglt2_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_sglt2_first) & exp_date_sglt2_first <= landmark_date),
     # sulfo mono
-    exp_bin_sulfo_mono = exp_bin_metfin == FALSE & exp_date_sulfo_first <= landmark_date,
+    exp_bin_sulfo_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_sulfo_first) & exp_date_sulfo_first <= landmark_date),
     # glp1 mono
-    exp_bin_glp1_mono = exp_bin_metfin == FALSE & exp_date_glp1_first <= landmark_date,
+    exp_bin_glp1_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_glp1_first) & exp_date_glp1_first <= landmark_date),
     # megli mono
-    exp_bin_megli_mono = exp_bin_metfin == FALSE & exp_date_megli_first <= landmark_date,
+    exp_bin_megli_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_megli_first) & exp_date_megli_first <= landmark_date),
     # agi mono
-    exp_bin_agi_mono = exp_bin_metfin == FALSE & exp_date_agi_first <= landmark_date,
+    exp_bin_agi_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_agi_first) & exp_date_agi_first <= landmark_date),
     # insulin mono
-    exp_bin_insulin_mono = exp_bin_metfin == FALSE & exp_date_insulin_first <= landmark_date,
+    exp_bin_insulin_mono = exp_bin_metfin == FALSE & (!is.na(exp_date_insulin_first) & exp_date_insulin_first <= landmark_date),
     
     ## (3) No prescription at all until 6 months after T2DM diagnosis (landmark)
     exp_bin_treat_nothing = case_when(exp_bin_metfin == FALSE # covers metformin combo and mono
@@ -212,15 +209,6 @@ data_processed <- data_processed %>%
   mutate(exp_bin_treat = case_when(exp_bin_metfin_mono == TRUE ~ 1,
                                    exp_bin_treat_nothing == TRUE ~ 0,
                                    TRUE ~ NA_real_))
-
-
-# Modify dummy data -------------------------------------------------------
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, modify final treatment variable for dummy data")
-  data_processed <- data_processed %>%
-    mutate(exp_bin_treat = sample(c(1, 0), nrow(data_processed), replace = TRUE, prob = c(0.5, 0.5)))
-  message("Dummy data successfully modified")
-}
 
 
 # Assign outcomes ---------------------------------------------------------
@@ -256,14 +244,47 @@ data_processed <- data_processed %>%
     cens_date_ltfu_afterlandmark = case_when(cens_bin_ltfu_afterlandmark == TRUE ~ cens_date_dereg, 
                                             TRUE ~ as.Date(NA)),
     # In INTERVENTION: Identify all metformin prescription (combo and mono) in 6m prior to pandemic start, may be used to censor those who stopped before pandemic
-    cens_bin_metfin_pandemicstart = exp_bin_metfin_mono == TRUE & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183),
+    cens_bin_metfin_pandemicstart = exp_bin_metfin_mono == TRUE & !is.na(exp_date_metfin_mono_last) & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183),
     cens_date_metfin_pandemicstart = case_when(cens_bin_metfin_pandemicstart == TRUE ~ exp_date_metfin_mono_last, 
                                              TRUE ~ as.Date(NA)),
     # In CONTROL: Identify all who started any metformin after landmark
-    cens_bin_metfin_start_cont = exp_bin_treat_nothing == TRUE & exp_date_metfin_mono_first > landmark_date,
+    cens_bin_metfin_start_cont = exp_bin_treat_nothing == TRUE & !is.na(exp_date_metfin_mono_first) & exp_date_metfin_mono_first > landmark_date,
     cens_date_metfin_start_cont = case_when(cens_bin_metfin_start_cont == TRUE ~ exp_date_metfin_mono_first, 
                                                TRUE ~ as.Date(NA))
     )
+
+
+# Assign Cox variables ------------------------------------------------------
+data_processed <- data_processed %>% 
+  mutate(
+    cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
+                                out_date_death_afterlandmark,
+                                cens_date_ltfu_afterlandmark,
+                                studyend_date,
+                                na.rm = TRUE),
+    cox_tt_severecovid = difftime(cox_date_severecovid,
+                                  landmark_date,
+                                  units = "days") %>% as.numeric(),
+    cox_date_covid = pmin(out_date_covid_afterlandmark, 
+                                out_date_death_afterlandmark,
+                                cens_date_ltfu_afterlandmark,
+                                studyend_date,
+                                na.rm = TRUE),
+    cox_tt_covid = difftime(cox_date_covid,
+                                  landmark_date,
+                                  units = "days") %>% as.numeric(),
+    cox_date_longcovid_virfat_afterlandmark = pmin(out_date_longcovid_virfat_afterlandmark, 
+                                                   out_date_death_afterlandmark,
+                                                   cens_date_ltfu_afterlandmark,
+                                                   studyend_date,
+                                                   na.rm = TRUE),
+    cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
+                                                     landmark_date,
+                                                     units = "days") %>% as.numeric(),
+    # for cox reusable action: exposure start date for those who start, missing for all others 
+    cox_date_metfin_start_within6m = case_when(exp_bin_metfin == TRUE ~ landmark_date, 
+                                            TRUE ~ as.Date(NA))
+  )
 
 
 # Save and inspect full processed dataset ---------------------------------
@@ -272,7 +293,7 @@ data_processed_full_desc <- skim(data_processed_full)
 write.csv(data_processed_full_desc, file = here::here("output", "data_description", "data_processed_full_desc.csv")) # for L4 reviewing only, not for release
 arrow::write_feather(data_processed_full, here::here("output", "data", "data_processed_full.arrow"))
 
-table(data_processed_full$exp_bin_treat, useNA = "always")
+
 # Restrict the dataset for pipeline onwards -------------------------------
 # (1) Include only those fulfilling the final treatment strategy
 data_processed <- data_processed %>%
@@ -287,7 +308,8 @@ data_processed <- data_processed %>%
          starts_with("exp_"), # Exposures
          starts_with("cov_"), # Covariates
          starts_with("out_"), # Outcomes
-         starts_with("cens_") # Censoring variable
+         starts_with("cens_"), # Censoring variable
+         starts_with("cox_"), # Cox variables
   )
 
 
