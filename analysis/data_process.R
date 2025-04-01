@@ -266,13 +266,55 @@ data_processed <- data_processed %>%
     )
 
 
+# Assign Cox variables ------------------------------------------------------
+data_processed <- data_processed %>% 
+  mutate(
+    cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
+                                out_date_death_afterlandmark,
+                                cens_date_ltfu_afterlandmark,
+                                studyend_date,
+                                na.rm = TRUE),
+    cox_tt_severecovid = difftime(cox_date_severecovid,
+                                  landmark_date,
+                                  units = "days") %>% as.numeric(),
+    cox_date_covid = pmin(out_date_covid_afterlandmark, 
+                                out_date_death_afterlandmark,
+                                cens_date_ltfu_afterlandmark,
+                                studyend_date,
+                                na.rm = TRUE),
+    cox_tt_covid = difftime(cox_date_covid,
+                                  landmark_date,
+                                  units = "days") %>% as.numeric(),
+    cox_date_longcovid_virfat_afterlandmark = pmin(out_date_longcovid_virfat_afterlandmark, 
+                                                   out_date_death_afterlandmark,
+                                                   cens_date_ltfu_afterlandmark,
+                                                   studyend_date,
+                                                   na.rm = TRUE),
+    cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
+                                                     landmark_date,
+                                                     units = "days") %>% as.numeric(),
+    # cox_cat_severecovid = case_when(
+    #   # pt should not have both noncovid and covid death
+    #   cox_date_severecovid == out_date_severecovid_afterlandmark ~ "covid_death_hosp",
+    #   cox_date_severecovid == out_date_death_afterlandmark ~ "noncovid_death",
+    #   cox_date_severecovid == cens_date_ltfu_afterlandmark ~ "ltfu",
+    #   TRUE ~ "none"
+    # ),
+    # cox_bin_severecovid = case_when(cox_cat_severecovid %in% c("noncovid_death", "ltfu", "none") ~ 0,
+    #                                 cox_cat_severecovid == "covid_death_hosp" ~ 1,
+    #                                 TRUE ~ NA_real_),
+    # cox_date_severecovid_censor = case_when(cox_bin_severecovid == 0 ~ cox_date_severecovid,
+    #                                         TRUE ~ as.Date(NA))
+  )
+
+
 # Save and inspect full processed dataset ---------------------------------
 data_processed_full <- data_processed
 data_processed_full_desc <- skim(data_processed_full)
 write.csv(data_processed_full_desc, file = here::here("output", "data_description", "data_processed_full_desc.csv")) # for L4 reviewing only, not for release
 arrow::write_feather(data_processed_full, here::here("output", "data", "data_processed_full.arrow"))
 
-table(data_processed_full$exp_bin_treat, useNA = "always")
+
 # Restrict the dataset for pipeline onwards -------------------------------
 # (1) Include only those fulfilling the final treatment strategy
 data_processed <- data_processed %>%
@@ -287,7 +329,8 @@ data_processed <- data_processed %>%
          starts_with("exp_"), # Exposures
          starts_with("cov_"), # Covariates
          starts_with("out_"), # Outcomes
-         starts_with("cens_") # Censoring variable
+         starts_with("cens_"), # Censoring variable
+         starts_with("cox_"), # Cox variables
   )
 
 

@@ -32,31 +32,6 @@ age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 df <- df %>%
   mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
 
-# Create time-to-event variables for Cox regression -----------------------
-df <- df %>% 
-  mutate(
-    cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
-                          out_date_death_afterlandmark,
-                          cens_date_ltfu_afterlandmark,
-                          studyend_date,
-                          na.rm = TRUE),
-    cox_cat_severecovid = case_when(
-      # pt should not have both noncovid and covid death
-      cox_date_severecovid == out_date_severecovid_afterlandmark ~ "covid_death_hosp",
-      cox_date_severecovid == out_date_death_afterlandmark ~ "noncovid_death",
-      cox_date_severecovid == cens_date_ltfu_afterlandmark ~ "ltfu",
-      TRUE ~ "none"
-    ),
-    cox_tt_severecovid = difftime(cox_date_severecovid,
-                                  landmark_date,
-                                  units = "days") %>% as.numeric(),
-    cox_bin_severecovid = case_when(cox_cat_severecovid %in% c("noncovid_death", "ltfu", "none") ~ 0,
-                                    cox_cat_severecovid == "covid_death_hosp" ~ 1,
-                                    TRUE ~ NA_real_),
-    cox_date_severecovid_censor = case_when(cox_bin_severecovid == 0 ~ cox_date_severecovid,
-                                          TRUE ~ as.Date(NA))
-  )
-
 # Add treatment variable --------------------------------------------------
 # Set format and reference to ensure proper logistic regression modeling
 df$exp_bin_treat <- factor(df$exp_bin_treat, 
@@ -75,7 +50,7 @@ covariate_names <- names(df) %>%
     ## take out cov_cat_region since it's used as a stratification variable instead
     setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol"
               , "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age", "cov_cat_region")) 
-print(covariate_names)
+# print(covariate_names)
 
 # Checks before proceeding to Cox model -----------------------------------
 if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
@@ -85,7 +60,7 @@ if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
 }
 
 # Cox model ---------------------------------------------------------------
-cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, cox_bin_severecovid) ~ exp_bin_treat +", 
+cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat +", 
                                             paste(covariate_names, collapse = " + "), "+ strata(cov_cat_region)"))
 cox_model_severecovid <- coxph(cox_formula_severecovid, data = df)
 cox_severecovid <- tbl_regression(cox_model_severecovid, exp = TRUE)
