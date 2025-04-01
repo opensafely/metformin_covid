@@ -91,22 +91,22 @@ actions:
       moderately_sensitive:
         table1: output/data_description/table1_midpoint6.csv
 
-  km_treat:
-    run: kaplan-meier-function:v0.0.17 
-      --df_input=output/data/data_processed.arrow
-      --dir_output=output/treat
-      --exposure=exp_bin_treat
-      --origin_date=landmark_date
-      --event_date=out_date_severecovid
-      --censor_date=qa_date_of_death
-      --max_fup=548
-      --plot=TRUE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        km_treat_estimates: output/treat/*.csv
-        png: output/treat/*.png
+  #km_treat:
+  #  run: kaplan-meier-function:v0.0.17 
+  #    --df_input=output/data/data_processed.arrow
+  #    --dir_output=output/treat
+  #    --exposure=exp_bin_treat
+  #    --origin_date=landmark_date
+  #    --event_date=out_date_severecovid
+  #    --censor_date=qa_date_of_death
+  #    --max_fup=548
+  #    --plot=TRUE
+  #  needs:
+  #  - data_process
+  #  outputs:
+  #    moderately_sensitive:
+  #      km_treat_estimates: output/treat/*.csv
+  #      png: output/treat/*.png
 
   #ps:
   #  run: r:latest analysis/ps.R
