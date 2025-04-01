@@ -125,21 +125,21 @@ df <- df %>%
     ## (6) Let's investigate those who did not start any metfin MONO, UNTIL 6M LANDMARK, i.e. exp_bin_metfin_mono == FALSE
     # DPP4 (or combo with SGLT2) +/- metformin
     # Now we may have people who initiated DPP4 + metformin in exp_bin_dpp4
-    exp_bin_dpp4 = exp_bin_metfin_mono == FALSE & exp_date_dpp4_first <= landmark_date,
+    exp_bin_dpp4 = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_dpp4_first) & exp_date_dpp4_first <= landmark_date),
     # TZD +/- metformin
-    exp_bin_tzd = exp_bin_metfin_mono == FALSE & exp_date_tzd_first <= landmark_date,
+    exp_bin_tzd = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_tzd_first) & exp_date_tzd_first <= landmark_date),
     # SGLT2 (or combo with DPP4) +/- metformin
-    exp_bin_sglt2 = exp_bin_metfin_mono == FALSE & exp_date_sglt2_first <= landmark_date,
+    exp_bin_sglt2 = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_sglt2_first) & exp_date_sglt2_first <= landmark_date),
     # sulfo +/- metformin
-    exp_bin_sulfo = exp_bin_metfin_mono == FALSE & exp_date_sulfo_first <= landmark_date,
+    exp_bin_sulfo = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_sulfo_first) & exp_date_sulfo_first <= landmark_date),
     # glp1 +/- metformin
-    exp_bin_glp1 = exp_bin_metfin_mono == FALSE & exp_date_glp1_first <= landmark_date,
+    exp_bin_glp1 = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_glp1_first) & exp_date_glp1_first <= landmark_date),
     # megli +/- metformin
-    exp_bin_megli = exp_bin_metfin_mono == FALSE & exp_date_megli_first <= landmark_date,
+    exp_bin_megli = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_megli_first) & exp_date_megli_first <= landmark_date),
     # agi +/- metformin
-    exp_bin_agi = exp_bin_metfin_mono == FALSE & exp_date_agi_first <= landmark_date,
+    exp_bin_agi = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_agi_first) & exp_date_agi_first <= landmark_date),
     # insulin +/- metformin
-    exp_bin_insulin = exp_bin_metfin_mono == FALSE & exp_date_insulin_first <= landmark_date,
+    exp_bin_insulin = exp_bin_metfin_mono == FALSE & (!is.na(exp_date_insulin_first) & exp_date_insulin_first <= landmark_date),
     
     ## (7) No prescription at all UNTIL 6M after T2DM diagnosis | Should give the same result as exp_bin_treat_nothing, just a different distribution across the arms
     exp_bin_treat_nothing2 = case_when(exp_bin_metfin_mono == FALSE

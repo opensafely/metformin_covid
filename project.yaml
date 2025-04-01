@@ -108,15 +108,6 @@ actions:
         km_treat_estimates: output/te/km/*.csv
         png: output/te/km/*.png
 
-  #ps:
-  #  run: r:latest analysis/ps.R
-  #  needs:
-  #  - data_process
-  #  outputs:
-  #    moderately_sensitive:
-  #      csv: output/ps/*.csv
-  #      plots: output/ps/*.png
-
   cox_primary_scripted:
     run: r:latest analysis/cox_analysis.R
     needs:
@@ -124,34 +115,10 @@ actions:
     outputs:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
-
-  cox_primary_RA:
-    run: cox-ipw:v0.0.33
-    config:
-     df_input: data/data_processed.arrow
-     ipw: FALSE
-     exposure: cox_date_metfin_start_within6m
-     outcome: out_date_severecovid_afterlandmark
-     strata: cov_cat_region
-     covariate_sex: cov_cat_sex
-     covariate_age: cov_num_age
-     covariate_other: cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_cat_smoking_status;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_bin_obesity;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_cat_tc_hdl_ratio;cov_cat_hba1c_mmol_mol
-     cox_start: landmark_date
-     cox_stop: cox_date_severecovid
-     study_start: "2018-07-01"
-     study_stop: "2022-04-01"
-     cut_points: 1;7;14;28;56;84;183;365;730
-     age_spline: TRUE
-     df_output: results_cox_ra.csv
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        arguments: output/args-results_cox_ra.csv
-        estimates: output/results_cox_ra.csv
-
   
 
+
+  
   # km_estimates_metfin_RA:
   #   run: kaplan-meier-function:v0.0.8
   #     --df_input=output/data/data_plots.feather
