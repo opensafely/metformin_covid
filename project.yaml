@@ -98,7 +98,7 @@ actions:
       --exposure=exp_bin_treat
       --origin_date=landmark_date
       --event_date=out_date_severecovid_afterlandmark
-      --censor_date=cox_date_severecovid_censor
+      --censor_date=cox_date_severecovid
       --max_fup=990
       --plot=TRUE
     needs:
@@ -128,7 +128,7 @@ actions:
   cox_primary_RA:
     run: cox-ipw:v0.0.33
     config:
-     df_input: data_processed.arrow
+     df_input: output/data/data_processed.arrow
      ipw: FALSE
      exposure: exp_date_metfin_mono_first
      outcome: out_date_severecovid_afterlandmark
