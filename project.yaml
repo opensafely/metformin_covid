@@ -138,8 +138,8 @@ actions:
      covariate_other: cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_cat_smoking_status;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_bin_obesity;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_cat_tc_hdl_ratio;cov_cat_hba1c_mmol_mol
      cox_start: landmark_date
      cox_stop: cox_date_severecovid
-     study_start: 2021-07-01
-     study_stop: 2022-04-01
+     study_start: mid2018_date
+     study_stop: studyend_date
      cut_points: 1;7;14;28;56;84;183;365;730
      age_spline: TRUE
      df_output: results.csv
