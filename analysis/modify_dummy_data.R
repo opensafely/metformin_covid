@@ -117,7 +117,7 @@ data_processed <- data_processed %>%
     exp_date_metfin_first
   )) %>%
   ungroup()
-# Introduce ~10% missing values randomly in exp_date_metfin_mono_first
+# Now, introduce ~10% missing values randomly in these
 data_processed <- data_processed %>%
   mutate(exp_date_metfin_mono_first = ifelse(
     runif(n()) < 0.1,  # 10% probability of NA
@@ -134,7 +134,7 @@ data_processed <- data_processed %>%
   mutate(exp_date_metfin_mono_first = as.Date(exp_date_metfin_mono_first, origin = "1970-01-01")) %>% 
   mutate(exp_date_metfin_first = as.Date(exp_date_metfin_first, origin = "1970-01-01"))
 
-# (3) Ensure the main intervention variables are between baseline date (elig_date_t2dm) and studyend date
+# (3) Ensure all exposure variables are between baseline date (elig_date_t2dm) and studyend date
 ## If the date is NA, leave it as NA.
 ## If the date is before elig_date_t2dm, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
@@ -164,7 +164,7 @@ data_processed <- data_processed %>%
   ungroup() %>%
   mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
-# (5) Ensure all censoring dates are afterbetween baseline date (elig_date_t2dm) and studyend date
+# (5) Ensure all censoring dates are between baseline date (elig_date_t2dm) and studyend date
 ## cens_date_dereg is completely missing in the current dummy data, so replace all
 ## but impute only 5% of cens_date_dereg date variables
 data_processed$cens_date_dereg <- sapply(data_processed$elig_date_t2dm, function(baseline_date) {
