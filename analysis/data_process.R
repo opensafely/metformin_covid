@@ -95,10 +95,7 @@ data_processed <- data_extracted %>%
       cov_cat_smoking_status == "N" ~ "Never",
       TRUE ~ "Unknown"),
     
-    cov_bin_obesity = fn_case_when(
-      cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
-      cov_bin_obesity == FALSE & (cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Overweight (25-29.9)") ~ "Not Obese (<=30)",
-      TRUE ~ "Unknown"),
+    cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     ## remove TC < 1.75 or > 20; remove HDL < 0.4 or > 5; remove ratios < 1 or > 50

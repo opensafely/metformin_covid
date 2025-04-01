@@ -89,11 +89,9 @@ data_processed <- data_processed %>%
 data_processed <- data_processed %>%
   mutate(cov_bin_prediabetes = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.5, 0.5))) # see prelim data
 
-# cov_bin_obesity only contains 1 value in 1 category
-cov_bin_obesity_categories <- c("Obese (>30)", "Not Obese (<=30)", "Unknown")
-cov_bin_obesity_prob <- c(0.3, 0.5, 0.2)
+# cov_bin_obesity only contains very few TRUE
 data_processed <- data_processed %>%
-  mutate(cov_bin_obesity = as.factor(sample(cov_bin_obesity_categories, n(), replace = TRUE, prob = cov_bin_obesity_prob)))
+  mutate(cov_bin_obesity = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.3, 0.7)))
 
 
 # Modify dates ------------------------------------------------------------
