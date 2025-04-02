@@ -84,12 +84,8 @@ smd_sw <- smd_sw %>%
   rename("SMD_weighted_stabilized" = Diff.Adj)
 
 # Trimming ----------------------------------------------------------------
-# Trimming based on 99th and 1st percentile of the weights
-threshold_99 <- quantile(df$sw, 0.99)
-threshold_01 <- quantile(df$sw, 0.01)
-df_trimmed <- df %>%
-  filter(sw > threshold_01 & sw < threshold_99)
-
+# Determine the common min overlap range in PS
+# Reduce to the max. of all group-wise min. PS (i.e. everyone has at least this PS) & the min. of all group-wise max. PS (i.e. no-one has a PS above) 
 ps_trim <- df %>%
   group_by(exp_bin_treat) %>%
   summarise(min_ps = min(ps), max_ps = max(ps)) %>%
