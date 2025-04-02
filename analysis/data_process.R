@@ -40,6 +40,7 @@ fs::dir_create(here::here("output", "data_description"))
 # Import dates ------------------------------------------------------------
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
+studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
 
 # Define redaction threshold ----------------------------------------------
