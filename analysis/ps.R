@@ -56,12 +56,8 @@ ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 df$ps <- predict(ps_model, type = "response")
 
 # Inverse probability weighting -------------------------------------------
-# Unstabilized
-df$usw <- ifelse(df$exp_bin_treat == "metformin", 
-                                 1/df$ps, 
-                                 1/(1 - df$ps))
 # Stabilized
-p_treat <- mean(df$exp_bin_treat == "metformin") # treatment proportions
+p_treat <- mean(df$exp_bin_treat == "metformin") # prop treated, as per formular for stab weights
 df$sw <- ifelse(df$exp_bin_treat == "metformin", 
                                  p_treat / df$ps, 
                                  (1 - p_treat) / (1 - df$ps))
@@ -70,44 +66,43 @@ df$sw <- ifelse(df$exp_bin_treat == "metformin",
 tbl1_unweighted <- bal.tab(df[covariate_names], 
                           treat = df$exp_bin_treat, 
                           binary = "std",
-                          s.d.denom = "pooled")  # Standardization for binary variables
+                          s.d.denom = "pooled") # standardization for binary variables
 smd_unweighted <- as.data.frame(tbl1_unweighted$Balance)
 smd_unweighted <- smd_unweighted %>% 
   select(Diff.Un) %>% 
   rename("SMD_Unweighted" = Diff.Un)
 
-
 # Assess covariate balance AFTER IPW --------------------------------------
-tbl1_usw <- bal.tab(df[covariate_names], 
-                         treat = df$exp_bin_treat, 
-                         weights = df$usw,
-                         binary = "std", 
-                         s.d.denom = "pooled")  # Ensure consistency with unweighted
-smd_usw <- as.data.frame(tbl1_usw$Balance)
-smd_usw <- smd_usw %>% 
-  select(Diff.Adj) %>% 
-  rename("SMD_weighted_unstabilized" = Diff.Adj)
-
 tbl1_sw <- bal.tab(df[covariate_names], 
                     treat = df$exp_bin_treat, 
                     weights = df$sw,
                     binary = "std", 
-                    s.d.denom = "pooled")  # Ensure consistency with unweighted
+                    s.d.denom = "pooled")
 smd_sw <- as.data.frame(tbl1_sw$Balance)
 smd_sw <- smd_sw %>% 
   select(Diff.Adj) %>% 
   rename("SMD_weighted_stabilized" = Diff.Adj)
 
 # Trimming ----------------------------------------------------------------
-ps_trim <- df %>% 
+# Trimming based on 99th and 1st percentile of the weights
+threshold_99 <- quantile(df$sw, 0.99)
+threshold_01 <- quantile(df$sw, 0.01)
+df_trimmed <- df %>%
+  filter(sw > threshold_01 & sw < threshold_99)
+
+ps_trim <- df %>%
   group_by(exp_bin_treat) %>%
-  summarise(min_ps = min(ps), max_ps = max(ps)) %>% 
+  summarise(min_ps = min(ps), max_ps = max(ps)) %>%
   ungroup() %>%
   summarise(min_common = max(min_ps), max_common = min(max_ps))
-
-# trim based on overlap
 df_trimmed <- df %>%
   filter(ps >= ps_trim$min_common[1] & ps <= ps_trim$max_common[1])
+
+## Min, 25th percentile, median, mean, SD, 75th percentile, and max
+summary(df$sw)
+sd(df$sw)
+summary(df_trimmed$sw)
+sd(df_trimmed$sw)
 
 # Density plot ------------------------------------------------------------
 ## Untrimmed
@@ -118,7 +113,7 @@ df_untreated <- data.frame(dens_x = dens_untreated$x, dens_y = dens_untreated$y,
 ps_density_data_untrimmed <- bind_rows(df_treated, df_untreated)
 
 density_plot_untrimmed <- ggplot(ps_density_data_untrimmed, aes(x = dens_x, y = dens_y, color = group)) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   labs(title = "Propensity Score Density Plot; Untrimmed",
        x = "Propensity Score",
        y = "Density",
@@ -133,7 +128,7 @@ df_untreated_trim <- data.frame(dens_x = dens_untreated_trim$x, dens_y = dens_un
 ps_density_data_trimmed <- bind_rows(df_treated_trim, df_untreated_trim)
 
 density_plot_trimmed <- ggplot(ps_density_data_trimmed, aes(x = dens_x, y = dens_y, color = group)) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   labs(title = "Propensity Score Density Plot; Trimmed",
        x = "Propensity Score",
        y = "Density",
@@ -143,7 +138,6 @@ density_plot_trimmed <- ggplot(ps_density_data_trimmed, aes(x = dens_x, y = dens
 # Save output -------------------------------------------------------------
 # Standardized mean differences, unweighted and weighted (unstablized and stabilized)
 write.csv(smd_unweighted, file = here::here("output", "ps", "smd_unweighted.csv"))
-write.csv(smd_usw, file = here::here("output", "ps", "smd_weighted_unstabilized.csv"))
 write.csv(smd_sw, file = here::here("output", "ps", "smd_weighted_stabilized.csv"))
 # Density plot and underlying data
 write.csv(ps_density_data_untrimmed, file = here::here("output", "ps", "density_plot_untrimmed.csv"))

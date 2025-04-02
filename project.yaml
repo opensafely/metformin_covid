@@ -116,7 +116,14 @@ actions:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
 
-
+  ps:
+    run: r:latest analysis/ps.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        csv: output/ps/*.csv
+        plots: output/ps/*.png
 
 
   
