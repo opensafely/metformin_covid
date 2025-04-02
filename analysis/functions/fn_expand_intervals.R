@@ -7,12 +7,15 @@
 # d) If studyend_date is reached first, then assign outcome=0, censor=0, comp_event=0 to the interval when it happened and stop expanding
 # Weekly and monthly intervals (for now). Weekly intervals fixed to 7 days. Monthly intervals fixed to 31 days (to ensure max possible length of a month)
 ####
-fn_expand_intervals <- function(data, stop_date_columns, studyend_date, outcome_date_variable, comp_date_variable, censor_date_variable, interval_type = c("week", "month")) {
+fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, studyend_date, outcome_date_variable, comp_date_variable, censor_date_variable, interval_type = c("week", "month")) {
   interval_type <- match.arg(interval_type)  # Ensure only valid options are chosen
   
   data %>%
     rowwise() %>%
     mutate(
+      # Assign start date of interval expansion (in our case: landmark_date)
+      start_date = .data[[start_date_variable]],
+      
       # Calculate stop_date as the earliest of the defined dates, including administrative end of study (usually defined separately)
       stop_date = pmin(!!!syms(stop_date_columns), studyend_date, na.rm = TRUE),
       
@@ -47,7 +50,7 @@ fn_expand_intervals <- function(data, stop_date_columns, studyend_date, outcome_
     ungroup() %>%
     
     # Create a list of dates based on the interval_type (weekly or monthly)
-    mutate(intervals_list = map2(landmark_date, stop_date, ~ {
+    mutate(intervals_list = map2(start_date, stop_date, ~ {
       if (interval_type == "week") {
         seq(from = .x, to = .y, by = "week")  # Weekly intervals
       } else if (interval_type == "month") {

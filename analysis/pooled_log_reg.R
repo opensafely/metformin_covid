@@ -10,10 +10,16 @@
 
 
 # ToDo --------------------------------------------------------------------
-## a) Adapt all functions to use months or weeks dynamically
-## b) Discuss re region as stratification factor
-## c) Discuss re bootstrapping by arm
-## d) Marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping for IPTW & IPCW
+## a) Adapt the script to dynamically use months or weeks dynamically
+## b) Adapt the script to dynamically use different outcomes
+## c) Discuss re region as stratification factor
+## d) Discuss re bootstrapping by arm
+## e) Discuss re truncating/trimming: Use trimmed dataset from PS from the onset? Still apply truncation at 99th?
+## e) Complete the marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping for IPTW & IPCW (currently only curves from IPTW & IPCW without 95%)
+## f) Consider doing the Love/SMD plot in the separate PS branch/script only
+## g) Move each function into a separate R script
+## h) Consider deleting (or moving) all (i) Standardization chapters, only keep IPW approach
+## i) Discuss different spline methods, ns() versus rcs()
 
 
 # Import libraries and functions ------------------------------------------
@@ -29,8 +35,7 @@ library(car) # for deltaMethod
 library(boot)
 library(ggplot2)
 library(Hmisc) # for Love/SMD plot
-library(parglm) # to be more efficient
-# library(speedglm) # not available in OpenSAFELY !
+library(parglm) # to be computationally more efficient
 source(here::here("analysis", "functions", "fn_expand_intervals.R"))
 
 
@@ -44,80 +49,15 @@ df <- read_feather(here("output", "data", "data_processed.arrow"))
 
 # Import dates ------------------------------------------------------------
 source(here::here("analysis", "metadates.R"))
-# Convert the meta-dates into Date objects
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
 
-# Add splines ------------------------------------------------------------- ## define in data_process
+# Add splines -------------------------------------------------------------
 # Compute knot locations based on percentiles, according to study protocol
 age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 df <- df %>%
   mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
-
-
-# Create the data setup needed for pooled log reg -------------------------
-df <- df %>% 
-  filter(qa_date_of_death > elig_date_t2dm | is.na(qa_date_of_death)) # add this to data_process
-
-df <- df %>% 
-  mutate(landmark_date = elig_date_t2dm + days(183)) # add this to data_process
-
-df <- df %>% # add this to data_process
-  mutate(
-    out_bin_severecovid_afterlandmark = case_when(!is.na(out_date_covid19_severe)
-                                                  & out_date_covid19_severe > elig_date_t2dm + days(183) ~ TRUE,
-                                                  TRUE ~ FALSE),
-    out_date_severecovid_afterlandmark = case_when(out_bin_severecovid_afterlandmark == TRUE ~ out_date_covid19_severe, 
-                                                   TRUE ~ as.Date(NA)),
-    out_bin_death_afterlandmark = case_when(!is.na(qa_date_of_death)
-                                            & qa_date_of_death > elig_date_t2dm + days(183) ~ TRUE,
-                                            TRUE ~ FALSE),
-    out_date_death_afterlandmark = case_when(out_bin_death_afterlandmark == TRUE ~ qa_date_of_death, 
-                                             TRUE ~ as.Date(NA)),
-    out_bin_ltfu_afterlandmark = case_when(!is.na(cens_date_dereg)
-                                           & cens_date_dereg > elig_date_t2dm + days(183) ~ TRUE,
-                                           TRUE ~ FALSE),
-    out_date_ltfu_afterlandmark = case_when(out_bin_ltfu_afterlandmark == TRUE ~ cens_date_dereg, 
-                                            TRUE ~ as.Date(NA))
-  ) %>% 
-  mutate(
-    cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
-                                out_date_death_afterlandmark,
-                                out_date_ltfu_afterlandmark,
-                                studyend_date,
-                                na.rm = TRUE),
-    cox_cat_severecovid = case_when(
-      # pt should not have both noncovid and covid death
-      cox_date_severecovid == out_date_severecovid_afterlandmark ~ "covid_death_hosp",
-      cox_date_severecovid == out_date_death_afterlandmark ~ "noncovid_death",
-      cox_date_severecovid == out_date_ltfu_afterlandmark ~ "ltfu",
-      TRUE ~ "none"
-    ),
-    cox_tt_severecovid = difftime(cox_date_severecovid,
-                                  elig_date_t2dm + days(183), # count from landmark! ## define in data_process
-                                  units = "days") %>% as.numeric(),
-    cox_bin_severecovid = case_when(cox_cat_severecovid %in% c("noncovid_death", "ltfu", "none") ~ 0,
-                                    cox_cat_severecovid == "covid_death_hosp" ~ 1,
-                                    TRUE ~ NA_real_),
-    cox_date_severecovid_censor = case_when(cox_bin_severecovid == 0 ~ cox_date_severecovid,
-                                            TRUE ~ as.Date(NA))
-  )
-
-# Drop unnecessary variables going forward ## add to data_process
-df <- df %>% 
-  dplyr::select(patient_id, elig_date_t2dm, exp_bin_treat, landmark_date,
-         starts_with("cov_"),
-         ends_with("_afterlandmark"))
-
-# Define treatment variable -------------------------------------------------- ## define in data_process
-df <- df %>%
-  mutate(exp_bin_treat = sample(c(1, 2), nrow(df), replace = TRUE, prob = c(0.5, 0.5)))
-
-# Keep it at 1 and 0 for model below
-df <- df %>% 
-  mutate(exp_bin_treat = case_when(exp_bin_treat == 2 ~ 0,
-                                   exp_bin_treat == 1 ~ 1))
 
 
 # Define covariates ----------------------------------------------------------
@@ -129,10 +69,16 @@ covariate_names <- names(df) %>%
   ## cov_cat_hba1c_mmol_mol covers cov_num_hba1c_mmol_mol
   ## cov_cat_tc_hdl_ratio covers cov_num_tc_hdl_ratio
   ## cov_num_age_spline covers cov_cat_age and cov_num_age
-  ## CAVE: Keep cov_cat_region since it's used as a stratification variable instead
-  setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_num_tc_hdl_ratio"
-            , "cov_cat_age", "cov_num_age")) 
-# print(covariate_names)
+  setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age")) 
+print(covariate_names)
+
+
+# Drop unnecessary variables to reduce dataset size -----------------------
+df <- df %>% 
+  dplyr::select(patient_id, exp_bin_treat, elig_date_t2dm, landmark_date,
+                starts_with("cov_"),
+                starts_with("out_") & ends_with("_afterlandmark"),
+                starts_with("cens_"))
 
 
 # Expand the dataset ------------------------------------------------------
@@ -142,13 +88,15 @@ covariate_names <- names(df) %>%
 # c) If censoring event (out_date_ltfu_afterlandmark) is reached first, assign outcome=NA, censor=1, comp_event=NA to the interval when it happened and stop expanding
 # d) If studyend_date is reached first, then assign outcome=0, censor=0, comp_event=0 to the interval when it happened and stop expanding
 # Use studyend date from metadates.R import
-stop_date_columns <- c("out_date_severecovid_afterlandmark", "out_date_death_afterlandmark", "out_date_ltfu_afterlandmark")
+start_date_variable <- "landmark_date" # start expanding at landmark date, not elig_date_t2dm (due to landmark design)
+stop_date_columns <- c("out_date_severecovid_afterlandmark", "out_date_death_afterlandmark", "cens_date_ltfu_afterlandmark")
 outcome_date_variable <- "out_date_severecovid_afterlandmark"
 comp_date_variable <- "out_date_death_afterlandmark"
-censor_date_variable <- "out_date_ltfu_afterlandmark"
+censor_date_variable <- "cens_date_ltfu_afterlandmark"
 
 # Apply the function, choose either weeks or months, currently only using months, but works for both.
 df_long_months <- fn_expand_intervals(df, 
+                                      start_date_variable,
                                       stop_date_columns, 
                                       studyend_date,
                                       outcome_date_variable, 
@@ -156,13 +104,12 @@ df_long_months <- fn_expand_intervals(df,
                                       censor_date_variable,
                                       interval_type = "month")
 
-## double-check:
+## To double-check:
 # df_long_months %>%
-#   dplyr::select(patient_id, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
-#          out_date_ltfu_afterlandmark, studyend_date, stop_date, start_date_month, month, outcome, 
-#          comp_event, censor,
-#          qa_date_of_death, cov_cat_sex, cov_num_age, elig_date_t2dm) %>%
-#   dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
+#   dplyr::select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
+#                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome, comp_event, censor,
+#                 cov_cat_sex, cov_num_age) %>%
+#   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
 #   # dplyr::filter(patient_id == 16) %>%
 #   # dplyr::filter(is.na(censor)) %>%
 #   View()
@@ -170,40 +117,36 @@ df_long_months <- fn_expand_intervals(df,
 
 # Background description -----------------------------------------------------
 ### a) Pooled logistic regression
-## Pooled logistic regression models naturally allow for the parametric estimation of risks, and thus risk differences
-## and risk ratios. Also, these models can be specified such that the effect of the treatment can vary over time, 
-## as opposed to relying on a proportional hazards assumption.
-## We're modeling/simulating expected (counterfactual) risks over time under the assumption that 
-## individuals could have been followed until K-1. Hence everyone has risk data until until K-1.
+## Pooled logistic regression models allow for the parametric estimation of risks, and thus risk differences and risk ratios.
+## Also, these models can be specified such that the effect of the treatment can vary over time, without relying on a proportional hazards assumption.
+## We're modeling/simulating expected/predicted (counterfactual) risks over time under the assumption that 
+## individuals could have been followed until max fup time (K-1). Hence everyone has predicted risk data until K-1.
 ## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
-## Some general details regarding the PLR data setup/model:
-## Age is included with splines
-## See dataset rules above, regarding competing and censoring event. Data setup as in CAUSALab TTE course material.
+## The dataset is currently set up as in CAUSALab TTE course material (esp. see coding for "outcome", "censor" and "comp_event")
 ## I currently include cov_cat_region as another confounder - however, in the protocol we specified cov_cat_region as a stratification. Discuss, rethink.
 
 ### b) Adjustment for baseline confounding
-## Adjustment for baseline confounding, which can be conceptualized as an attempt to emulate randomization in an observational analysis, 
-## can be accomplished using a variety of methods. 
-## I will use (i) standardization and (ii) inverse probability weighting (IPW) and (iii) their combination
+## Adjustment for baseline confounding, i.e. attempt to emulate randomization can be accomplished using a variety of methods. 
+## I will use (i) standardization and (ii) inverse probability weighting (IPW), however, focus on IPW going forward
 
 ## (i) Standardization
 ## The standardized outcome among the treated and untreated groups is estimated by taking a weighted average of the conditional
 ## outcomes, using the prevalence of the baseline confounders in the observed study population as weights. This entails:
-## (1) fitting an outcome regression model conditional on the confounders listed above and 
+## (1) fitting an outcome regression model conditional on the confounders and 
 ## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
 ## We model the follow-up time in the outcome regression model using linear and quadratic terms and include product terms between the treatment group indicator and follow-up time.
 ## Other follow-up time modelling would be possible (cubic, splines), I will stick to linear and quadratic term.
 
 ## (ii) IPW
-## Like standardization, IPW can also be used to obtain marginal estimates of causal effects. 
+## Like standardization, IPW can be used to obtain marginal estimates of causal effects. 
 ## Briefly, IPW can be used to create a pseudopopulation (i.e.,a hypothetical population) in which treatment is independent of the measured confounders.
 ## Informally, the denominator of the inverse probability weight for each individual is the probability of receiving their observed treatment value, given their confounder history.
-## Unstabilized and stabilized weights can be used, I will focus on stabilized
-## Truncation/trimming can be applied to avoid extreme weights, I will explore this in addition.
+## Unstabilized and stabilized weights can be used, I will focus on stabilized.
+## If we want to incorporate time-varying confounding, e.g. for censoring weights or adherence weights (per protocol analysis), 
+## then standardization alone is not possible anymore, we then need time-update and time-varying weights, and simply multiply all weights
 
 ## (iii) Combination of above, useful when:
-## If we need to adjust for additional baseline confounding that can't be included when creating IPW (e.g. baseline calendar week/month in sequential trial setup), then we can create IPW first and then standardize to the empirical distribution of baseline calendar week/month in the dataset
-## If we want to incorporate time-varying confounding, e.g. censoring weights or adherence weights (per protocol analysis), then standardization alone is not possible anymore, while IPW can be easily multiplied and incoporate time-varying covariates
+## If we need to adjust for additional baseline confounding that can't be included when creating IPW (e.g. baseline calendar week/month in sequential trial setup), then we create IPW first and then standardize to the empirical distribution of baseline calendar week/month in the datase
 
 
 # Define interval data set and number of bootstraps ----------------------------
@@ -378,6 +321,7 @@ te_stand_rd_rr_withCI <- function(data, indices) {
 
 set.seed(423)
 te_stand_rd_rr_withCI <- boot(data = study_ids, statistic = te_stand_rd_rr_withCI, R = R)
+# summary(te_stand_rd_rr_withCI$t)
 
 # Function to extract bootstrapped confidence intervals - and keep a column with the original point estimates (without CI)
 extract_ci_boot <- function(boot_obj, index) {
@@ -389,7 +333,7 @@ extract_ci_boot <- function(boot_obj, index) {
   }
 }
 
-# # Create the results table
+# Create the results table
 te_plr_stand_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
   Estimate_original = te_stand_rd_rr_withCI$t0,  # Original estimates
@@ -400,6 +344,9 @@ te_plr_stand_boot_tbl <- data.frame(
 
 
 # (i) Standardization: Marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping ----
+
+### This chapter will be removed, instead will do the graph with IPTW & IPCW ###
+
 study_ids <- data.frame(patient_id = df$patient_id)
 # same function as above, except that a) it returns all risk timepoints incl. 95% CI, and b) no RD and RR
 te_all_timepoints_withCI <- function(data, indices) {
@@ -537,9 +484,8 @@ te_all_timepoints_withCI <- function(data, indices) {
 # (ii) IPTW ----------------------------------------------------------------
 ## The denominator of the IPTW for each individual is the probability of receiving their observed(!) treatment value, given their confounder history.
 ## Similar to PS, but "probability of receiving their observed(!) treatment value", i.e. 0 or 1, not only 1 like in a PS
-## If we run sequential trials, then we usually include calendar time (and _sqr) as baseline confounder to account for a time trend between trials - and include this as only confounder in the outcome model => that requires standardization over calendar period afterwards. 
-## In our scenario, as per protocol, we do not include calendar week/month as baseline confounder. To be discussed.
-## If so, include calendar time (e.g. since study start) as baseline confounder. CAVE: not the same as month and monthsqr!
+## If we run sequential trials, then we usually include calendar period (and _sqr) as baseline confounder to account for a time trend between trials - and include this as the only confounder in the outcome model and then standardize over calendar period. 
+## In our current scenario, as per protocol, we do not use sequential trials and do not include calendar period as baseline confounder. CAVE: This is not the same as month and monthsqr!
 
 # Calculate denominator for "probability of receiving their observed(!) treatment value"
 iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + ")))
@@ -564,12 +510,13 @@ sd(df_long_months$w_treat_stab)
 treat_b0 <- subset(df_long_months,exp_bin_treat==0)
 treat_b1 <- subset(df_long_months,exp_bin_treat==1)
 
-# List of variables to compare
+# List of variables to compare (include more, not only covariate_names, e.g. also the numeric variables for HbA1c and TC/HDL ratio)
 varlist <- names(df) %>%
   grep("^cov", ., value = TRUE) %>% 
-  # exclude those not needed in the this plot: 
-  ## cov_num_age_spline, cov_cat_stp (cov_cat_region is enough)
-  setdiff(c("cov_num_age_spline", "cov_cat_stp")) 
+  # but exclude those that make no sense: 
+  ## cov_cat_stp (will be excluded from the list at a later stage anyway)
+  ## cov_num_age_spline and cov_cat_age, represented by cov_num_age
+  setdiff(c("cov_num_age_spline", "cov_cat_age", "cov_cat_stp")) 
 print(varlist)
 
 # Create function to take mean difference, or SMD for age
@@ -622,6 +569,7 @@ covplot_weighted <- ggplot(data = covplot_w) +
   geom_point(aes(x = md, y = var), color = "steelblue") + scale_x_continuous(limits = c(-0.9, 0.9)) +
   geom_vline(xintercept = 0) +
   labs(y = "Covariates", x = "Mean Difference", title = "Covariate Balance Plot")
+## However, since the numeric variables are not needed for modelling, they were not modified in the dummy data, and thus contain lots of missing
 
 
 # (ii) IPTW: Truncate weights --------------------------------------------------------
@@ -768,16 +716,15 @@ te_plr_iptw_rse_tbl <- data.frame(
 # (ii) IPTW & IPCW: Add censoring event weights -----------------------------------
 ## In our case we want to censor for LTFU, i.e. "the effect had no one been lost to follow-up"
 ## Informally, an uncensored individual’s inverse probability of censoring weight is the inverse of
-## their probability of remaining uncensored given their treatment and covariate history. In the
-## context of loss to follow-up, each individual who was not lost to follow-up receives a weight that
-## is proportional to the inverse of the probability of not being lost to follow-up, given their specific
-## history. We may also consider stabilized IP weights for censoring, in which the numerator of the
+## their probability of remaining uncensored given their treatment and covariate history. 
+## In the context of loss to follow-up, each individual who was not lost to follow-up receives a weight that is
+## proportional to the inverse of the probability of not being lost to follow-up, given their specific history.
+## We will consider stabilized IP weights for censoring, in which the numerator of the
 ## weights is the probability of remaining uncensored given an individual’s treatment.
 
 ## Once an individual is censored, they receive a censoring weight of 0 from that point onward. In
-## this simplified example, we assume censoring due to loss to follow-up depends only on the
-## baseline treatment, 𝐴$ , and baseline covariates, 𝐿$ . In practice, censoring due to loss to follow-up
-## will usually also depend on time-varying characteristics. Once, we can incorporate time-varying covariates (from OpenSAFELY), we will adapt
+## this simplified example, we assume censoring due to loss to follow-up depends only on the baseline treatment and baseline covariates.
+## Once, we can incorporate time-varying covariates (from OpenSAFELY), we will adapt.
 
 # Indicator for ever being censored due to loss to follow-up
 df_long_months <- df_long_months %>%
@@ -786,10 +733,9 @@ df_long_months <- df_long_months %>%
   ungroup()
 
 ## Fit a pooled logistic regression model for the denominator of the IP weights for censoring 
-## This model should predict the probability of remaining uncensored (not being lost to follow-up) at each
-## time, conditional on treatment and the baseline covariates specified in the target trial protocol. 
+## This model should predict the probability of remaining uncensored (not being lost to follow-up) at each timepoint. 
 ## Continuous time, here months (modeled using linear and quadratic terms), will serve as the time scale for this model. 
-## Do not include any product terms in the model.
+## Hence, we do not include any product terms in the model.
 ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + ")))
 ipcw.denom <- parglm(ipcw_denom_formula, 
                   family = binomial(link = 'logit'),
@@ -798,7 +744,7 @@ ipcw.denom <- parglm(ipcw_denom_formula,
 # Obtain predicted probabilities of being uncensored for denominator
 df_long_months$ipcw_denom <- predict(ipcw.denom, df_long_months, type="response")
 
-## For the numerator we now fit a model to include the time-varying aspect of the weights
+## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any confounders 
 ipcw_num_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr"))
 ipcw.num <- glm(ipcw_num_formula, 
                 family = binomial(link = 'logit'),
