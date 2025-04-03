@@ -281,10 +281,7 @@ data_processed <- data_processed %>%
                                                    na.rm = TRUE),
     cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
                                                      landmark_date,
-                                                     units = "days") %>% as.numeric(),
-    # for cox reusable action: exposure start date for those who start, missing for all others 
-    cox_date_metfin_start_within6m = case_when(exp_bin_metfin == TRUE ~ landmark_date, 
-                                            TRUE ~ as.Date(NA))
+                                                     units = "days") %>% as.numeric()
   )
 
 
