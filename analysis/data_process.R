@@ -33,6 +33,7 @@ source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 
 
 # Create directories for output -------------------------------------------
+fs::dir_create(here::here("output"))
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_description"))
 

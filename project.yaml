@@ -69,6 +69,7 @@ actions:
       highly_sensitive:
         dataset1: output/data/data_processed.arrow
         dataset2: output/data/data_processed_full.arrow
+        dataset3: output/data_processed.arrow
       moderately_sensitive:
         flowchart_tbls: output/data_description/*.csv
 
