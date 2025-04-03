@@ -291,7 +291,7 @@ data_processed <- data_processed %>%
                                                      landmark_date,
                                                      units = "days") %>% as.numeric(),
     # for cox reusable action: exposure start date for those who start, missing for all others 
-    cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date, 
+    cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date + days(1), 
                                                TRUE ~ as.Date(NA))
   )
 
@@ -333,3 +333,4 @@ write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_descripti
 write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_elig_excluded.csv"))
 # final (restricted) dataset
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
+arrow::write_feather(data_processed, here::here("output", "data_processed.arrow"))
