@@ -33,7 +33,6 @@ source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 
 
 # Create directories for output -------------------------------------------
-fs::dir_create(here::here("output"))
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_description"))
 
@@ -334,4 +333,3 @@ write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_descripti
 write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_elig_excluded.csv"))
 # final (restricted) dataset
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
-arrow::write_feather(data_processed, here::here("output", "data_processed.arrow"))

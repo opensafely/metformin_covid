@@ -69,7 +69,6 @@ actions:
       highly_sensitive:
         dataset1: output/data/data_processed.arrow
         dataset2: output/data/data_processed_full.arrow
-        dataset3: output/data_processed.arrow
       moderately_sensitive:
         flowchart_tbls: output/data_description/*.csv
 
@@ -118,9 +117,9 @@ actions:
         csv: output/te/cox_scripted/*.csv
   
   cox_primary_RA:
-    run: cox-ipw:v0.0.33
+    run: cox-ipw:v0.0.34
     config:
-     df_input: data_processed.arrow
+     df_input: data/data_processed.arrow
      ipw: FALSE
      exposure: cox_date_metfin_start_within6m
      outcome: out_date_severecovid_afterlandmark
@@ -132,7 +131,7 @@ actions:
      cox_stop: cox_date_severecovid
      study_start: "2018-07-01"
      study_stop: "2022-04-01"
-     cut_points: 28;90;365;730
+     cut_points: 730
      age_spline: TRUE
      save_analysis_ready: FALSE
      df_output: results_cox_ra.csv
