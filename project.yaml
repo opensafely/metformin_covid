@@ -20,7 +20,7 @@ actions:
         dataset: output/dataset_dm_algo.arrow
 
   diabetes_algo:
-    run: diabetes-algo:v0.0.4
+    run: diabetes-algo:v0.0.6
     config:
      df_input: dataset_dm_algo.arrow
      remove_helper: TRUE
