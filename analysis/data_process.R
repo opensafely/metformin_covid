@@ -93,7 +93,7 @@ data_processed <- data_extracted %>%
       strat_cat_region == "South East" ~ "South East",
       strat_cat_region == "South West" ~ "South West",
       TRUE ~ NA_character_), # will have no missing, by definition (excluded)
-    
+
     cov_cat_rural_urban = fn_case_when(
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
