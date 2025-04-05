@@ -41,16 +41,14 @@ df$exp_bin_treat <- factor(df$exp_bin_treat,
 # Add covariates ----------------------------------------------------------
 covariate_names <- names(df) %>%
     grep("^cov_", ., value = TRUE) %>% 
-    # exclude those not needed in the model: 
-    ## cov_cat_region covers for cov_cat_stp, 
+    # exclude those not needed in the model:
     ## cov_bin_obesity covers for cov_num_bmi & cov_cat_bmi_groups,
     ## cov_cat_hba1c_mmol_mol covers cov_num_hba1c_mmol_mol
     ## cov_cat_tc_hdl_ratio covers cov_num_tc_hdl_ratio
     ## cov_num_age_spline covers cov_cat_age and cov_num_age
-    ## take out cov_cat_region since it's used as a stratification variable instead
-    setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol"
-              , "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age", "cov_cat_region")) 
-print(covariate_names)
+    setdiff(c("cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol"
+              , "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age")) 
+# print(covariate_names)
 
 # Checks before proceeding to Cox model -----------------------------------
 if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
@@ -61,7 +59,7 @@ if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
 
 # Cox model ---------------------------------------------------------------
 cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strata(cov_cat_region)"))
+                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 cox_model_severecovid <- coxph(cox_formula_severecovid, data = df)
 cox_severecovid <- tbl_regression(cox_model_severecovid, exp = TRUE)
 cox_severecovid_df <- cox_severecovid %>% 

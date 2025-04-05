@@ -27,7 +27,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
       # Rule 4: no imd at elig_date_t2dm
       no_imd = qa_bin_known_imd == FALSE | cov_cat_deprivation_5 == "Unknown", # should not matter which variable is taken, but just in case
       # Rule 5: no region at elig_date_t2dm
-      no_region = cov_cat_region == "Unknown",
+      no_region = strat_cat_region == "Unknown",
       # Rule 6: not registered elig_date_t2dm
       not_registered = qa_bin_was_registered == FALSE | is.na(qa_bin_was_registered)
     )

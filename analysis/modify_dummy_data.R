@@ -58,10 +58,10 @@ data_processed <- data_processed %>%
   mutate(qa_bin_known_imd = cov_cat_deprivation_5 %in% c("1 (most deprived)", "2", "3", "4", "5 (least deprived)"))
 
 # Complete region info
-cov_cat_region_categories <- c("North East and Yorkshire", "North West", "Midlands", "East of England", "London", "South East", "South West", "Unknown")
-cov_cat_region_prob <- c(0.2, 0.1, 0.2, 0.25, 0.05, 0.05, 0.15, 0.0) # see prelim data
+strat_cat_region_categories <- c("North East and Yorkshire", "North West", "Midlands", "East of England", "London", "South East", "South West", "Unknown")
+strat_cat_region_prob <- c(0.2, 0.1, 0.2, 0.25, 0.05, 0.05, 0.15, 0.0) # see prelim data
 data_processed <- data_processed %>%
-  mutate(cov_cat_region = as.factor(sample(cov_cat_region_categories, n(), replace = TRUE, prob = cov_cat_region_prob)))
+  mutate(strat_cat_region = as.factor(sample(strat_cat_region_categories, n(), replace = TRUE, prob = strat_cat_region_prob)))
 
 # All registered
 data_processed <- data_processed %>%
