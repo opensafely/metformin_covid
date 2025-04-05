@@ -82,7 +82,7 @@ data_processed <- data_extracted %>%
       cov_cat_ethnicity == "Other" ~ "Other",
       TRUE ~ "Unknown"),
     
-    strat_cat_region = fn_case_when(
+    cov_cat_region = fn_case_when(
       strat_cat_region == "East" ~ "East",
       strat_cat_region == "London" ~ "London",
       strat_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
