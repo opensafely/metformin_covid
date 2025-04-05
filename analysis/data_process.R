@@ -40,6 +40,7 @@ fs::dir_create(here::here("output", "data_description"))
 # Import dates ------------------------------------------------------------
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
+studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
 
 # Define redaction threshold ----------------------------------------------
@@ -73,14 +74,22 @@ data_processed <- data_extracted %>%
       cov_cat_deprivation_5 == "5 (least deprived)" ~ "5 (least deprived)",
       TRUE ~ "Unknown"),
     
-    cov_cat_region = fn_case_when(
-      cov_cat_region == "East" ~ "East",
-      cov_cat_region == "London" ~ "London",
-      cov_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
-      cov_cat_region %in% c("Yorkshire and The Humber", "North East") ~ "North East and Yorkshire",
-      cov_cat_region == "North West" ~ "North West",
-      cov_cat_region == "South East" ~ "South East",
-      cov_cat_region == "South West" ~ "South West",
+    cov_cat_ethnicity = fn_case_when(
+      cov_cat_ethnicity == "White" ~ "White",
+      cov_cat_ethnicity == "Mixed" ~ "Mixed",
+      cov_cat_ethnicity == "Asian" ~ "Asian",
+      cov_cat_ethnicity == "Black" ~ "Black",
+      cov_cat_ethnicity == "Other" ~ "Other",
+      TRUE ~ "Unknown"),
+    
+    strat_cat_region = fn_case_when(
+      strat_cat_region == "East" ~ "East",
+      strat_cat_region == "London" ~ "London",
+      strat_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
+      strat_cat_region %in% c("Yorkshire and The Humber", "North East") ~ "North East and Yorkshire",
+      strat_cat_region == "North West" ~ "North West",
+      strat_cat_region == "South East" ~ "South East",
+      strat_cat_region == "South West" ~ "South West",
       TRUE ~ "Unknown"),
     
     cov_cat_rural_urban = fn_case_when(
@@ -280,10 +289,7 @@ data_processed <- data_processed %>%
                                                    na.rm = TRUE),
     cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
                                                      landmark_date,
-                                                     units = "days") %>% as.numeric(),
-    # for cox reusable action: exposure start date for those who start, missing for all others 
-    cox_date_metfin_start_within6m = case_when(exp_bin_metfin == TRUE ~ landmark_date, 
-                                            TRUE ~ as.Date(NA))
+                                                     units = "days") %>% as.numeric()
   )
 
 
@@ -306,6 +312,7 @@ data_processed <- data_processed %>%
          landmark_date,
          qa_date_of_death, # To identify other deaths, e.g. between eligibility and landmark
          starts_with("exp_"), # Exposures
+         starts_with("strat_"), # Stratification variable
          starts_with("cov_"), # Covariates
          starts_with("out_"), # Outcomes
          starts_with("cens_"), # Censoring variable
