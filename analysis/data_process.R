@@ -82,7 +82,7 @@ data_processed <- data_extracted %>%
       cov_cat_ethnicity == "Other" ~ "Other",
       TRUE ~ "Unknown"),
     
-    strat_cat_region = fn_case_when(
+    cov_cat_region = fn_case_when(
       strat_cat_region == "East" ~ "East",
       strat_cat_region == "London" ~ "London",
       strat_cat_region %in% c("West Midlands", "East Midlands") ~ "Midlands",
@@ -289,7 +289,10 @@ data_processed <- data_processed %>%
                                                    na.rm = TRUE),
     cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
                                                      landmark_date,
-                                                     units = "days") %>% as.numeric()
+                                                     units = "days") %>% as.numeric(),
+    # for cox reusable action: exposure start date for those who start, missing for all others 
+    cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date + days(1), 
+                                               TRUE ~ as.Date(NA))
   )
 
 
