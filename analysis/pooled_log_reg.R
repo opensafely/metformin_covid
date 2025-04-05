@@ -12,9 +12,8 @@
 # ToDo --------------------------------------------------------------------
 ## a) Adapt the script to dynamically use months or weeks dynamically
 ## b) Adapt the script to dynamically use different outcomes
-## c) Discuss re region as stratification factor
-## d) Discuss re bootstrapping by arm
-## e) Discuss re truncating/trimming: Use trimmed dataset from PS from the onset? Still apply truncation at 99th?
+## c) Discuss re bootstrapping by arm
+## d) Discuss re truncating/trimming: Use trimmed dataset from PS from the onset? Still apply truncation at 99th?
 ## e) Complete the marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping for IPTW & IPCW (currently only curves from IPTW & IPCW without 95%)
 ## f) Consider doing the Love/SMD plot in the separate PS branch/script only
 ## g) Move each function into a separate R script
@@ -64,19 +63,19 @@ df <- df %>%
 covariate_names <- names(df) %>%
   grep("^cov_", ., value = TRUE) %>% 
   # exclude those not needed in the model: 
-  ## cov_cat_region covers for cov_cat_stp, 
   ## cov_bin_obesity covers for cov_num_bmi & cov_cat_bmi_groups,
   ## cov_cat_hba1c_mmol_mol covers cov_num_hba1c_mmol_mol
   ## cov_cat_tc_hdl_ratio covers cov_num_tc_hdl_ratio
   ## cov_num_age_spline covers cov_cat_age and cov_num_age
-  setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age")) 
-print(covariate_names)
+  setdiff(c("cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age")) 
+# print(covariate_names)
 
 
 # Drop unnecessary variables to reduce dataset size -----------------------
 df <- df %>% 
   dplyr::select(patient_id, exp_bin_treat, elig_date_t2dm, landmark_date,
                 starts_with("cov_"),
+                starts_with("strat_"),
                 starts_with("out_") & ends_with("_afterlandmark"),
                 starts_with("cens_"))
 
@@ -123,7 +122,6 @@ df_long_months <- fn_expand_intervals(df,
 ## individuals could have been followed until max fup time (K-1). Hence everyone has predicted risk data until K-1.
 ## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
 ## The dataset is currently set up as in CAUSALab TTE course material (esp. see coding for "outcome", "censor" and "comp_event")
-## I currently include cov_cat_region as another confounder - however, in the protocol we specified cov_cat_region as a stratification. Discuss, rethink.
 
 ### b) Adjustment for baseline confounding
 ## Adjustment for baseline confounding, i.e. attempt to emulate randomization can be accomplished using a variety of methods. 
@@ -160,7 +158,7 @@ R <- 10 # Total bootstraps (ideally >500)
 ## (1) fitting an outcome regression model conditional on the confounders listed above
 df_long_months$monthsqr <- df_long_months$month^2
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                            paste(covariate_names, collapse = " + ")))
+                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
                              data = df_long_months) 
@@ -269,7 +267,7 @@ te_stand_rd_rr_withCI <- function(data, indices) {
   
   # Fit pooled logistic model to estimate discrete hazards
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + ")))
+                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
                                data = d)
@@ -360,7 +358,7 @@ te_all_timepoints_withCI <- function(data, indices) {
   
   # Fit pooled logistic model to estimate discrete hazards
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + ")))
+                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
                                data = d)
@@ -488,7 +486,7 @@ te_all_timepoints_withCI <- function(data, indices) {
 ## In our current scenario, as per protocol, we do not use sequential trials and do not include calendar period as baseline confounder. CAVE: This is not the same as month and monthsqr!
 
 # Calculate denominator for "probability of receiving their observed(!) treatment value"
-iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + ")))
+iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 iptw.denom <- parglm(iptw_denom_formula, 
                  family = binomial(link = 'logit'),
                  data = df_long_months) 
@@ -514,9 +512,8 @@ treat_b1 <- subset(df_long_months,exp_bin_treat==1)
 varlist <- names(df) %>%
   grep("^cov", ., value = TRUE) %>% 
   # but exclude those that make no sense: 
-  ## cov_cat_stp (will be excluded from the list at a later stage anyway)
   ## cov_num_age_spline and cov_cat_age, represented by cov_num_age
-  setdiff(c("cov_num_age_spline", "cov_cat_age", "cov_cat_stp")) 
+  setdiff(c("cov_num_age_spline", "cov_cat_age")) 
 print(varlist)
 
 # Create function to take mean difference, or SMD for age
@@ -590,7 +587,7 @@ sd(df_long_months$w_treat_stab_99)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + ")))
+                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
                              data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
@@ -736,7 +733,7 @@ df_long_months <- df_long_months %>%
 ## This model should predict the probability of remaining uncensored (not being lost to follow-up) at each timepoint. 
 ## Continuous time, here months (modeled using linear and quadratic terms), will serve as the time scale for this model. 
 ## Hence, we do not include any product terms in the model.
-ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + ")))
+ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 ipcw.denom <- parglm(ipcw_denom_formula, 
                   family = binomial(link = 'logit'),
                   data = df_long_months) 
@@ -779,7 +776,7 @@ sd(df_long_months$w_treat_cens_stab_99)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + ")))
+                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                 family = binomial(link = 'logit'),
                                 data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
@@ -930,7 +927,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
                            (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
   
   ### (2) Calculate IPCW
-  ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + ")))
+  ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
   ipcw.denom <- parglm(ipcw_denom_formula, 
                        family = binomial(link = 'logit'),
                        data = d) 
@@ -967,7 +964,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
   # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                              paste(covariate_names, collapse = " + ")))
+                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                   family = binomial(link = 'logit'),
                                   data = d[d$censor==0 & d$comp_event == 0,],
