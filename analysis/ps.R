@@ -35,18 +35,17 @@ df$exp_bin_treat <- factor(df$exp_bin_treat,
 # Define the covariates included in the PS model
 covariate_names <- names(df) %>%
   grep("^cov_", ., value = TRUE) %>% 
-  # exclude those not needed in the model: 
-  ## cov_cat_region is covering for cov_cat_stp, 
+  # exclude those not needed in the model:
   ## cov_bin_obesity is covering for cov_num_bmi & cov_cat_bmi_groups,
   ## cov_cat_hba1c_mmol_mol is covering for cov_num_hba1c_mmol_mol
   ## cov_cat_tc_hdl_ratio is covering for cov_num_tc_hdl_ratio
   ## spline(cov_num_age) is covering for cov_cat_age
-  setdiff(c("cov_cat_stp", "cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_cat_age", "cov_num_tc_hdl_ratio"
+  setdiff(c("cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_cat_age", "cov_num_tc_hdl_ratio"
             )) 
 # print(covariate_names)
 
 # Construct model formula dynamically
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + ")))
+ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
 
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
