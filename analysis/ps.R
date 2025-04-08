@@ -8,27 +8,32 @@
 ####
 
 # Import libraries and functions ------------------------------------------
+print('Import libraries and functions')
 library(arrow)
 library(here)
 library(dplyr)
-library(rms) # splines
+library(rms) # splines and strat
 library(cobalt) # SMD density
 library(ggplot2)
 
 # Create directories for output -------------------------------------------
+print('Create directories for output')
 fs::dir_create(here::here("output", "ps"))
 
 # Import the data ---------------------------------------------------------
+print('Import the data')
 df <- read_feather(here("output", "data", "data_processed.arrow"))
 
 # Add splines -------------------------------------------------------------
+print('Add/compute splines')
 # Compute knot locations based on percentiles, according to study protocol
 age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 # print(age_knots)
 
-# PS model ----------------------------------------------------------------
+# Define treatment variable, and covariates -------------------------------
+print('Define treatment variable, and covariates')
 # Set format and reference to ensure proper logistic regression modeling
-df$exp_bin_treat <- factor(df$exp_bin_treat, 
+df$exp_bin_treat <- ordered(df$exp_bin_treat, 
                                        levels = c(0, 1), # Reference first
                                        labels = c("nothing", "metformin"))
 
@@ -44,9 +49,9 @@ covariate_names <- names(df) %>%
             )) 
 # print(covariate_names)
 
-# Construct model formula dynamically
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
-
+# PS model ----------------------------------------------------------------
+print('PS model and predict')
+ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
@@ -55,6 +60,7 @@ ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 df$ps <- predict(ps_model, type = "response")
 
 # Inverse probability weighting -------------------------------------------
+print('Inverse probability weighting')
 # Stabilized
 p_treat <- mean(df$exp_bin_treat == "metformin") # prop treated, as per formular for stab weights
 df$sw <- ifelse(df$exp_bin_treat == "metformin", 
@@ -62,6 +68,7 @@ df$sw <- ifelse(df$exp_bin_treat == "metformin",
                                  (1 - p_treat) / (1 - df$ps))
 
 # Assess covariate balance BEFORE IPW -------------------------------------
+print('Assess covariate balance BEFORE IPW')
 tbl1_unweighted <- bal.tab(df[covariate_names], 
                           treat = df$exp_bin_treat, 
                           binary = "std",
@@ -72,6 +79,7 @@ smd_unweighted <- smd_unweighted %>%
   rename("SMD_Unweighted" = Diff.Un)
 
 # Assess covariate balance AFTER IPW --------------------------------------
+print('Assess covariate balance AFTER IPW')
 tbl1_sw <- bal.tab(df[covariate_names], 
                     treat = df$exp_bin_treat, 
                     weights = df$sw,
@@ -83,8 +91,12 @@ smd_sw <- smd_sw %>%
   rename("SMD_weighted_stabilized" = Diff.Adj)
 
 # Trimming ----------------------------------------------------------------
+print('Min./Max. PS per group and then trimming the dataset')
 # Determine the common min overlap range in PS
 # Reduce to the max. of all group-wise min. PS (i.e. everyone has at least this PS) & the min. of all group-wise max. PS (i.e. no-one has a PS above) 
+ps_minmax <- df %>%
+  group_by(exp_bin_treat) %>%
+  summarise(min_ps = min(ps), max_ps = max(ps))
 ps_trim <- df %>%
   group_by(exp_bin_treat) %>%
   summarise(min_ps = min(ps), max_ps = max(ps)) %>%
@@ -100,6 +112,7 @@ summary(df_trimmed$sw)
 sd(df_trimmed$sw)
 
 # Density plot ------------------------------------------------------------
+print('Density plot')
 ## Untrimmed
 dens_treated <- density(df$ps[df$exp_bin_treat == "metformin"])
 df_treated <- data.frame(dens_x = dens_treated$x, dens_y = dens_treated$y, group = "metformin (untrimmed)")
@@ -131,6 +144,9 @@ density_plot_trimmed <- ggplot(ps_density_data_trimmed, aes(x = dens_x, y = dens
   theme_minimal()
 
 # Save output -------------------------------------------------------------
+print('Save output')
+# min/max PS per group
+write.csv(ps_minmax, file = here::here("output", "ps", "ps_minmax.csv"))
 # Standardized mean differences, unweighted and weighted (unstablized and stabilized)
 write.csv(smd_unweighted, file = here::here("output", "ps", "smd_unweighted.csv"))
 write.csv(smd_sw, file = here::here("output", "ps", "smd_weighted_stabilized.csv"))
