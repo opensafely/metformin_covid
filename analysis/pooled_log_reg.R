@@ -22,6 +22,7 @@
 
 
 # Import libraries and functions ------------------------------------------
+print('Import libraries and functions')
 library(arrow)
 library(here)
 library(tidyverse)
@@ -40,20 +41,24 @@ source(here::here("analysis", "functions", "fn_expand_intervals.R"))
 
 
 # Create directories for output -------------------------------------------
+print('Create directories for output')
 fs::dir_create(here::here("output", "te", "pooled_log_reg"))
 
 
 # Import the data ---------------------------------------------------------
+print('Import the data')
 df <- read_feather(here("output", "data", "data_processed.arrow"))
 
 
 # Import dates ------------------------------------------------------------
+print('Import dates')
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
 
 # Add splines -------------------------------------------------------------
+print('Add splines')
 # Compute knot locations based on percentiles, according to study protocol
 age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
 df <- df %>%
@@ -61,6 +66,7 @@ df <- df %>%
 
 
 # Define covariates ----------------------------------------------------------
+print('Define covariates')
 covariate_names <- names(df) %>%
   grep("^cov_", ., value = TRUE) %>% 
   # exclude those not needed in the model: 
@@ -73,6 +79,7 @@ covariate_names <- names(df) %>%
 
 
 # Drop unnecessary variables to reduce dataset size -----------------------
+print('Drop unnecessary variables to reduce dataset size')
 df <- df %>% 
   dplyr::select(patient_id, exp_bin_treat, elig_date_t2dm, landmark_date,
                 starts_with("cov_"),
@@ -82,6 +89,7 @@ df <- df %>%
 
 
 # Expand the dataset ------------------------------------------------------
+print('Expand the dataset')
 # Expand the dataset into intervals and follow these rules:
 # a) If outcome (out_date_severecovid_afterlandmark) is reached first, assign outcome=1, censor=0, comp_event=0 to the interval when it happened and stop expanding
 # b) If competing event (out_date_death_afterlandmark) is reached first, assign outcome=NA, censor=0, comp_event=1 to the interval when it happened and stop expanding
@@ -156,6 +164,7 @@ R <- 10 # Total bootstraps (ideally >500)
 
 
 # (i) Standardization ---------------------------------------------------------
+print('Standardization creating te_plr_stand_rse_tbl')
 ## (1) fitting an outcome regression model conditional on the confounders listed above
 df_long_months$monthsqr <- df_long_months$month^2
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
@@ -254,6 +263,7 @@ te_plr_stand_rse_tbl <- data.frame(
 
 
 # (i) Standardization: Add 95% CI for risks, RD and RR using bootstrapping ---------------
+print('Standardization creating te_plr_stand_boot_tbl')
 study_ids <- data.frame(patient_id = df$patient_id)
 
 # Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 risk time point
@@ -343,7 +353,7 @@ te_plr_stand_boot_tbl <- data.frame(
 
 
 # (i) Standardization: Marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping ----
-
+print('Standardization creating marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping')
 ### This chapter will be removed, instead will do the graph with IPTW & IPCW ###
 
 study_ids <- data.frame(patient_id = df$patient_id)
@@ -481,6 +491,7 @@ te_all_timepoints_withCI <- function(data, indices) {
 
 
 # (ii) IPTW ----------------------------------------------------------------
+print('IPTW')
 ## The denominator of the IPTW for each individual is the probability of receiving their observed(!) treatment value, given their confounder history.
 ## Similar to PS, but "probability of receiving their observed(!) treatment value", i.e. 0 or 1, not only 1 like in a PS
 ## If we run sequential trials, then we usually include calendar period (and _sqr) as baseline confounder to account for a time trend between trials - and include this as the only confounder in the outcome model and then standardize over calendar period. 
@@ -502,6 +513,7 @@ df_long_months$w_treat_stab <- ifelse(df_long_months$exp_bin_treat==1,
 
 
 # (ii) IPTW: Check the weights and the balance ---------------------------------------
+print('IPTW: Check the weights and the balance')
 summary(df_long_months$w_treat_stab)
 sd(df_long_months$w_treat_stab)
 
@@ -571,6 +583,7 @@ covplot_weighted <- ggplot(data = covplot_w) +
 
 
 # (ii) IPTW: Truncate weights --------------------------------------------------------
+print('IPTW: Truncate weights')
 # Truncate stabilized weights at the 99th percentile
 threshold_99 <- quantile(df_long_months$w_treat_stab, 0.99)
 df_long_months$w_treat_stab_99 <- df_long_months$w_treat_stab
@@ -584,6 +597,7 @@ sd(df_long_months$w_treat_stab_99)
 
 
 # (ii) IPTW: Fit pooled logistic regression -------------------------------------
+print('IPTW: Fit pooled logistic regression and create plot_cum_risk_iptw')
 # Fit pooled logistic regression, with stabilized weights (currently only IPW for treatment, i.e. baseline confounding => same weights across time)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
@@ -673,6 +687,7 @@ plot_cum_risk_iptw <- ggplot(graph,
 
 
 # (ii) IPTW: Add 95% CI using robust standard errors and the delta method for RD and RR ----
+print('IPTW: create te_plr_iptw_rse_tbl')
 # Compute robust standard errors
 vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
 robust_se <- sqrt(diag(vcov_robust))
@@ -712,6 +727,7 @@ te_plr_iptw_rse_tbl <- data.frame(
 
 
 # (ii) IPTW & IPCW: Add censoring event weights -----------------------------------
+print('IPTW & IPCW: Add censoring event weights')
 ## In our case we want to censor for LTFU, i.e. "the effect had no one been lost to follow-up"
 ## Informally, an uncensored individual’s inverse probability of censoring weight is the inverse of
 ## their probability of remaining uncensored given their treatment and covariate history. 
@@ -773,6 +789,7 @@ summary(df_long_months$w_treat_cens_stab_99)
 sd(df_long_months$w_treat_cens_stab_99)
 
 # (ii) IPTW & IPCW: Fit pooled logistic regression -------------------------
+print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw_ipcw')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
@@ -862,6 +879,7 @@ plot_cum_risk_iptw_ipcw <- ggplot(graph,
 
 
 # (ii) IPTW & IPCW: Add 95% CI using robust standard errors and the delta method for RD and RR ----
+print('IPTW & IPCW: create te_plr_iptw_ipcw_boot_tbl')
 # Compute robust standard errors
 vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
 robust_se <- sqrt(diag(vcov_robust))
@@ -1041,6 +1059,7 @@ te_plr_iptw_ipcw_boot_tbl <- data.frame(
 
 
 # Save output -------------------------------------------------------------
+print('Save output')
 # Treatment effect (risk) estimates
 write.csv(te_plr_stand_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_rse_severecovid.csv"))
 write.csv(te_plr_stand_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_boot_severecovid.csv"))
