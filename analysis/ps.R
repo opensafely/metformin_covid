@@ -91,12 +91,9 @@ smd_sw <- smd_sw %>%
   rename("SMD_weighted_stabilized" = Diff.Adj)
 
 # Trimming ----------------------------------------------------------------
-print('Min./Max. PS per group and then trimming the dataset')
+print('Min./Max. PS per group and resulting common min/max after trimming, then trimming the dataset, and double-checking weights before/after')
 # Determine the common min overlap range in PS
 # Reduce to the max. of all group-wise min. PS (i.e. everyone has at least this PS) & the min. of all group-wise max. PS (i.e. no-one has a PS above) 
-ps_minmax <- df %>%
-  group_by(exp_bin_treat) %>%
-  summarise(min_ps = min(ps), max_ps = max(ps))
 ps_trim <- df %>%
   group_by(exp_bin_treat) %>%
   summarise(min_ps = min(ps), max_ps = max(ps)) %>%
@@ -104,6 +101,12 @@ ps_trim <- df %>%
   summarise(min_common = max(min_ps), max_common = min(max_ps))
 df_trimmed <- df %>%
   filter(ps >= ps_trim$min_common[1] & ps <= ps_trim$max_common[1])
+
+# Document min/max PS before trimming and resulting common min/max after trimming
+ps_minmax <- df %>%
+  group_by(exp_bin_treat) %>%
+  summarise(min_ps = min(ps), max_ps = max(ps))
+ps_summary <- cross_join(ps_minmax, ps_trim)
 
 ## Min, 25th percentile, median, mean, SD, 75th percentile, and max
 summary(df$sw)
@@ -146,7 +149,7 @@ density_plot_trimmed <- ggplot(ps_density_data_trimmed, aes(x = dens_x, y = dens
 # Save output -------------------------------------------------------------
 print('Save output')
 # min/max PS per group
-write.csv(ps_minmax, file = here::here("output", "ps", "ps_minmax.csv"))
+write.csv(ps_summary, file = here::here("output", "ps", "ps_summary.csv"))
 # Standardized mean differences, unweighted and weighted (unstablized and stabilized)
 write.csv(smd_unweighted, file = here::here("output", "ps", "smd_unweighted.csv"))
 write.csv(smd_sw, file = here::here("output", "ps", "smd_weighted_stabilized.csv"))
