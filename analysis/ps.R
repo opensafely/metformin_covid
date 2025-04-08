@@ -106,7 +106,11 @@ df_trimmed <- df %>%
 ps_minmax <- df %>%
   group_by(exp_bin_treat) %>%
   summarise(min_ps = min(ps), max_ps = max(ps))
-ps_summary <- cross_join(ps_minmax, ps_trim)
+ps_summary <- ps_minmax %>%
+  mutate(
+    min_common = ps_trim$min_common,
+    max_common = ps_trim$max_common
+  )
 
 ## Min, 25th percentile, median, mean, SD, 75th percentile, and max
 summary(df$sw)
