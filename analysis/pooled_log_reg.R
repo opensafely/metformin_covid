@@ -27,6 +27,7 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(splines)
+library(rms) # strat
 library(purrr)
 library(sandwich) # for robust standard errors
 library(lmtest) # for hypothesis testing with robust standard errors
@@ -158,7 +159,7 @@ R <- 10 # Total bootstraps (ideally >500)
 ## (1) fitting an outcome regression model conditional on the confounders listed above
 df_long_months$monthsqr <- df_long_months$month^2
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
                              data = df_long_months) 
@@ -267,7 +268,7 @@ te_stand_rd_rr_withCI <- function(data, indices) {
   
   # Fit pooled logistic model to estimate discrete hazards
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
                                data = d)
@@ -358,7 +359,7 @@ te_all_timepoints_withCI <- function(data, indices) {
   
   # Fit pooled logistic model to estimate discrete hazards
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
                                data = d)
@@ -486,7 +487,7 @@ te_all_timepoints_withCI <- function(data, indices) {
 ## In our current scenario, as per protocol, we do not use sequential trials and do not include calendar period as baseline confounder. CAVE: This is not the same as month and monthsqr!
 
 # Calculate denominator for "probability of receiving their observed(!) treatment value"
-iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 iptw.denom <- parglm(iptw_denom_formula, 
                  family = binomial(link = 'logit'),
                  data = df_long_months) 
@@ -587,7 +588,7 @@ sd(df_long_months$w_treat_stab_99)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
                              data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
@@ -733,7 +734,7 @@ df_long_months <- df_long_months %>%
 ## This model should predict the probability of remaining uncensored (not being lost to follow-up) at each timepoint. 
 ## Continuous time, here months (modeled using linear and quadratic terms), will serve as the time scale for this model. 
 ## Hence, we do not include any product terms in the model.
-ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 ipcw.denom <- parglm(ipcw_denom_formula, 
                   family = binomial(link = 'logit'),
                   data = df_long_months) 
@@ -776,7 +777,7 @@ sd(df_long_months$w_treat_cens_stab_99)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
 plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                 family = binomial(link = 'logit'),
                                 data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
@@ -927,7 +928,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
                            (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
   
   ### (2) Calculate IPCW
-  ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+  ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   ipcw.denom <- parglm(ipcw_denom_formula, 
                        family = binomial(link = 'logit'),
                        data = d) 
@@ -964,7 +965,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
   # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
   plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
-                                              paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                   family = binomial(link = 'logit'),
                                   data = d[d$censor==0 & d$comp_event == 0,],
