@@ -1,0 +1,353 @@
+#######################################################################################
+# IMPORT
+#######################################################################################
+## ehrQL functions
+from ehrql import (
+    case,
+    create_dataset,
+    when,
+    minimum_of,
+    days
+)
+
+## TPP tables
+from ehrql.tables.tpp import (
+    clinical_events,
+    medications,
+    patients,
+    practice_registrations,
+    ons_deaths,
+    sgss_covid_all_tests,
+    addresses,
+    occupation_on_covid_vaccine_record,
+    appointments
+)
+
+## for import of diabetes algo created data
+from ehrql.query_language import (
+    table_from_file,
+    PatientFrame,
+    Series
+)
+
+## All codelists from codelists.py
+from codelists import *
+
+## variable helper functions 
+from variable_helper_functions import *
+
+## json (for the dates)
+import json
+
+## for import of diabetes algo created data
+from datetime import date
+
+## import diabetes algo created data
+@table_from_file("output/data_processed.csv.gz")
+class data_processed(PatientFrame):
+    ethnicity_cat = Series(str)
+    t2dm_date = Series(date)
+
+# random seed
+import random
+random.seed(19283) # random seed
+
+#######################################################################################
+# INITIALISE the dataset and set the dummy dataset size
+#######################################################################################
+dataset = create_dataset()
+dataset.configure_dummy_data(population_size=8000)
+dataset.define_population(patients.exists_for_patient())
+
+#######################################################################################
+# DEFINE the dates
+#######################################################################################
+dataset.elig_date_t2dm = data_processed.t2dm_date
+with open("output/study_dates.json") as f:
+  study_dates = json.load(f)
+studyend_date = study_dates["studyend_date"]
+pandemicstart_date = study_dates["pandemicstart_date"]
+mid2018_date = study_dates["mid2018_date"]
+
+#######################################################################################
+# Table 2) QUALITY ASSURANCES and completeness criteria
+#######################################################################################
+## Year of birth
+dataset.qa_num_birth_year = patients.date_of_birth
+dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
+dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
+dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
+dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
+dataset.qa_bin_was_registered = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+
+## Date of death
+dataset.qa_date_of_death = ons_deaths.date
+
+## Pregnancy (over entire study period -> don't have helper function for this)
+dataset.qa_bin_pregnancy = clinical_events.where(clinical_events.snomedct_code.is_in(pregnancy_snomed_clinical)).exists_for_patient()
+
+## Combined oral contraceptive pill (over entire study period -> don't have helper function for this)
+dataset.qa_bin_cocp = medications.where(medications.dmd_code.is_in(cocp_dmd)).exists_for_patient()
+
+## Hormone replacement therapy (over entire study period -> don't have helper function for this)
+dataset.qa_bin_hrt = medications.where(medications.dmd_code.is_in(hrt_dmd)).exists_for_patient()
+
+## Prostate cancer (over entire study period -> don't have helper function for this)
+### Primary care
+prostate_cancer_snomed = clinical_events.where(clinical_events.snomedct_code.is_in(prostate_cancer_snomed_clinical)).exists_for_patient()
+
+### HES APC
+prostate_cancer_hes = apcs.where(apcs.all_diagnoses.contains_any_of(prostate_cancer_icd10)).exists_for_patient()
+
+### ONS (stated anywhere on death certificate)
+prostate_cancer_death = cause_of_death_matches(prostate_cancer_icd10)
+# Combined: Any prostate cancer diagnosis
+dataset.qa_bin_prostate_cancer = case(
+    when(prostate_cancer_snomed).then(True),
+    when(prostate_cancer_hes).then(True),
+    when(prostate_cancer_death).then(True),
+    otherwise=False
+)
+
+
+#######################################################################################
+# Table 3) ELIGIBILITY criteria
+#######################################################################################
+
+###
+# diabetes variables defined in previous separate action/dataset definition
+###
+
+## Any metformin prescription BEFORE T2DM diagnosis
+dataset.elig_date_metfin = first_matching_med_dmd_before(metformin_dmd, dataset.elig_date_t2dm).date
+## Any other antidiabetic drug exposure BEFORE T2DM diagnosis
+dataset.elig_date_sulfo = first_matching_med_dmd_before(sulfonylurea_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_dpp4 = first_matching_med_dmd_before(dpp4_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_tzd = first_matching_med_dmd_before(tzd_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_sglt2 = first_matching_med_dmd_before(sglt2_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_glp1 = first_matching_med_dmd_before(glp1_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_megli = first_matching_med_dmd_before(meglitinides_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_agi = first_matching_med_dmd_before(agi_dmd, dataset.elig_date_t2dm).date 
+dataset.elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, dataset.elig_date_t2dm).date
+
+## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
+dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm).date
+
+## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before elig_date_t2dm
+dataset.elig_date_ckd_45_first = minimum_of(
+    first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, dataset.elig_date_t2dm).date,
+    first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm).admission_date
+)
+
+## Advance decompensated liver cirrhosis, on or before elig_date_t2dm
+dataset.elig_date_liver_cirrhosis_first = minimum_of(
+    first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm).date,
+    first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm).admission_date
+)
+
+## Use of the following medications in the last 14 days before elig_date_t2dm (drug-drug interaction with metformin)
+dataset.elig_date_metfin_interaction_last = last_matching_med_dmd_before(metformin_interaction_dmd, dataset.elig_date_t2dm).date
+
+
+#######################################################################################
+# Table 4) INTERVENTION/EXPOSURE variables
+#######################################################################################
+## First metformin prescription on/after T2DM diagnosis
+dataset.exp_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, dataset.elig_date_t2dm, studyend_date).date
+dataset.exp_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, dataset.elig_date_t2dm, studyend_date).date
+
+## Other antidiabetic drug exposure on/after T2DM diagnosis (to define treatment strategy, or/and as intercurrent events for PP analysis)
+dataset.exp_date_sulfo_first = first_matching_med_dmd_between(sulfonylurea_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_dpp4_first = first_matching_med_dmd_between(dpp4_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_tzd_first = first_matching_med_dmd_between(tzd_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_sglt2_first = first_matching_med_dmd_between(sglt2_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_glp1_first = first_matching_med_dmd_between(glp1_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_megli_first = first_matching_med_dmd_between(meglitinides_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_agi_first = first_matching_med_dmd_between(agi_dmd, dataset.elig_date_t2dm, studyend_date).date 
+dataset.exp_date_insulin_first = first_matching_med_dmd_between(insulin_dmd, dataset.elig_date_t2dm, studyend_date).date
+
+## Last metformin prescription before pandemic start: Use to establish who stopped before pandemic start (for PP analysis)
+dataset.exp_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, pandemicstart_date).date
+dataset.exp_date_metfin_mono_last = last_matching_med_dmd_before(metformin_mono_dmd, pandemicstart_date).date 
+
+
+#######################################################################################
+# Table 5) Demographics, covariates and potential confounders
+#######################################################################################
+## Sex
+dataset.cov_cat_sex = patients.sex
+
+## Age at elig_date_t2dm
+dataset.cov_num_age = patients.age_on(dataset.elig_date_t2dm)
+
+## Ethnicity (import from the diabetes algo data)
+dataset.cov_cat_ethnicity = data_processed.ethnicity_cat
+
+## Index of Multiple Deprevation Rank (rounded down to nearest 100). 5 categories.
+imd_rounded = addresses.for_patient_on(dataset.elig_date_t2dm).imd_rounded
+dataset.cov_cat_deprivation_5 = case(
+    when((imd_rounded >=0) & (imd_rounded < int(32844 * 1 / 5))).then("1 (most deprived)"),
+    when(imd_rounded < int(32844 * 2 / 5)).then("2"),
+    when(imd_rounded < int(32844 * 3 / 5)).then("3"),
+    when(imd_rounded < int(32844 * 4 / 5)).then("4"),
+    when(imd_rounded < int(32844 * 5 / 5)).then("5 (least deprived)"),
+    otherwise="Unknown"
+)
+
+## Practice registration info at elig_date_t2dm
+# but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
+spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+registered = spanning_regs.sort_by(
+    practice_registrations.start_date,
+    practice_registrations.end_date,
+    practice_registrations.practice_pseudo_id,
+).last_for_patient()
+dataset.strat_cat_region = registered.practice_nuts1_region_name 
+dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification 
+
+## Smoking status at elig_date_t2dm
+tmp_most_recent_smoking_cat = last_matching_event_clinical_ctv3_before(smoking_clear, dataset.elig_date_t2dm).ctv3_code.to_category(smoking_clear)
+tmp_ever_smoked = last_matching_event_clinical_ctv3_before(ever_smoking, dataset.elig_date_t2dm).exists_for_patient() # uses a different codelist with ONLY smoking codes
+dataset.cov_cat_smoking_status = case(
+    when(tmp_most_recent_smoking_cat == "S").then("S"),
+    when(tmp_most_recent_smoking_cat == "E").then("E"),
+    when((tmp_most_recent_smoking_cat == "N") & (tmp_ever_smoked == True)).then("E"),
+    when(tmp_most_recent_smoking_cat == "N").then("N"),
+    when((tmp_most_recent_smoking_cat == "M") & (tmp_ever_smoked == True)).then("E"),
+    when(tmp_most_recent_smoking_cat == "M").then("M"),
+    otherwise = "M"
+)
+
+## Care home resident at elig_date_t2dm, see https://github.com/opensafely/opioids-covid-research/blob/main/analysis/define_dataset_table.py
+# Flag care home based on primis (patients in long-stay nursing and residential care)
+tmp_care_home_code = last_matching_event_clinical_snomed_before(carehome, dataset.elig_date_t2dm).exists_for_patient()
+# Flag care home based on TPP
+tmp_care_home_tpp1 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_is_potential_match
+tmp_care_home_tpp2 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_requires_nursing
+tmp_care_home_tpp3 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_does_not_require_nursing
+# combine
+dataset.cov_bin_carehome_status = case(
+    when(tmp_care_home_code).then(True),
+    when(tmp_care_home_tpp1).then(True),
+    when(tmp_care_home_tpp2).then(True),
+    when(tmp_care_home_tpp3).then(True),
+    otherwise = False
+)
+
+## Healthcare worker at the time they received a COVID-19 vaccination
+dataset.cov_bin_healthcare_worker = (
+  occupation_on_covid_vaccine_record.where(
+    occupation_on_covid_vaccine_record.is_healthcare_worker == True)
+    .exists_for_patient()
+)
+
+## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
+### Consultation rate in 2019
+tmp_cov_num_consrate = appointments.where(
+    appointments.status.is_in([
+        "Arrived",
+        "In Progress",
+        "Finished",
+        "Visit",
+        "Waiting",
+        "Patient Walked Out",
+        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
+        ).count_for_patient()    
+
+dataset.cov_num_consrate = case(
+    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
+    otherwise=365, # quality assurance
+)
+
+### reduced to 2 clinical diagnoses in this dataset definition to reduce overloading testing with ELD
+
+## 1) Acute myocardial infarction, on or before elig_date_t2dm
+dataset.cov_bin_ami = (
+    last_matching_event_clinical_snomed_before(ami_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
+    last_matching_event_apc_before(ami_prior_icd10 + ami_icd10, dataset.elig_date_t2dm).exists_for_patient()
+)
+
+## 2) All stroke, on or before elig_date_t2dm
+dataset.cov_bin_all_stroke = (
+    last_matching_event_clinical_snomed_before(stroke_isch_snomed_clinical + stroke_sah_hs_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
+    last_matching_event_apc_before(stroke_isch_icd10 + stroke_sah_hs_icd10, dataset.elig_date_t2dm).exists_for_patient()
+)
+
+### kept most important time-varying conditions/measurements to inform censoring weights when someone starts metformin in the control group during the follow-up
+## Obesity, on or before elig_date_t2dm
+dataset.cov_bin_obesity = (
+    last_matching_event_clinical_snomed_before(bmi_obesity_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
+    last_matching_event_apc_before(bmi_obesity_icd10, dataset.elig_date_t2dm).exists_for_patient()
+)
+
+## BMI, most recent value, within previous 2 years, on or before elig_date_t2dm
+bmi_measurement = most_recent_bmi(
+    where=clinical_events.date.is_on_or_between(dataset.elig_date_t2dm - days(2 * 366), dataset.elig_date_t2dm),
+    minimum_age_at_measurement=16,
+)
+dataset.cov_num_bmi = bmi_measurement.numeric_value
+dataset.cov_cat_bmi_groups = case(
+    when((dataset.cov_num_bmi < 18.5) & (dataset.cov_num_bmi >= 12.0)).then("Underweight"), # Set minimum to avoid any impossibly extreme values being classified as underweight
+    when((dataset.cov_num_bmi >= 18.5) & (dataset.cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
+    when((dataset.cov_num_bmi >= 25.0) & (dataset.cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
+    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi <= 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
+    otherwise = "missing", 
+)
+
+## HbA1c, most recent value, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+
+## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+
+## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
+
+####
+# ELD for time-varying covariates: Age, BMI, HbA1c, lipids, new diagnosis of AMI or stroke
+####
+
+
+
+#######################################################################################
+# Table 6) Outcomes and censoring events
+#######################################################################################
+### COVID-related HOSPITALIZAION
+## First covid-19 related hospital admission, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date, only_prim_diagnoses=True).admission_date
+## First covid-19 related emergency attendance, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, dataset.elig_date_t2dm, studyend_date).arrival_date
+# combined: First covid-19 related hospitalization
+dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid_hes, dataset.out_date_covid_emergency)
+
+### COVID-related DEATH
+## Between elig_date_t2dm and studyend_date (incl. those dates), stated anywhere on any of the 15 death certificate options
+tmp_out_bin_death_covid = matching_death_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date)
+dataset.out_date_covid_death = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
+
+### COVID-related HOSPITALIZAION or DEATH
+dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, dataset.out_date_covid_hosp)
+
+### COVID-related EVENT/DIAGNOSIS
+## First COVID-19 diagnosis in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
+tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, dataset.elig_date_t2dm, studyend_date).date
+## First positive SARS-COV-2 PCR in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
+tmp_covid19_sgss_date = (
+  sgss_covid_all_tests.where(sgss_covid_all_tests.specimen_taken_date.is_on_or_between(dataset.elig_date_t2dm, studyend_date))
+  .where(sgss_covid_all_tests.is_positive)
+  .sort_by(sgss_covid_all_tests.specimen_taken_date)
+  .first_for_patient()
+  .specimen_taken_date
+)
+## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 death, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid_hosp, dataset.out_date_covid_death)
+
+### UPDATED eligibility and intercurrent events for potential censoring
+## Practice deregistration date: Based on main registration at t2dm diagnosis date
+# However, it does count those who only switch TPP practices
+deregistered = spanning_regs.sort_by(
+practice_registrations.end_date,
+practice_registrations.practice_pseudo_id,
+).last_for_patient()
+
+dataset.cens_date_dereg = deregistered.end_date
