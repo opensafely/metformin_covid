@@ -115,6 +115,19 @@ actions:
     outputs:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
+
+  
+  # ELD testing
+  generate_dataset_seqtrials:
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_SeqTrials.py 
+      --output output:arrow
+    needs: 
+    - study_dates
+    - generate_dataset_dm_algo
+    - diabetes_algo
+    outputs:
+      highly_sensitive:
+        dataset: output/*.arrow
   
 
 

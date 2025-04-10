@@ -20,7 +20,8 @@ from ehrql.tables.tpp import (
     sgss_covid_all_tests,
     addresses,
     occupation_on_covid_vaccine_record,
-    appointments
+    appointments,
+    vaccinations
 )
 
 ## for import of diabetes algo created data
@@ -118,73 +119,75 @@ dataset.qa_bin_prostate_cancer = case(
 # diabetes variables defined in previous separate action/dataset definition
 ###
 
-## Any metformin prescription BEFORE T2DM diagnosis
-dataset.elig_date_metfin = first_matching_med_dmd_before(metformin_dmd, dataset.elig_date_t2dm).date
-## Any other antidiabetic drug exposure BEFORE T2DM diagnosis
-dataset.elig_date_sulfo = first_matching_med_dmd_before(sulfonylurea_dmd, dataset.elig_date_t2dm).date 
-dataset.elig_date_dpp4 = first_matching_med_dmd_before(dpp4_dmd, dataset.elig_date_t2dm).date
-dataset.elig_date_tzd = first_matching_med_dmd_before(tzd_dmd, dataset.elig_date_t2dm).date 
-dataset.elig_date_sglt2 = first_matching_med_dmd_before(sglt2_dmd, dataset.elig_date_t2dm).date 
-dataset.elig_date_glp1 = first_matching_med_dmd_before(glp1_dmd, dataset.elig_date_t2dm).date 
-dataset.elig_date_megli = first_matching_med_dmd_before(meglitinides_dmd, dataset.elig_date_t2dm).date
-dataset.elig_date_agi = first_matching_med_dmd_before(agi_dmd, dataset.elig_date_t2dm).date 
-dataset.elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, dataset.elig_date_t2dm).date
+## First, define first ever events:
+# first metformin prescription and first ever other antidiabetic drug exposure
+dataset.elig_date_metfin = first_matching_med_dmd_before(metformin_dmd, studyend_date).date
+dataset.elig_date_metfin_mono = first_matching_med_dmd_before(metformin_dmd, studyend_date).date
+dataset.elig_date_sulfo = first_matching_med_dmd_before(sulfonylurea_dmd, studyend_date).date 
+dataset.elig_date_dpp4 = first_matching_med_dmd_before(dpp4_dmd, studyend_date).date
+dataset.elig_date_tzd = first_matching_med_dmd_before(tzd_dmd, studyend_date).date 
+dataset.elig_date_sglt2 = first_matching_med_dmd_before(sglt2_dmd, studyend_date).date 
+dataset.elig_date_glp1 = first_matching_med_dmd_before(glp1_dmd, studyend_date).date 
+dataset.elig_date_megli = first_matching_med_dmd_before(meglitinides_dmd, studyend_date).date
+dataset.elig_date_agi = first_matching_med_dmd_before(agi_dmd, studyend_date).date 
+dataset.elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, studyend_date).date
 
-## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
-dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm).date
+## first known hypersensitivity / intolerance to metformin, on or before studyend_date
+dataset.elig_date_metfin_allergy_first = first_matching_event_clinical_snomed_before(metformin_allergy_snomed_clinical, studyend_date).date
 
-## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before elig_date_t2dm
+## first moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before studyend_date
 dataset.elig_date_ckd_45_first = minimum_of(
-    first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, dataset.elig_date_t2dm).date,
-    first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm).admission_date
+    first_matching_event_clinical_snomed_before(ckd_snomed_clinical_45, studyend_date).date,
+    first_matching_event_apc_before(ckd_stage4_icd10 + ckd_stage5_icd10, studyend_date).admission_date
 )
 
-## Advance decompensated liver cirrhosis, on or before elig_date_t2dm
+## first advance decompensated liver cirrhosis, on or before studyend_date
 dataset.elig_date_liver_cirrhosis_first = minimum_of(
-    first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm).date,
-    first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm).admission_date
+    first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, studyend_date).admission_date
 )
 
-## Use of the following medications in the last 14 days before elig_date_t2dm (drug-drug interaction with metformin)
-dataset.elig_date_metfin_interaction_last = last_matching_med_dmd_before(metformin_interaction_dmd, dataset.elig_date_t2dm).date
+## First use of the following medications (drug-drug interaction with metformin), on or before studyend_date
+dataset.elig_date_metfin_interaction_first = first_matching_med_dmd_before(metformin_interaction_dmd, studyend_date).date
+
+## Second, define events happening in a past window (not necessarily first ever):
+dataset.elig_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, pandemicstart_date).date
+dataset.elig_date_metfin_mono_last = last_matching_med_dmd_before(metformin_mono_dmd, pandemicstart_date).date 
 
 
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables
 #######################################################################################
-## First metformin prescription on/after T2DM diagnosis
-dataset.exp_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, dataset.elig_date_t2dm, studyend_date).date
-dataset.exp_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, dataset.elig_date_t2dm, studyend_date).date
+## First metformin prescription on/after pandemic start (to differentiate between those who started new vs those who restarted)
+dataset.exp_date_metfin_first = first_matching_med_dmd_between(metformin_dmd, pandemicstart_date, studyend_date).date
+dataset.exp_date_metfin_mono_first = first_matching_med_dmd_between(metformin_mono_dmd, pandemicstart_date, studyend_date).date
 
-## Other antidiabetic drug exposure on/after T2DM diagnosis (to define treatment strategy, or/and as intercurrent events for PP analysis)
-dataset.exp_date_sulfo_first = first_matching_med_dmd_between(sulfonylurea_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_dpp4_first = first_matching_med_dmd_between(dpp4_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_tzd_first = first_matching_med_dmd_between(tzd_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_sglt2_first = first_matching_med_dmd_between(sglt2_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_glp1_first = first_matching_med_dmd_between(glp1_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_megli_first = first_matching_med_dmd_between(meglitinides_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_agi_first = first_matching_med_dmd_between(agi_dmd, dataset.elig_date_t2dm, studyend_date).date 
-dataset.exp_date_insulin_first = first_matching_med_dmd_between(insulin_dmd, dataset.elig_date_t2dm, studyend_date).date
-
-## Last metformin prescription before pandemic start: Use to establish who stopped before pandemic start (for PP analysis)
-dataset.exp_date_metfin_last = last_matching_med_dmd_before(metformin_dmd, pandemicstart_date).date
-dataset.exp_date_metfin_mono_last = last_matching_med_dmd_before(metformin_mono_dmd, pandemicstart_date).date 
+## Other antidiabetic drug exposure on/after pandemic start (to define treatment strategy, or/and as intercurrent events for PP analysis)
+dataset.exp_date_sulfo_first = first_matching_med_dmd_between(sulfonylurea_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_dpp4_first = first_matching_med_dmd_between(dpp4_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_tzd_first = first_matching_med_dmd_between(tzd_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_sglt2_first = first_matching_med_dmd_between(sglt2_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_glp1_first = first_matching_med_dmd_between(glp1_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_megli_first = first_matching_med_dmd_between(meglitinides_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_agi_first = first_matching_med_dmd_between(agi_dmd, pandemicstart_date, studyend_date).date 
+dataset.exp_date_insulin_first = first_matching_med_dmd_between(insulin_dmd, pandemicstart_date, studyend_date).date
 
 
 #######################################################################################
 # Table 5) Demographics, covariates and potential confounders
 #######################################################################################
+### CATEGORY 1) Demographics measured at pandemic start and not updated thereafter
+# Age at pandemicstart_date
+dataset.cov_num_age = patients.age_on(pandemicstart_date)
+
 ## Sex
 dataset.cov_cat_sex = patients.sex
-
-## Age at elig_date_t2dm
-dataset.cov_num_age = patients.age_on(dataset.elig_date_t2dm)
 
 ## Ethnicity (import from the diabetes algo data)
 dataset.cov_cat_ethnicity = data_processed.ethnicity_cat
 
 ## Index of Multiple Deprevation Rank (rounded down to nearest 100). 5 categories.
-imd_rounded = addresses.for_patient_on(dataset.elig_date_t2dm).imd_rounded
+imd_rounded = addresses.for_patient_on(pandemicstart_date).imd_rounded
 dataset.cov_cat_deprivation_5 = case(
     when((imd_rounded >=0) & (imd_rounded < int(32844 * 1 / 5))).then("1 (most deprived)"),
     when(imd_rounded < int(32844 * 2 / 5)).then("2"),
@@ -194,20 +197,45 @@ dataset.cov_cat_deprivation_5 = case(
     otherwise="Unknown"
 )
 
-## Practice registration info at elig_date_t2dm
-# but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+## Practice registration info at pandemicstart_date
+# use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
+spanning_regs = practice_registrations.spanning(pandemicstart_date - days(366), pandemicstart_date)
 registered = spanning_regs.sort_by(
-    practice_registrations.start_date,
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
 ).last_for_patient()
 dataset.strat_cat_region = registered.practice_nuts1_region_name 
-dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification 
+dataset.cov_cat_rural_urban = addresses.for_patient_on(pandemicstart_date).rural_urban_classification 
 
-## Smoking status at elig_date_t2dm
-tmp_most_recent_smoking_cat = last_matching_event_clinical_ctv3_before(smoking_clear, dataset.elig_date_t2dm).ctv3_code.to_category(smoking_clear)
-tmp_ever_smoked = last_matching_event_clinical_ctv3_before(ever_smoking, dataset.elig_date_t2dm).exists_for_patient() # uses a different codelist with ONLY smoking codes
+## Healthcare worker at the time they received a COVID-19 vaccination
+dataset.cov_bin_healthcare_worker = (
+  occupation_on_covid_vaccine_record.where(
+    occupation_on_covid_vaccine_record.is_healthcare_worker == True)
+    .exists_for_patient()
+)
+
+## Consultation rate in previous year as a proxy for health seeking behaviour
+# Consultation rate in 2019
+tmp_cov_num_consrate = appointments.where(
+    appointments.status.is_in([
+        "Arrived",
+        "In Progress",
+        "Finished",
+        "Visit",
+        "Waiting",
+        "Patient Walked Out",
+        ]) & appointments.start_date.is_on_or_between("2019-02-01", "2020-02-01")
+        ).count_for_patient()    
+
+dataset.cov_num_consrate = case(
+    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
+    otherwise=365, # quality assurance
+)
+
+### CATEGORY 2) Measured at pandemic start but we might update them later (to have time-updated baseline info for sequential trial baseline adjustment)
+## Smoking status at pandemicstart_date
+tmp_most_recent_smoking_cat = last_matching_event_clinical_ctv3_before(smoking_clear, pandemicstart_date).ctv3_code.to_category(smoking_clear)
+tmp_ever_smoked = last_matching_event_clinical_ctv3_before(ever_smoking, pandemicstart_date).exists_for_patient() # uses a different codelist with ONLY smoking codes
 dataset.cov_cat_smoking_status = case(
     when(tmp_most_recent_smoking_cat == "S").then("S"),
     when(tmp_most_recent_smoking_cat == "E").then("E"),
@@ -218,13 +246,13 @@ dataset.cov_cat_smoking_status = case(
     otherwise = "M"
 )
 
-## Care home resident at elig_date_t2dm, see https://github.com/opensafely/opioids-covid-research/blob/main/analysis/define_dataset_table.py
+## Care home resident at pandemicstart_date, see https://github.com/opensafely/opioids-covid-research/blob/main/analysis/define_dataset_table.py
 # Flag care home based on primis (patients in long-stay nursing and residential care)
-tmp_care_home_code = last_matching_event_clinical_snomed_before(carehome, dataset.elig_date_t2dm).exists_for_patient()
+tmp_care_home_code = last_matching_event_clinical_snomed_before(carehome, pandemicstart_date).exists_for_patient()
 # Flag care home based on TPP
-tmp_care_home_tpp1 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_is_potential_match
-tmp_care_home_tpp2 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_requires_nursing
-tmp_care_home_tpp3 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_does_not_require_nursing
+tmp_care_home_tpp1 = addresses.for_patient_on(pandemicstart_date).care_home_is_potential_match
+tmp_care_home_tpp2 = addresses.for_patient_on(pandemicstart_date).care_home_requires_nursing
+tmp_care_home_tpp3 = addresses.for_patient_on(pandemicstart_date).care_home_does_not_require_nursing
 # combine
 dataset.cov_bin_carehome_status = case(
     when(tmp_care_home_code).then(True),
@@ -234,55 +262,30 @@ dataset.cov_bin_carehome_status = case(
     otherwise = False
 )
 
-## Healthcare worker at the time they received a COVID-19 vaccination
-dataset.cov_bin_healthcare_worker = (
-  occupation_on_covid_vaccine_record.where(
-    occupation_on_covid_vaccine_record.is_healthcare_worker == True)
-    .exists_for_patient()
-)
-
-## Consultation rate in previous year (mid2017 to mid2018) as a proxy for health seeking behaviour
-### Consultation rate in 2019
-tmp_cov_num_consrate = appointments.where(
-    appointments.status.is_in([
-        "Arrived",
-        "In Progress",
-        "Finished",
-        "Visit",
-        "Waiting",
-        "Patient Walked Out",
-        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
-        ).count_for_patient()    
-
-dataset.cov_num_consrate = case(
-    when(tmp_cov_num_consrate <= 365).then(tmp_cov_num_consrate),
-    otherwise=365, # quality assurance
-)
-
-### reduced to 2 clinical diagnoses in this dataset definition to reduce overloading testing with ELD
-
-## 1) Acute myocardial infarction, on or before elig_date_t2dm
+### CATEGORY 3) ONLY ONE-TIME (i.e., first time) recording is important, since these conditions are absorbing conditions (they might increase, however, but that's not important for now). Similar to the ELIGIBILITY criteria.
+### PS: reduced to 2 clinical diagnoses only, there would be many more, but to reduce overloading testing with ELD
+## First (if any) acute myocardial infarction, on or before study end date
 dataset.cov_bin_ami = (
-    last_matching_event_clinical_snomed_before(ami_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
-    last_matching_event_apc_before(ami_prior_icd10 + ami_icd10, dataset.elig_date_t2dm).exists_for_patient()
+    first_matching_event_clinical_snomed_before(ami_snomed_clinical, studyend_date).exists_for_patient() |
+    first_matching_event_apc_before(ami_prior_icd10 + ami_icd10, studyend_date).exists_for_patient()
 )
-
-## 2) All stroke, on or before elig_date_t2dm
+## First (if any) stroke, on or before study end date
 dataset.cov_bin_all_stroke = (
-    last_matching_event_clinical_snomed_before(stroke_isch_snomed_clinical + stroke_sah_hs_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
-    last_matching_event_apc_before(stroke_isch_icd10 + stroke_sah_hs_icd10, dataset.elig_date_t2dm).exists_for_patient()
+    first_matching_event_clinical_snomed_before(stroke_isch_snomed_clinical + stroke_sah_hs_snomed_clinical, studyend_date).exists_for_patient() |
+    first_matching_event_apc_before(stroke_isch_icd10 + stroke_sah_hs_icd10, studyend_date).exists_for_patient()
 )
 
-### kept most important time-varying conditions/measurements to inform censoring weights when someone starts metformin in the control group during the follow-up
-## Obesity, on or before elig_date_t2dm
+### CATEGORY 4) TIME-VARYING conditions (they may reduce/increase) between pandemic start (= study start) and study end
+## FIRST, just measured value at pandemic start to use for first trial
+# Obesity, on or before pandemic start
 dataset.cov_bin_obesity = (
-    last_matching_event_clinical_snomed_before(bmi_obesity_snomed_clinical, dataset.elig_date_t2dm).exists_for_patient() |
-    last_matching_event_apc_before(bmi_obesity_icd10, dataset.elig_date_t2dm).exists_for_patient()
+    last_matching_event_clinical_snomed_before(bmi_obesity_snomed_clinical, pandemicstart_date).exists_for_patient() |
+    last_matching_event_apc_before(bmi_obesity_icd10, pandemicstart_date).exists_for_patient()
 )
 
-## BMI, most recent value, within previous 2 years, on or before elig_date_t2dm
+# BMI, most recent value, within previous 2 years, on or before pandemic start
 bmi_measurement = most_recent_bmi(
-    where=clinical_events.date.is_on_or_between(dataset.elig_date_t2dm - days(2 * 366), dataset.elig_date_t2dm),
+    where=clinical_events.date.is_on_or_between(pandemicstart_date - days(2 * 366), pandemicstart_date),
     minimum_age_at_measurement=16,
 )
 dataset.cov_num_bmi = bmi_measurement.numeric_value
@@ -294,60 +297,222 @@ dataset.cov_cat_bmi_groups = case(
     otherwise = "missing", 
 )
 
-## HbA1c, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+# HbA1c, most recent value, within previous 2 years, on or before pandemic start
+dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, pandemicstart_date - days(2*366), pandemicstart_date).numeric_value 
 
-## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+# Total Cholesterol, most recent value, within previous 2 years, on or before pandemic start
+dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(cholesterol_snomed, pandemicstart_date - days(2*366), pandemicstart_date).numeric_value 
 
-## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
+# HDL Cholesterol, most recent value, within previous 2 years, on or before pandemic start
+dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, pandemicstart_date - days(2*366), pandemicstart_date).numeric_value 
 
-####
-# ELD for time-varying covariates: Age, BMI, HbA1c, lipids, new diagnosis of AMI or stroke
-####
+#######
+## SECOND, use event-level data for the above CATEGORY 4) TIME-VARYING conditions - and now also include vaccination data. And integrated outcomes in ELD tables.
+#######
+
+## All SARS-CoV-2 vaccinations someone received during study period; to dynamically adjust the treatment weights for no vs any vs multiple vaccinations at the start of each seq trial
+covid_vaccinations = (
+  vaccinations
+  .where(vaccinations.target_disease.is_in(["SARS-2 CORONAVIRUS"]))
+  .where(vaccinations.date.is_on_or_between(pandemicstart_date, studyend_date))
+  .sort_by(vaccinations.date)
+)
+dataset.add_event_table(
+  "covid_vaccinations",
+  date=covid_vaccinations.date,
+  product = covid_vaccinations.product_name # not sure I need it, just for testing purpose for now
+)
+
+## Obesity, HbA1c, lipids recordings during study period; to dynamically adjust the treatment weights at the start of each sequential trial and inform the censoring weights for the PPA (start of metformin in control)
+## Include the time-varying outcomes here, too, if I search already in corresponding table
+# Consider combining obesity with BMI measurement as above?
+
+# 1) clinical_events table snomed codes
+# clinical_events_pc = (
+#    clinical_events
+#    .where(clinical_events.date.is_after(pandemicstart_date))
+#    .where(clinical_events.date.is_on_or_before(studyend_date))
+#    .where((clinical_events.snomedct_code.is_in(bmi_obesity_snomed_clinical)) | (clinical_events.ctv3_code.is_in(
+#       covid_primary_care_code
+#       + covid_primary_care_positive_test
+#       + covid_primary_care_sequelae))
+#       )
+#       .sort_by(clinical_events.date)
+# )
+# dataset.add_event_table(
+#   "clinical_events_pc",
+#   date=clinical_events_pc.date,
+#   obesity=clinical_events_pc.snomedct_code.is_in(bmi_obesity_snomed_clinical),
+#   covid=clinical_events_pc.ctv3_code.is_in(
+#      covid_primary_care_code
+#       + covid_primary_care_positive_test
+#       + covid_primary_care_sequelae
+#       )
+# )
+
+clinical_events_pc = (
+   clinical_events
+   .where(clinical_events.date.is_after(pandemicstart_date))
+   .where(clinical_events.date.is_on_or_before(studyend_date))
+   .where((clinical_events.snomedct_code.is_in(
+      bmi_obesity_snomed_clinical
+      + hba1c_snomed
+      + cholesterol_snomed
+      + hdl_cholesterol_snomed
+      )) | (clinical_events.ctv3_code.is_in(
+      covid_primary_care_code
+      + covid_primary_care_positive_test
+      + covid_primary_care_sequelae))
+      )
+      .sort_by(clinical_events.date)
+)
+dataset.add_event_table(
+  "clinical_events_pc",
+  date = clinical_events_pc.date,
+  obesity = clinical_events_pc.snomedct_code.is_in(bmi_obesity_snomed_clinical),
+  covid = clinical_events_pc.ctv3_code.is_in(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae),
+  hba1c = clinical_events_pc.snomedct_code.is_in(hba1c_snomed),
+  chol = clinical_events_pc.snomedct_code.is_in(cholesterol_snomed),
+  hdl = clinical_events_pc.snomedct_code.is_in(hdl_cholesterol_snomed),
+  num = clinical_events_pc.numeric_value
+)
 
 
+clinical_events_num_pc = (
+   clinical_events
+   .where(clinical_events.date.is_after(pandemicstart_date))
+   .where(clinical_events.date.is_on_or_before(studyend_date))
+   .where(clinical_events.snomedct_code.is_in(
+      hba1c_snomed
+      + cholesterol_snomed
+      + hdl_cholesterol_snomed
+      ))
+      .sort_by(clinical_events.date)
+)
+dataset.add_event_table(
+  "clinical_events_num_pc",
+  date = clinical_events_num_pc.date,
+  hba1c = clinical_events_num_pc.snomedct_code.is_in(hba1c_snomed),
+  chol = clinical_events_num_pc.snomedct_code.is_in(cholesterol_snomed),
+  hdl = clinical_events_num_pc.snomedct_code.is_in(hdl_cholesterol_snomed),
+  num = clinical_events_num_pc.numeric_value
+)
+
+
+# 2) clinical_events table ctv3 codes
+#clinical_events_ctv3_pc = (
+#   clinical_events
+#   .where(clinical_events.date.is_after(pandemicstart_date))
+#   .where(clinical_events.date.is_on_or_before(studyend_date))
+#   .where(clinical_events.ctv3_code.is_in(
+#      covid_primary_care_code 
+#      + covid_primary_care_positive_test
+#      + covid_primary_care_sequelae
+#      ))
+#      .sort_by(clinical_events.date)
+#)
+#dataset.add_event_table(
+#  "clinical_events_ctv3_pc",
+#  date=clinical_events_ctv3_pc.date
+#)
+
+# 3) apcs table, diagnosis recorded in any diagnosis field
+apcs_obesity = (
+   apcs
+   .where(apcs.admission_date.is_after(pandemicstart_date))
+   .where(apcs.admission_date.is_on_or_before(studyend_date))
+   .where(apcs.all_diagnoses.contains_any_of(bmi_obesity_icd10))
+   .sort_by(apcs.admission_date)
+)
+dataset.add_event_table(
+  "apcs_obesity",
+  date=apcs_obesity.admission_date
+)
+
+# 4) apcs table, diagnosis recorded only in primary diagnosis field
+apcs_covid = (
+   apcs
+   .where(apcs.admission_date.is_after(pandemicstart_date))
+   .where(apcs.admission_date.is_on_or_before(studyend_date))
+   .where(apcs.primary_diagnosis.is_in(covid_codes_incl_clin_diag))
+   .sort_by(apcs.admission_date)
+)
+dataset.add_event_table(
+  "apcs_covid",
+  date=apcs_covid.admission_date
+)
+
+# 5) emergency_care_attendances table, diagnosis recorded in any diagnosis field
+def ec_eld(codelist, start_date, end_date, where=True):
+    conditions = [
+        getattr(emergency_care_attendances, column_name).is_in(codelist)
+        for column_name in ([f"diagnosis_{i:02d}" for i in range(1, 25)])
+    ]
+    return(
+        emergency_care_attendances.where(where)
+        .where(any_of(conditions))
+        .where(emergency_care_attendances.arrival_date.is_after(start_date))
+        .where(emergency_care_attendances.arrival_date.is_on_or_before(end_date))
+        .sort_by(emergency_care_attendances.arrival_date)
+    )
+
+ec_covid = ec_eld(covid_emergency, pandemicstart_date, studyend_date)
+
+dataset.add_event_table(
+  "ec_covid",
+  date=ec_covid.arrival_date
+)
+
+# 6) sgss_covid_all_tests table
+sgss_covid = (
+   sgss_covid_all_tests
+   .where(sgss_covid_all_tests.specimen_taken_date.is_after(pandemicstart_date))
+   .where(sgss_covid_all_tests.specimen_taken_date.is_on_or_before(studyend_date))
+   .where(sgss_covid_all_tests.is_positive)
+   .sort_by(sgss_covid_all_tests.specimen_taken_date)
+)
+dataset.add_event_table(
+  "sgss_covid",
+  date=sgss_covid.specimen_taken_date
+)
 
 #######################################################################################
-# Table 6) Outcomes and censoring events
+# Table 6) Outcomes (also important for time-updated eligibility), and censoring events
 #######################################################################################
-### COVID-related HOSPITALIZAION
-## First covid-19 related hospital admission, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date, only_prim_diagnoses=True).admission_date
-## First covid-19 related emergency attendance, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, dataset.elig_date_t2dm, studyend_date).arrival_date
-# combined: First covid-19 related hospitalization
-dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid_hes, dataset.out_date_covid_emergency)
-
-### COVID-related DEATH
-## Between elig_date_t2dm and studyend_date (incl. those dates), stated anywhere on any of the 15 death certificate options
-tmp_out_bin_death_covid = matching_death_between(covid_codes_incl_clin_diag, dataset.elig_date_t2dm, studyend_date)
+### CATEGORY 1) ONE-TIME conditions (absorbing conditions, no change after first measurement)
+## COVID-related DEATH
+# Between pandemicstart_date and studyend_date (incl. those dates), stated anywhere on any of the 15 death certificate options
+tmp_out_bin_death_covid = matching_death_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date)
 dataset.out_date_covid_death = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
 
+## Deregistration, for censoring
+dataset.cens_date_dereg = registered.end_date
+
+### CATEGORY 2) TIME-VARYING conditions; they may be present/absent - and be relevant for time-updated eligibility to be included in SeqTrials => use event-level data
+#### All are above integrated in ELD tables ####
+
+
+### COVID-related HOSPITALIZAION
+## First covid-19 related hospital admission, between pandemicstart_date and studyend_date (incl. those dates)
+#dataset.out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date, only_prim_diagnoses=True).admission_date
+## First covid-19 related emergency attendance, between pandemicstart_date and studyend_date (incl. those dates)
+#dataset.out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, pandemicstart_date, studyend_date).arrival_date
+# combined: First covid-19 related hospitalization
+#dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid_hes, dataset.out_date_covid_emergency)
+
 ### COVID-related HOSPITALIZAION or DEATH
-dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, dataset.out_date_covid_hosp)
+#dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, dataset.out_date_covid_hosp)
 
 ### COVID-related EVENT/DIAGNOSIS
 ## First COVID-19 diagnosis in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
-tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, dataset.elig_date_t2dm, studyend_date).date
+#tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae,  pandemicstart_date, studyend_date).date
 ## First positive SARS-COV-2 PCR in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
-tmp_covid19_sgss_date = (
-  sgss_covid_all_tests.where(sgss_covid_all_tests.specimen_taken_date.is_on_or_between(dataset.elig_date_t2dm, studyend_date))
-  .where(sgss_covid_all_tests.is_positive)
-  .sort_by(sgss_covid_all_tests.specimen_taken_date)
-  .first_for_patient()
-  .specimen_taken_date
-)
+#tmp_covid19_sgss_date = (
+#  sgss_covid_all_tests.where(sgss_covid_all_tests.specimen_taken_date.is_on_or_between(pandemicstart_date, studyend_date))
+#  .where(sgss_covid_all_tests.is_positive)
+#  .sort_by(sgss_covid_all_tests.specimen_taken_date)
+#  .first_for_patient()
+#  .specimen_taken_date
+#)
 ## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 death, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid_hosp, dataset.out_date_covid_death)
-
-### UPDATED eligibility and intercurrent events for potential censoring
-## Practice deregistration date: Based on main registration at t2dm diagnosis date
-# However, it does count those who only switch TPP practices
-deregistered = spanning_regs.sort_by(
-practice_registrations.end_date,
-practice_registrations.practice_pseudo_id,
-).last_for_patient()
-
-dataset.cens_date_dereg = deregistered.end_date
+#dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_covid_hosp, dataset.out_date_covid_death)
