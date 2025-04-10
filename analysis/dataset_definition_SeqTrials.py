@@ -327,29 +327,7 @@ dataset.add_event_table(
 ## Include the time-varying outcomes here, too, if I search already in corresponding table
 # Consider combining obesity with BMI measurement as above?
 
-# 1) clinical_events table snomed codes
-# clinical_events_pc = (
-#    clinical_events
-#    .where(clinical_events.date.is_after(pandemicstart_date))
-#    .where(clinical_events.date.is_on_or_before(studyend_date))
-#    .where((clinical_events.snomedct_code.is_in(bmi_obesity_snomed_clinical)) | (clinical_events.ctv3_code.is_in(
-#       covid_primary_care_code
-#       + covid_primary_care_positive_test
-#       + covid_primary_care_sequelae))
-#       )
-#       .sort_by(clinical_events.date)
-# )
-# dataset.add_event_table(
-#   "clinical_events_pc",
-#   date=clinical_events_pc.date,
-#   obesity=clinical_events_pc.snomedct_code.is_in(bmi_obesity_snomed_clinical),
-#   covid=clinical_events_pc.ctv3_code.is_in(
-#      covid_primary_care_code
-#       + covid_primary_care_positive_test
-#       + covid_primary_care_sequelae
-#       )
-# )
-
+# 1) clinical_events table
 clinical_events_pc = (
    clinical_events
    .where(clinical_events.date.is_after(pandemicstart_date))
@@ -377,46 +355,7 @@ dataset.add_event_table(
   num = clinical_events_pc.numeric_value
 )
 
-
-clinical_events_num_pc = (
-   clinical_events
-   .where(clinical_events.date.is_after(pandemicstart_date))
-   .where(clinical_events.date.is_on_or_before(studyend_date))
-   .where(clinical_events.snomedct_code.is_in(
-      hba1c_snomed
-      + cholesterol_snomed
-      + hdl_cholesterol_snomed
-      ))
-      .sort_by(clinical_events.date)
-)
-dataset.add_event_table(
-  "clinical_events_num_pc",
-  date = clinical_events_num_pc.date,
-  hba1c = clinical_events_num_pc.snomedct_code.is_in(hba1c_snomed),
-  chol = clinical_events_num_pc.snomedct_code.is_in(cholesterol_snomed),
-  hdl = clinical_events_num_pc.snomedct_code.is_in(hdl_cholesterol_snomed),
-  num = clinical_events_num_pc.numeric_value
-)
-
-
-# 2) clinical_events table ctv3 codes
-#clinical_events_ctv3_pc = (
-#   clinical_events
-#   .where(clinical_events.date.is_after(pandemicstart_date))
-#   .where(clinical_events.date.is_on_or_before(studyend_date))
-#   .where(clinical_events.ctv3_code.is_in(
-#      covid_primary_care_code 
-#      + covid_primary_care_positive_test
-#      + covid_primary_care_sequelae
-#      ))
-#      .sort_by(clinical_events.date)
-#)
-#dataset.add_event_table(
-#  "clinical_events_ctv3_pc",
-#  date=clinical_events_ctv3_pc.date
-#)
-
-# 3) apcs table, diagnosis recorded in any diagnosis field
+# 2) apcs table, diagnosis recorded in any diagnosis field
 apcs_obesity = (
    apcs
    .where(apcs.admission_date.is_after(pandemicstart_date))
@@ -429,7 +368,8 @@ dataset.add_event_table(
   date=apcs_obesity.admission_date
 )
 
-# 4) apcs table, diagnosis recorded only in primary diagnosis field
+# 3) apcs table, diagnosis recorded only in primary diagnosis field
+## combine with above!
 apcs_covid = (
    apcs
    .where(apcs.admission_date.is_after(pandemicstart_date))
@@ -442,7 +382,7 @@ dataset.add_event_table(
   date=apcs_covid.admission_date
 )
 
-# 5) emergency_care_attendances table, diagnosis recorded in any diagnosis field
+# 4) emergency_care_attendances table, diagnosis recorded in any diagnosis field
 def ec_eld(codelist, start_date, end_date, where=True):
     conditions = [
         getattr(emergency_care_attendances, column_name).is_in(codelist)
@@ -463,7 +403,7 @@ dataset.add_event_table(
   date=ec_covid.arrival_date
 )
 
-# 6) sgss_covid_all_tests table
+# 5) sgss_covid_all_tests table
 sgss_covid = (
    sgss_covid_all_tests
    .where(sgss_covid_all_tests.specimen_taken_date.is_after(pandemicstart_date))
