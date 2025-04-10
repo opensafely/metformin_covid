@@ -11,6 +11,7 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(splines)
+library(rms) # strat()
 library(survival) # survival/TTE analyses
 library(ggfortify) # autoplot
 library(gtsummary) # tbl_regression
