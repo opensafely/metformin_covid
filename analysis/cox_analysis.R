@@ -73,7 +73,7 @@ if (anyNA(df[, c("cox_tt_severecovid", "out_bin_severecovid_afterlandmark", cova
 # Cox model ---------------------------------------------------------------
 print('Run Cox model')
 cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strata(strat_cat_region)"))
+                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 cox_model_severecovid <- coxph(cox_formula_severecovid, data = df)
 cox_severecovid <- tbl_regression(cox_model_severecovid, exp = TRUE)
 cox_severecovid_df <- cox_severecovid %>% 
