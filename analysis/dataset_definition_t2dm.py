@@ -202,7 +202,6 @@ dataset.cov_cat_deprivation_5 = case(
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
 spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
 registered = spanning_regs.sort_by(
-    practice_registrations.start_date,
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
 ).last_for_patient()
@@ -475,12 +474,7 @@ dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, datas
 ### UPDATED eligibility and intercurrent events for potential censoring
 ## Practice deregistration date: Based on main registration at t2dm diagnosis date
 # However, it does count those who only switch TPP practices
-deregistered = spanning_regs.sort_by(
-practice_registrations.end_date,
-practice_registrations.practice_pseudo_id,
-).last_for_patient()
-
-dataset.cens_date_dereg = deregistered.end_date
+dataset.cens_date_dereg = registered.end_date
 
 ## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
 dataset.cens_date_metfin_allergy_first = first_matching_event_clinical_snomed_between(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date
