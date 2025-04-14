@@ -125,27 +125,6 @@ actions:
         csv: output/ps/*.csv
         plots: output/ps/*.png
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   cox_primary_RA:
     run: cox-ipw:v0.0.36
     config:
@@ -171,6 +150,25 @@ actions:
       moderately_sensitive:
         arguments: output/args-results_cox_ra.csv
         estimates: output/results_cox_ra.csv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   # km_estimates_metfin_RA:
