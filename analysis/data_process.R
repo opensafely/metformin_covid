@@ -291,7 +291,7 @@ data_processed <- data_processed %>%
                                                      landmark_date,
                                                      units = "days") %>% as.numeric(),
     # for cox reusable action: exposure start date for those who start, missing for all others 
-    cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date + days(1), 
+    cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date, 
                                                TRUE ~ as.Date(NA))
   )
 
