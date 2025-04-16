@@ -150,19 +150,16 @@ actions:
       moderately_sensitive:
         arguments: output/args-results_cox_ra.csv
         estimates: output/results_cox_ra.csv
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+  plr:
+    run: r:latest analysis/pooled_log_reg.R
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        csv: output/te/pooled_log_reg/*.csv
+        plots: output/te/pooled_log_reg/*.png
+  
 
 
 
