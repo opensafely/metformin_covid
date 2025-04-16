@@ -167,7 +167,7 @@ R <- 10 # Total bootstraps (ideally >500)
 print('Standardization creating te_plr_stand_rse_tbl')
 ## (1) fitting an outcome regression model conditional on the confounders listed above
 df_long_months$monthsqr <- df_long_months$month^2
-plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
                                             paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
@@ -277,7 +277,7 @@ te_stand_rd_rr_withCI <- function(data, indices) {
   d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
   
   # Fit pooled logistic model to estimate discrete hazards
-  plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
                                               paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
@@ -368,7 +368,7 @@ te_all_timepoints_withCI <- function(data, indices) {
   d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
   
   # Fit pooled logistic model to estimate discrete hazards
-  plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
                                               paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                family = binomial(link = 'logit'),
@@ -601,7 +601,7 @@ print('IPTW: Fit pooled logistic regression and create plot_cum_risk_iptw')
 # Fit pooled logistic regression, with stabilized weights (currently only IPW for treatment, i.e. baseline confounding => same weights across time)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
+plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
                                             paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                              family = binomial(link = 'logit'),
@@ -793,7 +793,7 @@ print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
+plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
                                             paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                 family = binomial(link = 'logit'),
@@ -982,7 +982,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   ### (5) Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
   # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
   # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-  plr_formula_severecovid <- as.formula(paste("out_bin_severecovid_afterlandmark ~ exp_bin_treat +", 
+  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
                                               paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                   family = binomial(link = 'logit'),
