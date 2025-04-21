@@ -99,7 +99,7 @@ actions:
       --origin_date=landmark_date
       --event_date=out_date_severecovid_afterlandmark
       --censor_date=cox_date_severecovid
-      --max_fup=990
+      --max_fup=730
       --plot=TRUE
     needs:
     - data_process
