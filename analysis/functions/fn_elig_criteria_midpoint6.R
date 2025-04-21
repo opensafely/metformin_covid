@@ -1,7 +1,7 @@
 ################################################################################
 # Custom made function to assess the eligibility criteria
 ################################################################################
-fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_days, dummydata = FALSE) {
+fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_days) {
   # Extract dates from the study_dates list
   pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
   mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
@@ -11,7 +11,7 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       mutate(
         # Exclusion 1: no T2DM diagnosis or out of window
         no_t2dm_or_outofwindow = is.na(elig_date_t2dm) 
-        | (elig_date_t2dm >= pandemicstart_date - days(183) & elig_date_t2dm < pandemicstart_date) # in 6m window before pandemic start
+        | (elig_date_t2dm > pandemicstart_date - days(183)) # in 6m window before pandemic start (or later, but should not occur, see dataset definition)
         | (elig_date_t2dm < mid2018_date - days(years_in_days))) # older than mid2018
     
     # Filter 1: main eligibility criteria: T2DM diagnosis

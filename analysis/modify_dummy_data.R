@@ -39,8 +39,8 @@ data_processed <- data_processed %>%
 
 # Modify completeness criteria ---------------------------------------------------
 # Increase completeness in sex, resample with replacement
-sex_categories <- c("Female", "Male", "Unknown")
-sex_categories_prob <- c(0.4, 0.5, 0.0)
+sex_categories <- c("Female", "Male")
+sex_categories_prob <- c(0.4, 0.5)
 data_processed <- data_processed %>%
   mutate(cov_cat_sex = as.factor(sample(sex_categories, n(), replace = TRUE, prob = sex_categories_prob))) %>%
   mutate(qa_bin_is_female_or_male = cov_cat_sex %in% c("Female", "Male"))
@@ -51,15 +51,15 @@ data_processed <- data_processed %>%
   mutate(qa_bin_was_adult = cov_num_age >= 18 & cov_num_age <= 110)
 
 # Complete deprivation info
-cov_cat_deprivation_5_categories <- c("1 (most deprived)", "2", "3", "4", "5 (least deprived)", "Unknown")
-cov_cat_deprivation_5_prob <- c(0.3, 0.2, 0.2, 0.15, 0.15, 0.0) # see prelim data
+cov_cat_deprivation_5_categories <- c("1 (most deprived)", "2", "3", "4", "5 (least deprived)")
+cov_cat_deprivation_5_prob <- c(0.3, 0.2, 0.2, 0.15, 0.15) # see prelim data
 data_processed <- data_processed %>%
   mutate(cov_cat_deprivation_5 = as.factor(sample(cov_cat_deprivation_5_categories, n(), replace = TRUE, prob = cov_cat_deprivation_5_prob))) %>%
   mutate(qa_bin_known_imd = cov_cat_deprivation_5 %in% c("1 (most deprived)", "2", "3", "4", "5 (least deprived)"))
 
 # Complete region info
-strat_cat_region_categories <- c("North East and Yorkshire", "North West", "Midlands", "East of England", "London", "South East", "South West", "Unknown")
-strat_cat_region_prob <- c(0.2, 0.1, 0.2, 0.25, 0.05, 0.05, 0.15, 0.0) # see prelim data
+strat_cat_region_categories <- c("North East and Yorkshire", "North West", "Midlands", "East of England", "London", "South East", "South West")
+strat_cat_region_prob <- c(0.2, 0.1, 0.2, 0.25, 0.05, 0.05, 0.15) # see prelim data
 data_processed <- data_processed %>%
   mutate(strat_cat_region = as.factor(sample(strat_cat_region_categories, n(), replace = TRUE, prob = strat_cat_region_prob)))
 
@@ -92,6 +92,12 @@ data_processed <- data_processed %>%
 # cov_bin_obesity only contains very few TRUE
 data_processed <- data_processed %>%
   mutate(cov_bin_obesity = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.3, 0.7)))
+
+# Complete rural/urban info
+cov_cat_rural_urban_categories <- c("Urban conurbation", "Urban city or town", "Rural town or village")
+cov_cat_rural_urban_prob <- c(0.2, 0.6, 0.2) # see prelim data
+data_processed <- data_processed %>%
+  mutate(cov_cat_rural_urban = as.factor(sample(cov_cat_rural_urban_categories, n(), replace = TRUE, prob = cov_cat_rural_urban_prob)))
 
 
 # Modify dates ------------------------------------------------------------

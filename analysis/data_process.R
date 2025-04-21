@@ -64,7 +64,7 @@ data_processed <- data_extracted %>%
     cov_cat_sex = fn_case_when(
       cov_cat_sex == "female" ~ "Female",
       cov_cat_sex == "male" ~ "Male",
-      TRUE ~ "Unknown"),
+      TRUE ~ NA_character_), # will have no missing, by definition (excluded)
     
     cov_cat_deprivation_5 = fn_case_when(
       cov_cat_deprivation_5 == "1 (most deprived)" ~ "1 (most deprived)",
@@ -72,7 +72,7 @@ data_processed <- data_extracted %>%
       cov_cat_deprivation_5 == "3" ~ "3",
       cov_cat_deprivation_5 == "4" ~ "4",
       cov_cat_deprivation_5 == "5 (least deprived)" ~ "5 (least deprived)",
-      TRUE ~ "Unknown"),
+      TRUE ~ NA_character_), # will have no missing, by definition (excluded)
     
     cov_cat_ethnicity = fn_case_when(
       cov_cat_ethnicity == "White" ~ "White",
@@ -80,7 +80,7 @@ data_processed <- data_extracted %>%
       cov_cat_ethnicity == "Asian" ~ "Asian",
       cov_cat_ethnicity == "Black" ~ "Black",
       cov_cat_ethnicity == "Other" ~ "Other",
-      TRUE ~ "Unknown"),
+      TRUE ~ "Unknown"), # add missing indicator
     
     strat_cat_region = fn_case_when(
       strat_cat_region == "East" ~ "East",
@@ -90,19 +90,19 @@ data_processed <- data_extracted %>%
       strat_cat_region == "North West" ~ "North West",
       strat_cat_region == "South East" ~ "South East",
       strat_cat_region == "South West" ~ "South West",
-      TRUE ~ "Unknown"),
+      TRUE ~ NA_character_), # will have no missing, by definition (excluded)
     
     cov_cat_rural_urban = fn_case_when(
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
       cov_cat_rural_urban %in% c(5,6,7,8) ~ "Rural town or village",
-      TRUE ~ "Unknown"),
+      TRUE ~ NA_character_), # will have no missing
     
     cov_cat_smoking_status = fn_case_when(
       cov_cat_smoking_status == "S" ~ "Smoker",
       cov_cat_smoking_status == "E" ~ "Ever",
       cov_cat_smoking_status == "N" ~ "Never",
-      TRUE ~ "Unknown"),
+      TRUE ~ "Unknown"), # add missing indicator
     
     cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     
@@ -158,15 +158,16 @@ data_processed <- completeness$data_processed
 # Apply the eligibility criteria ------------------------------------------
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
 # => use function with loop that can be mapped to other windows, depending on "years_in_days" input
-eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0, dummydata = FALSE)
+eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0)
 n_elig_excluded <- eligibility$n_elig_excluded
 n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 data_processed <- eligibility$data_processed
 
 
-# Assign the landmark date ------------------------------------------------
+# Assign the landmark date and max follow-up date -------------------------
 data_processed <- data_processed %>% 
-  mutate(landmark_date = elig_date_t2dm + days(183))
+  mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
+  mutate(max_fup_date = landmark_date + days(730))
 
 
 # Assign treatment/exposure -----------------------------------------------
@@ -269,22 +270,25 @@ data_processed <- data_processed %>%
     cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
                                 out_date_death_afterlandmark,
                                 cens_date_ltfu_afterlandmark,
+                                max_fup_date,
                                 studyend_date,
                                 na.rm = TRUE),
     cox_tt_severecovid = difftime(cox_date_severecovid,
                                   landmark_date,
                                   units = "days") %>% as.numeric(),
     cox_date_covid = pmin(out_date_covid_afterlandmark, 
-                                out_date_death_afterlandmark,
-                                cens_date_ltfu_afterlandmark,
-                                studyend_date,
-                                na.rm = TRUE),
+                          out_date_death_afterlandmark,
+                          cens_date_ltfu_afterlandmark,
+                          max_fup_date,
+                          studyend_date,
+                          na.rm = TRUE),
     cox_tt_covid = difftime(cox_date_covid,
-                                  landmark_date,
-                                  units = "days") %>% as.numeric(),
+                            landmark_date,
+                            units = "days") %>% as.numeric(),
     cox_date_longcovid_virfat_afterlandmark = pmin(out_date_longcovid_virfat_afterlandmark, 
                                                    out_date_death_afterlandmark,
                                                    cens_date_ltfu_afterlandmark,
+                                                   max_fup_date,
                                                    studyend_date,
                                                    na.rm = TRUE),
     cox_tt_longcovid_virfat_afterlandmark = difftime(cox_date_longcovid_virfat_afterlandmark,
