@@ -105,5 +105,6 @@ print('Save output')
 # cox model table
 write.csv(cox_severecovid_df, file = here::here("output", "te", "cox_scripted", "cox_severecovid.csv"))
 # KM curve
-ggsave(filename = here::here("output", "te", "cox_scripted", "cuminc_plot.png"), cuminc_plot, width = 20, height = 20, units = "cm")
-
+ggsave(filename = here::here("output", "te", "cox_scripted", "cuminc_plot.png"), 
+       plot = cuminc_plot$plot,
+       width = 20, height = 20, units = "cm")

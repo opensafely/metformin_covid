@@ -11,11 +11,11 @@
 print('Import libraries and functions')
 library(arrow)
 library(here)
-library(dplyr)
+library(tidyverse)
 library(rms) # splines and strat
 library(cobalt) # SMD density
 library(ggplot2)
-library(tableone)
+library(gtsummary)
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -253,10 +253,44 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 }
 
 # Explore the PS  ----------------------------------------------------------
+var_labels <- list(
+  N  ~ "Total N",
+  ps_group ~ "PS group",
+  cov_num_age ~ "Age",
+  cov_cat_sex ~ "Sex",
+  cov_cat_ethnicity ~ "Ethnicity",
+  cov_cat_deprivation_5 ~ "Deprivation",
+  cov_cat_rural_urban ~ "Rural/urban",
+  cov_cat_smoking_status ~ "Smoking status",
+  cov_bin_carehome_status ~ "Care/nursing home resident",
+  cov_bin_healthcare_worker ~ "Healthcare worker",
+  cov_num_consrate ~ "Consultation rate in previous year",
+  cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",
+  cov_bin_ami ~ "History of acute myocardial infarct",
+  cov_bin_all_stroke  ~ "History of stroke",
+  cov_bin_other_arterial_embolism ~ "History of other arterial embolism",
+  cov_bin_vte ~ "History of venous thromboembolism",
+  cov_bin_hf ~ "History of heart failure",
+  cov_bin_angina ~ "History of angina pectoris",
+  cov_bin_dementia ~ "History of dementia",
+  cov_bin_cancer ~ "History of cancer",
+  cov_bin_hypertension ~ "History of arterial hypertension",
+  cov_bin_depression ~ "History of depression",
+  cov_bin_copd ~ "History of COPD",
+  cov_bin_liver_disease ~ "History of liver disease",
+  cov_bin_chronic_kidney_disease ~ "History of CKD",
+  cov_bin_pcos ~ "History of PCOS",
+  cov_bin_prediabetes ~ "History of prediabetes",
+  cov_bin_diabetescomp ~ "Diabetes complication",
+  cov_cat_hba1c_mmol_mol ~ "HbA1c in mmol/mol",
+  cov_cat_tc_hdl_ratio ~ "TC/Chol ratio"
+) %>%
+  set_names(., map_chr(., all.vars))
+
 # Explore PS groups in intervention, use cut-off 0.55 and 0.9
 df <- df %>%
   mutate(
-    ps_group_int = factor(
+    ps_group = factor(
       case_when(
         exp_bin_treat == "metformin" & ps < 0.55 ~ "PS < 0.55",
         exp_bin_treat == "metformin" & ps >= 0.55 & ps <= 0.9 ~ "0.55 ≤ PS ≤ 0.9",
@@ -266,16 +300,31 @@ df <- df %>%
       levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55")
     )
   )
-ps_int_groups <- CreateTableOne(vars = covariate_names, 
-                         strata = "ps_group_int",
-                         data = df %>% filter(exp_bin_treat == "metformin"), 
-                         factorVars = c("cov_cat_ethnicity", "cov_cat_deprivation_5", "cov_cat_rural_urban", "cov_cat_smoking_status", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c_mmol_mol"))
-tbl_ps_int_groups <- as.data.frame(print(ps_int_groups, showAllLevels = TRUE))
+table_int <-
+  df %>% filter(exp_bin_treat == "metformin") %>% 
+  mutate(
+    N=1L,
+    ps_group = factor(ps_group, levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55"))
+  ) %>%
+  select(
+    ps_group,
+    all_of(names(var_labels)),
+  ) %>%
+  tbl_summary(
+    by = ps_group,
+    label = unname(var_labels[names(.)]),
+    statistic = list(
+      N ~ "{N}",
+      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+    ),
+  )
+# Extract the summary table as a data frame
+table_int_df <- as_tibble(table_int)
 
 # Explore PS groups in control, use cut-off 0.55
 df <- df %>%
   mutate(
-    ps_group_cont = factor(
+    ps_group = factor(
       case_when(
         exp_bin_treat == "nothing" & ps < 0.55 ~ "PS < 0.55",
         exp_bin_treat == "nothing" & ps >= 0.55 ~ "PS >= 0.55",
@@ -283,12 +332,27 @@ df <- df %>%
       )
     )
   )
-ps_cont_groups <- CreateTableOne(vars = covariate_names, 
-                                strata = "ps_group_cont",
-                                data = df %>% filter(exp_bin_treat == "nothing"), 
-                                factorVars = c("cov_cat_ethnicity", "cov_cat_deprivation_5", "cov_cat_rural_urban", "cov_cat_smoking_status", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c_mmol_mol"))
-tbl_ps_cont_groups <- as.data.frame(print(ps_cont_groups, showAllLevels = TRUE))
+table_cont <-
+  df %>% filter(exp_bin_treat == "nothing") %>% 
+  mutate(
+    N=1L,
+    ps_group = factor(ps_group, levels = c("PS < 0.55", "PS >= 0.55"))
+  ) %>%
+  select(
+    ps_group,
+    all_of(names(var_labels)),
+  ) %>%
+  tbl_summary(
+    by = ps_group,
+    label = unname(var_labels[names(.)]),
+    statistic = list(
+      N ~ "{N}",
+      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+    ),
+  )
 
+# Extract
+table_cont_df <- as_tibble(table_cont)
 
 # Save output -------------------------------------------------------------
 print('Save output')
@@ -308,5 +372,5 @@ ggsave(filename = here::here("output", "ps", "density_plot_trimmed.png"), densit
 ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")
 # PS stratified tables
-write.csv(tbl_ps_int_groups, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
-write.csv(tbl_ps_cont_groups, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))
+write.csv(table_int_df, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
+write.csv(table_cont_df, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))
