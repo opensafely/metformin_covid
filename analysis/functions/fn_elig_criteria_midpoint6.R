@@ -53,36 +53,42 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
                            & elig_date_liver_cirrhosis_first <= elig_date_t2dm), # count those diagnosed with cirrhosis on day of diagnosis
         # Exclusion 6: prior drug with interaction risk with metfin, in 14 days window before or on T2DM diagnosis day
         prior_interaction = (!is.na(elig_date_metfin_interaction_last) 
-                             & (elig_date_metfin_interaction_last <= elig_date_t2dm) & (elig_date_metfin_interaction_last >= elig_date_t2dm - days(14)))
+                             & (elig_date_metfin_interaction_last <= elig_date_t2dm) & (elig_date_metfin_interaction_last >= elig_date_t2dm - days(14))),
+        # Exclusion 7: Very high HbA1c (>75), prior or on T2DM diagnosis (max 2 years back)
+        prior_high_hba1c = (!is.na(cov_cat_hba1c_mmol_mol)
+                            & cov_cat_hba1c_mmol_mol == "above 75")
       )
     
     # Re-Apply the time-updated eligibility criteria again at landmark
     data_filtered_T2DM <- data_filtered_T2DM %>%
       mutate(
-        # Exclusion 7: metformin allergy prior to or on landmark, but after elig_date_t2dm (baseline) since all elig_date_t2dm in data_filtered_T2DM are in eligible time window (mid2018-2019)
+        # Exclusion 8: metformin allergy prior to or on landmark, but after elig_date_t2dm (baseline) since all elig_date_t2dm in data_filtered_T2DM are in eligible time window (mid2018-2019)
         prior_metfin_allergy_landmark = (!is.na(elig_date_metfin_allergy_first) 
                                          & elig_date_metfin_allergy_first > elig_date_t2dm # don't count those diagnosed with allergy on day of diagnosis again
                                          & elig_date_metfin_allergy_first <= elig_date_t2dm + days(183)),
-        # Exclusion 8: CKD 4/5 prior to or on landmark
+        # Exclusion 9: CKD 4/5 prior to or on landmark
         prior_ckd45_landmark = (!is.na(elig_date_ckd_45_first) 
                                 & elig_date_ckd_45_first > elig_date_t2dm
                                 & elig_date_ckd_45_first <= elig_date_t2dm + days(183)),
-        # Exclusion 9: liver cirrhosis prior to or on landmark
+        # Exclusion 10: liver cirrhosis prior to or on landmark
         prior_cirrhosis_landmark = (!is.na(elig_date_liver_cirrhosis_first) 
                                     & elig_date_liver_cirrhosis_first > elig_date_t2dm 
                                     & elig_date_liver_cirrhosis_first <= elig_date_t2dm + days(183)),
-        # Exclusion 10: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
-        prior_interaction_landmark = (!is.na(elig_date_metfin_interaction_last) 
-                                      & elig_date_metfin_interaction_last <= elig_date_t2dm + days(183) 
-                                      & elig_date_metfin_interaction_last >= elig_date_t2dm + days(169)),
-        # Exclusion 11: died prior to landmark
+        # Exclusion 11: prior drug with interaction risk with metfin, in 14 days window prior to or on landmark
+        prior_interaction_landmark = (!is.na(elig_date_metfin_interaction_landmark_last) 
+                                      & elig_date_metfin_interaction_landmark_last <= elig_date_t2dm + days(183) 
+                                      & elig_date_metfin_interaction_landmark_last >= elig_date_t2dm + days(169)),
+        # Exclusion 12: died prior to landmark
         prior_death_landmark = (!is.na(qa_date_of_death) 
                                 & qa_date_of_death > elig_date_t2dm
                                 & qa_date_of_death <= elig_date_t2dm + days(183)),
-        # Exclusion 12: LTFU prior to landmark
+        # Exclusion 13: LTFU prior to landmark
         prior_ltfu_landmark = (!is.na(cens_date_dereg) 
                                & cens_date_dereg > elig_date_t2dm
-                               & cens_date_dereg <= elig_date_t2dm + days(183))
+                               & cens_date_dereg <= elig_date_t2dm + days(183)),
+        # Exclusion 14: Very high HbA1c (>75), prior to landmark
+        prior_high_hba1c_landmark = (!is.na(elig_cat_hba1c_landmark_mmol_mol)
+                            & elig_cat_hba1c_landmark_mmol_mol == "above 75")
       )
     
     # Among these, count the exclusion criteria
@@ -101,12 +107,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         n_prior_ckd45 = sum(prior_ckd45, na.rm = TRUE),
         n_prior_cirrhosis = sum(prior_cirrhosis, na.rm = TRUE),
         n_prior_interaction = sum(prior_interaction, na.rm = TRUE),
+        n_prior_high_hba1c = sum(prior_high_hba1c, na.rm = TRUE),
         n_prior_metfin_allergy_landmark = sum(prior_metfin_allergy_landmark, na.rm = TRUE),
         n_prior_ckd45_landmark = sum(prior_ckd45_landmark, na.rm = TRUE),
         n_prior_cirrhosis_landmark = sum(prior_cirrhosis_landmark, na.rm = TRUE),
         n_prior_interaction_landmark = sum(prior_interaction_landmark, na.rm = TRUE),
         n_prior_death_landmark = sum(prior_death_landmark, na.rm = TRUE),
-        n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE)
+        n_prior_ltfu_landmark = sum(prior_ltfu_landmark, na.rm = TRUE),
+        n_prior_high_hba1c_landmark = sum(prior_high_hba1c_landmark, na.rm = TRUE)
       )
     
     # Filter 2: apply all exclusion criteria (inclusion criteria T2DM applied above)
@@ -125,12 +133,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         (!prior_ckd45 | is.na(prior_ckd45)),
         (!prior_cirrhosis | is.na(prior_cirrhosis)),
         (!prior_interaction | is.na(prior_interaction)),
+        (!prior_high_hba1c | is.na(prior_high_hba1c)),
         (!prior_metfin_allergy_landmark | is.na(prior_metfin_allergy_landmark)),
         (!prior_ckd45_landmark | is.na(prior_ckd45_landmark)),
         (!prior_cirrhosis_landmark | is.na(prior_cirrhosis_landmark)),
         (!prior_interaction_landmark | is.na(prior_interaction_landmark)),
         (!prior_death_landmark | is.na(prior_death_landmark)),
-        (!prior_ltfu_landmark | is.na(prior_ltfu_landmark))
+        (!prior_ltfu_landmark | is.na(prior_ltfu_landmark)),
+        (!prior_high_hba1c_landmark | is.na(prior_high_hba1c_landmark))
       )
     
     n_after_exclusion_processing <- nrow(data_filtered)
@@ -152,12 +162,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_ckd45 = count$n_prior_ckd45, # counted only among n_t2dm
       n_prior_cirrhosis = count$n_prior_cirrhosis, # counted only among n_t2dm
       n_prior_interaction = count$n_prior_interaction, # counted only among n_t2dm
+      n_prior_high_hba1c = count$n_prior_high_hba1c, # counted only among n_t2dm
       n_prior_metfin_allergy_landmark = count$n_prior_metfin_allergy_landmark, # counted only among n_t2dm
       n_prior_ckd45_landmark = count$n_prior_ckd45_landmark, # counted only among n_t2dm
       n_prior_cirrhosis_landmark = count$n_prior_cirrhosis_landmark, # counted only among n_t2dm
       n_prior_interaction_landmark = count$n_prior_interaction_landmark, # counted only among n_t2dm
       n_prior_death_landmark = count$n_prior_death_landmark, # counted only among n_t2dm
       n_prior_ltfu_landmark = count$n_prior_ltfu_landmark, # counted only among n_t2dm
+      n_prior_high_hba1c_landmark = count$n_prior_high_hba1c_landmark, # counted only among n_t2dm
       n_after_exclusion_processing = n_after_exclusion_processing
     ) %>% 
       # pivot (for easier data review in L4)
@@ -184,12 +196,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_ckd45_midpoint6 = "Prior CKD stage 4/5",
       n_prior_cirrhosis_midpoint6 = "Prior cirrhosis",
       n_prior_interaction_midpoint6 = "Use of drugs with interaction potential in past 14 days",
-      n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy",
-      n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5",
-      n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis",
+      n_prior_high_hba1c_midpoint6 = "HbA1c > 75 mmol/mol",
+      n_prior_metfin_allergy_landmark_midpoint6 = "New metformin allergy between baseline and landmark",
+      n_prior_ckd45_landmark_midpoint6 = "New CKD stage 4/5 between baseline and landmark",
+      n_prior_cirrhosis_landmark_midpoint6 = "New cirrhosis between baseline and landmark",
       n_prior_interaction_landmark_midpoint6 = "New use of drugs with interaction potential in past 14 days",
-      n_prior_death_landmark_midpoint6 = "Death",
-      n_prior_ltfu_landmark_midpoint6 = "Deregistration",
+      n_prior_death_landmark_midpoint6 = "Death between baseline and landmark",
+      n_prior_ltfu_landmark_midpoint6 = "Deregistration between baseline and landmark",
+      n_prior_high_hba1c_landmark_midpoint6 = "HbA1c > 75 mmol/mol between baseline and landmark",
       n_after_exclusion_processing_midpoint6 = "After applying eligibility criteria"
     )
     out_midpoint6 <- tibble(
@@ -208,12 +222,14 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
       n_prior_ckd45_midpoint6 = fn_roundmid_any(count$n_prior_ckd45, threshold), # counted only among n_t2dm
       n_prior_cirrhosis_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis, threshold), # counted only among n_t2dm
       n_prior_interaction_midpoint6 = fn_roundmid_any(count$n_prior_interaction, threshold), # counted only among n_t2dm
+      n_prior_high_hba1c_midpoint6 = fn_roundmid_any(count$n_prior_high_hba1c, threshold), # counted only among n_t2dm
       n_prior_metfin_allergy_landmark_midpoint6 = fn_roundmid_any(count$n_prior_metfin_allergy_landmark, threshold), # counted only among n_t2dm
       n_prior_ckd45_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ckd45_landmark, threshold), # counted only among n_t2dm
       n_prior_cirrhosis_landmark_midpoint6 = fn_roundmid_any(count$n_prior_cirrhosis_landmark, threshold), # counted only among n_t2dm
       n_prior_interaction_landmark_midpoint6 = fn_roundmid_any(count$n_prior_interaction_landmark, threshold), # counted only among n_t2dm
       n_prior_death_landmark_midpoint6 = fn_roundmid_any(count$n_prior_death_landmark, threshold), # counted only among n_t2dm
       n_prior_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_prior_ltfu_landmark, threshold), # counted only among n_t2dm
+      n_prior_high_hba1c_landmark_midpoint6 = fn_roundmid_any(count$n_prior_high_hba1c_landmark, threshold), # counted only among n_t2dm
       n_after_exclusion_processing_midpoint6 = fn_roundmid_any(n_after_exclusion_processing, threshold)
     ) %>% 
       # pivot (for easier data review in L4)

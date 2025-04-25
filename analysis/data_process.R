@@ -132,6 +132,14 @@ data_processed <- data_extracted %>%
       right = FALSE),
     cov_cat_hba1c_mmol_mol = case_when(is.na(cov_cat_hba1c_mmol_mol) ~ factor("Unknown", 
                                                                               levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_mmol_mol),
+    elig_num_hba1c_landmark_mmol_mol = replace(elig_num_hba1c_landmark_mmol_mol, elig_num_hba1c_landmark_mmol_mol < 0.00 | elig_num_hba1c_landmark_mmol_mol > 120.00, NA_real_),
+    elig_cat_hba1c_landmark_mmol_mol = cut(
+      elig_num_hba1c_landmark_mmol_mol,
+      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      labels = c("below 42" ,"42-58", "59-75", "above 75"),
+      right = FALSE),
+    elig_cat_hba1c_landmark_mmol_mol = case_when(is.na(elig_cat_hba1c_landmark_mmol_mol) ~ factor("Unknown", 
+                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ elig_cat_hba1c_landmark_mmol_mol),
     )
 
 

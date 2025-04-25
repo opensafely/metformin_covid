@@ -151,7 +151,11 @@ dataset.elig_date_liver_cirrhosis_first = minimum_of(
 
 ## Use of the following medications in the last 14 days before elig_date_t2dm (drug-drug interaction with metformin)
 dataset.elig_date_metfin_interaction_last = last_matching_med_dmd_before(metformin_interaction_dmd, dataset.elig_date_t2dm).date
+dataset.elig_date_metfin_interaction_landmark_last = last_matching_med_dmd_before(metformin_interaction_dmd, dataset.elig_date_t2dm + days(183)).date
 
+## HbA1c, most recent value, within previous 2 years, on or before elig_date_t2dm + days(183), i.e., landmark date -> only used as an updated eligibility at landmark, not a baseline covariate! 
+## cov_num_hba1c_mmol_mol (below) will be used for the baseline HbA1c exclusion
+dataset.elig_num_hba1c_landmark_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, dataset.elig_date_t2dm + days(183) - days(2*366), dataset.elig_date_t2dm + days(183)).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
 
 #######################################################################################
 # Table 4) INTERVENTION/EXPOSURE variables

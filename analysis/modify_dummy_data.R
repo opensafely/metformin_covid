@@ -74,6 +74,8 @@ HbA1c_categories <- c("below 42", "42-58", "59-75", "above 75", "Unknown")
 HbA1c_prob <- c(0.05, 0.35, 0.25, 0.05, 0.3)
 data_processed <- data_processed %>%
   mutate(cov_cat_hba1c_mmol_mol = as.factor(sample(HbA1c_categories, n(), replace = TRUE, prob = HbA1c_prob)))
+data_processed <- data_processed %>%
+  mutate(elig_cat_hba1c_landmark_mmol_mol = as.factor(sample(HbA1c_categories, n(), replace = TRUE, prob = HbA1c_prob)))
 
 # Tot Chol/HDL ratio has zero counts in all groups
 tc_hdl_ratio_categories <- c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")
