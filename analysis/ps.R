@@ -15,6 +15,7 @@ library(dplyr)
 library(rms) # splines and strat
 library(cobalt) # SMD density
 library(ggplot2)
+library(tableone)
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -58,6 +59,14 @@ ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 
 # Extract propensity scores
 df$ps <- predict(ps_model, type = "response")
+
+# Export full PS model summary --------------------------------------------
+print('Export PS model summary')
+
+# Convert model summary coefficients to a data frame
+ps_model_summary <- summary(ps_model)$coefficients %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
 
 # Inverse probability weighting -------------------------------------------
 print('Inverse probability weighting')
@@ -129,11 +138,25 @@ ps_density_data_untrimmed <- bind_rows(df_treated, df_untreated)
 
 density_plot_untrimmed <- ggplot(ps_density_data_untrimmed, aes(x = dens_x, y = dens_y, color = group)) +
   geom_line(linewidth = 1) +
-  labs(title = "Propensity Score Density Plot; Untrimmed",
-       x = "Propensity Score",
-       y = "Density",
-       color = "Group") +
-  theme_minimal()
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)  # optional: make labels clearer
+  )
 
 ## Trimmed
 dens_treated_trim <- density(df_trimmed$ps[df_trimmed$exp_bin_treat == "metformin"])
@@ -144,14 +167,133 @@ ps_density_data_trimmed <- bind_rows(df_treated_trim, df_untreated_trim)
 
 density_plot_trimmed <- ggplot(ps_density_data_trimmed, aes(x = dens_x, y = dens_y, color = group)) +
   geom_line(linewidth = 1) +
-  labs(title = "Propensity Score Density Plot; Trimmed",
-       x = "Propensity Score",
-       y = "Density",
-       color = "Group") +
-  theme_minimal()
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)  # optional: make labels clearer
+  )
+
+# Histograms  -------------------------------------------------------------
+print('Density histograms')
+## Untrimmed
+df_untrimmed_hist <- df %>%
+  select(ps, exp_bin_treat) %>%
+  mutate(group = as.character(exp_bin_treat))
+# Histogram
+histogram_untrimmed <- ggplot(df_untrimmed_hist, aes(x = ps, fill = group)) +
+  geom_histogram(binwidth = 0.025, position = "identity", alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c("nothing" = "lightgrey", "metformin" = "black"))  +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1),
+    minor_breaks = seq(0, 1, by = 0.05),
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Histogram; Untrimmed",
+    x = "Propensity Score",
+    y = "Count",
+    fill = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80"),
+    panel.grid.minor.x = element_line(color = "gray90"),
+    axis.text.x = element_text(size = 10)
+  )
+
+## Trimmed
+df_trimmed_hist <- df_trimmed %>%
+  select(ps, exp_bin_treat) %>%
+  mutate(group = as.character(exp_bin_treat))
+# Histogram
+histogram_trimmed <- ggplot(df_trimmed_hist, aes(x = ps, fill = group)) +
+  geom_histogram(binwidth = 0.025, position = "identity", alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c("nothing" = "lightgrey", "metformin" = "black"))  +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1),
+    minor_breaks = seq(0, 1, by = 0.05),
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Histogram; Untrimmed",
+    x = "Propensity Score",
+    y = "Count",
+    fill = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80"),
+    panel.grid.minor.x = element_line(color = "gray90"),
+    axis.text.x = element_text(size = 10)
+  )
+
+# Modify dummy data --------------------------------------------------------
+# add a few high PS to be able to run the code on the dummy data
+if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
+  message("Running locally, adapt dummy data")
+  df <- df %>%
+    mutate(ps = case_when(ps < 0.12 ~ 0.65,
+                          ps < 0.18 ~ 0.92,
+                          TRUE ~ ps))
+  message("Dummy data successfully modified")
+}
+
+# Explore the PS  ----------------------------------------------------------
+# Explore PS groups in intervention, use cut-off 0.55 and 0.9
+df <- df %>%
+  mutate(
+    ps_group_int = factor(
+      case_when(
+        exp_bin_treat == "metformin" & ps < 0.55 ~ "PS < 0.55",
+        exp_bin_treat == "metformin" & ps >= 0.55 & ps <= 0.9 ~ "0.55 ≤ PS ≤ 0.9",
+        exp_bin_treat == "metformin" & ps > 0.9 ~ "PS > 0.9",
+        TRUE ~ NA_character_  
+      ),
+      levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55")
+    )
+  )
+ps_int_groups <- CreateTableOne(vars = covariate_names, 
+                         strata = "ps_group_int",
+                         data = df %>% filter(exp_bin_treat == "metformin"), 
+                         factorVars = c("cov_cat_ethnicity", "cov_cat_deprivation_5", "cov_cat_rural_urban", "cov_cat_smoking_status", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c_mmol_mol"))
+tbl_ps_int_groups <- as.data.frame(print(ps_int_groups, showAllLevels = TRUE))
+
+# Explore PS groups in control, use cut-off 0.55
+df <- df %>%
+  mutate(
+    ps_group_cont = factor(
+      case_when(
+        exp_bin_treat == "nothing" & ps < 0.55 ~ "PS < 0.55",
+        exp_bin_treat == "nothing" & ps >= 0.55 ~ "PS >= 0.55",
+        TRUE ~ NA_character_  
+      )
+    )
+  )
+ps_cont_groups <- CreateTableOne(vars = covariate_names, 
+                                strata = "ps_group_cont",
+                                data = df %>% filter(exp_bin_treat == "nothing"), 
+                                factorVars = c("cov_cat_ethnicity", "cov_cat_deprivation_5", "cov_cat_rural_urban", "cov_cat_smoking_status", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c_mmol_mol"))
+tbl_ps_cont_groups <- as.data.frame(print(ps_cont_groups, showAllLevels = TRUE))
+
 
 # Save output -------------------------------------------------------------
 print('Save output')
+# PS model summary
+write.csv(ps_model_summary, file = here::here("output", "ps", "ps_model_summary.csv"))
 # min/max PS per group
 write.csv(ps_summary, file = here::here("output", "ps", "ps_summary.csv"))
 # Standardized mean differences, unweighted and weighted (unstablized and stabilized)
@@ -162,3 +304,9 @@ write.csv(ps_density_data_untrimmed, file = here::here("output", "ps", "density_
 write.csv(ps_density_data_trimmed, file = here::here("output", "ps", "density_plot_trimmed.csv"))
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed.png"), density_plot_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_trimmed.png"), density_plot_trimmed, width = 20, height = 20, units = "cm")
+# Histograms
+ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")
+# PS stratified tables
+write.csv(tbl_ps_int_groups, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
+write.csv(tbl_ps_cont_groups, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))

@@ -16,6 +16,7 @@ library(rms) # strat
 library(survival) # survival/TTE analyses
 library(ggfortify) # autoplot
 library(gtsummary) # tbl_regression
+library(survminer) # KM curve
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -65,6 +66,10 @@ if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
   print("Check passed: All values in cox_tt_severecovid are non-negative.")
 }
 
+if (anyNA(df[, c("cox_tt_severecovid", "out_bin_severecovid_afterlandmark", covariate_names)])) {
+  warning("Missing values detected in model variables")
+}
+
 # Cox model ---------------------------------------------------------------
 print('Run Cox model')
 cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat +", 
@@ -74,7 +79,31 @@ cox_severecovid <- tbl_regression(cox_model_severecovid, exp = TRUE)
 cox_severecovid_df <- cox_severecovid %>% 
   as_tibble()
 
+# Cumulative Incidence Curve ----------------------------------------------
+print('Generate cumulative incidence curve')
+
+# Fit Kaplan-Meier estimates
+cuminc_fit <- survfit(Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat, data = df)
+
+# Plot cumulative incidence (1 - survival)
+cuminc_plot <- ggsurvplot(
+  cuminc_fit,
+  data = df,
+  fun = "event",              
+  risk.table = TRUE,
+  pval = F,
+  conf.int = TRUE,
+  xlab = "Time (days)",
+  ylab = "Cumulative incidence",
+  ggtheme = theme_minimal(),
+  legend.title = "Treatment",
+  legend.labs = c("Nothing", "Metformin")
+)
+
 # Save output -------------------------------------------------------------
 print('Save output')
 # cox model table
 write.csv(cox_severecovid_df, file = here::here("output", "te", "cox_scripted", "cox_severecovid.csv"))
+# KM curve
+ggsave(filename = here::here("output", "te", "cox_scripted", "cuminc_plot.png"), cuminc_plot, width = 20, height = 20, units = "cm")
+

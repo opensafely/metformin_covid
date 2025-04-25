@@ -115,6 +115,7 @@ actions:
     outputs:
       moderately_sensitive:
         csv: output/te/cox_scripted/*.csv
+        plot: output/te/cox_scripted/*.png
 
   ps:
     run: r:latest analysis/ps.R

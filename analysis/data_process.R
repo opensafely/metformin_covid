@@ -79,8 +79,8 @@ data_processed <- data_extracted %>%
       cov_cat_ethnicity == "Mixed" ~ "Mixed",
       cov_cat_ethnicity == "Asian" ~ "Asian",
       cov_cat_ethnicity == "Black" ~ "Black",
-      cov_cat_ethnicity == "Other" ~ "Other",
-      TRUE ~ "Unknown"), # add missing indicator
+      cov_cat_ethnicity == "Other" | cov_cat_ethnicity == "Unknown" ~ "Other", # collapsed due to very few Unknown, to avoid variable exclusion in cox model
+      TRUE ~ NA_character_), # will have no missing
     
     strat_cat_region = fn_case_when(
       strat_cat_region == "East" ~ "East",
@@ -100,9 +100,9 @@ data_processed <- data_extracted %>%
     
     cov_cat_smoking_status = fn_case_when(
       cov_cat_smoking_status == "S" ~ "Smoker",
-      cov_cat_smoking_status == "E" ~ "Ever",
+      cov_cat_smoking_status == "E" | cov_cat_smoking_status == "M" ~ "Ever" , # collapsed due to very few Unknown (M), to avoid variable exclusion in cox model
       cov_cat_smoking_status == "N" ~ "Never",
-      TRUE ~ "Unknown"), # add missing indicator
+      TRUE ~ NA_character_), # will have no missing
     
     cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     
