@@ -75,8 +75,7 @@ covariate_names <- names(df) %>%
   ## cov_cat_tc_hdl_ratio covers cov_num_tc_hdl_ratio
   ## cov_num_age_spline covers cov_cat_age and cov_num_age
   setdiff(c("cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_num_tc_hdl_ratio", "cov_cat_age", "cov_num_age")) 
-# print(covariate_names)
-
+print(covariate_names)
 
 # Drop unnecessary variables to reduce dataset size -----------------------
 print('Drop unnecessary variables to reduce dataset size')
@@ -112,14 +111,19 @@ df_long_months <- fn_expand_intervals(df,
                                       censor_date_variable,
                                       interval_type = "month")
 
-## To double-check:
+## To double-check | to check how events are treated in interval the event happend, see stop_date and start_date_month
 # df_long_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
-#                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome, comp_event, censor,
+#                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
 #                 cov_cat_sex, cov_num_age) %>%
 #   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
-#   # dplyr::filter(patient_id == 16) %>%
+#   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
+#   # dplyr::filter(!is.na(out_date_severecovid_afterlandmark)) %>%
 #   # dplyr::filter(is.na(censor)) %>%
+#   # dplyr::filter(stop_date == "2022-04-01") %>%
+#   # dplyr::filter(is_event_interval == TRUE & !is.na(out_date_severecovid_afterlandmark)) %>% # should only have 1 row per person
+#   # dplyr::filter(patient_id == "1418") %>%
+#   # dplyr::filter(is.na(censor)) %>% # should be empty
 #   View()
 
 
@@ -159,261 +163,262 @@ df_long_months <- fn_expand_intervals(df,
 # Define interval data set and number of bootstraps ----------------------------
 ## I currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
 ## If weeks, then K = 169 weeks
-K <- 39 # Total follow-up
+K <- 39 # Total follow-up in months
+df_long_months$monthsqr <- df_long_months$month^2 # add months square
 R <- 10 # Total bootstraps (ideally >500)
 
 
 # (i) Standardization ---------------------------------------------------------
-print('Standardization creating te_plr_stand_rse_tbl')
-## (1) fitting an outcome regression model conditional on the confounders listed above
-df_long_months$monthsqr <- df_long_months$month^2
-plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-plr_model_severecovid <- parglm(plr_formula_severecovid, 
-                             family = binomial(link = 'logit'),
-                             data = df_long_months) 
-# summary(plr_model_severecovid)
+# print('Standardization creating te_plr_stand_rse_tbl')
+# ## (1) fitting an outcome regression model conditional on the confounders listed above
+# df_long_months$monthsqr <- df_long_months$month^2
+# plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+#                                             paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+# plr_model_severecovid <- parglm(plr_formula_severecovid, 
+#                              family = binomial(link = 'logit'),
+#                              data = df_long_months) 
+# # summary(plr_model_severecovid)
+# 
+# ## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
+# # Create dataset with all time points for each individual under each treatment level
+# df_pred <- df_long_months %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
+# df_pred$monthsqr <- df_pred$month^2
+# 
+# # Control group (everyone untreated)
+# df_pred0 <- df_pred
+# df_pred0$exp_bin_treat <- 0
+# df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
+# 
+# # Treatment group (everyone treated)
+# df_pred1 <- df_pred
+# df_pred1$exp_bin_treat <- 1
+# df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
+# # The above creates a person-time dataset where we have predicted discrete-time hazards
+# 
+# # Obtain predicted survival probabilities from discrete-time hazards
+# df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
+# df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
+# 
+# # Estimate risks from survival probabilities; compute risk at month K-1
+# # Risk = 1 - S(t)
+# df_pred0$risk0 <- 1 - df_pred0$surv0
+# df_pred1$risk1 <- 1 - df_pred1$surv1
+# 
+# # Get the mean in each treatment group at each month time point
+# risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
+# risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
+# 
+# # Put all in 1 data frame
+# graph.pred <- merge(risk0, risk1, by=c("month"))
+# 
+# # Edit data frame to reflect that risks are estimated at the END of each interval
+# graph.pred$time_0 <- graph.pred$month + 1
+# zero <- data.frame(cbind(0,0,0,1,0,0))
+# zero <- setNames(zero,names(graph.pred))
+# graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
+# 
+# # Add RD and RR
+# graph$rd <- graph$risk1-graph$risk0
+# graph$rr <- graph$risk1/graph$risk0
+# 
+# # Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
+# risk0 <- graph$risk0[which(graph$month==K-1)] 
+# risk1 <- graph$risk1[which(graph$month==K-1)]
+# rd <- graph$rd[which(graph$month==K-1)]
+# rr <- graph$rr[which(graph$month==K-1)]
 
-## (2) standardizing over the empirical distribution of the confounders to obtain marginal effect estimates. 
-# Create dataset with all time points for each individual under each treatment level
-df_pred <- df_long_months %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-df_pred$monthsqr <- df_pred$month^2
 
-# Control group (everyone untreated)
-df_pred0 <- df_pred
-df_pred0$exp_bin_treat <- 0
-df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
-
-# Treatment group (everyone treated)
-df_pred1 <- df_pred
-df_pred1$exp_bin_treat <- 1
-df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
-# The above creates a person-time dataset where we have predicted discrete-time hazards
-
-# Obtain predicted survival probabilities from discrete-time hazards
-df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-
-# Estimate risks from survival probabilities; compute risk at month K-1
-# Risk = 1 - S(t)
-df_pred0$risk0 <- 1 - df_pred0$surv0
-df_pred1$risk1 <- 1 - df_pred1$surv1
-
-# Get the mean in each treatment group at each month time point
-risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-
-# Put all in 1 data frame
-graph.pred <- merge(risk0, risk1, by=c("month"))
-
-# Edit data frame to reflect that risks are estimated at the END of each interval
-graph.pred$time_0 <- graph.pred$month + 1
-zero <- data.frame(cbind(0,0,0,1,0,0))
-zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
-
-# Add RD and RR
-graph$rd <- graph$risk1-graph$risk0
-graph$rr <- graph$risk1/graph$risk0
-
-# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
-risk0 <- graph$risk0[which(graph$month==K-1)] 
-risk1 <- graph$risk1[which(graph$month==K-1)]
-rd <- graph$rd[which(graph$month==K-1)]
-rr <- graph$rr[which(graph$month==K-1)]
-
-
-# (i) Standardization: Add 95% CI using robust standard errors and the delta method for RD and RR ----
-# Compute robust standard errors
-vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
-robust_se <- sqrt(diag(vcov_robust))
-coefs <- coef(plr_model_severecovid)
-
-# standard errors for the two arms
-se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
-se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
-
-# confidence intervals for predicted risks using normal approximation
-ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
-ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
-
-# Formula for risk difference (RD)
-rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
-
-# Delta method for RD
-se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
-ci_rd_lower <- rd - 1.96 * se_rd
-ci_rd_upper <- rd + 1.96 * se_rd
-
-# Formula for risk ratio (RR)
-rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
-
-# Delta method for RR
-se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
-ci_rr_lower <- rr - 1.96 * se_rr
-ci_rr_upper <- rr + 1.96 * se_rr
-
-# Create results table
-te_plr_stand_rse_tbl <- data.frame(
-  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate = c(risk0, risk1, rd, rr),
-  Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
-  Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
-)
+# (i) Standardization: Add 95% CI using robust standard errors and the delta method for RD and RR | See code from Will/Fizz ----
+# # Compute robust standard errors
+# vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
+# robust_se <- sqrt(diag(vcov_robust))
+# coefs <- coef(plr_model_severecovid)
+# 
+# # standard errors for the two arms
+# se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
+# se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
+# 
+# # confidence intervals for predicted risks using normal approximation
+# ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
+# ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
+# 
+# # Formula for risk difference (RD)
+# rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
+# 
+# # Delta method for RD
+# se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
+# ci_rd_lower <- rd - 1.96 * se_rd
+# ci_rd_upper <- rd + 1.96 * se_rd
+# 
+# # Formula for risk ratio (RR)
+# rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
+# 
+# # Delta method for RR
+# se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
+# ci_rr_lower <- rr - 1.96 * se_rr
+# ci_rr_upper <- rr + 1.96 * se_rr
+# 
+# # Create results table
+# te_plr_stand_rse_tbl <- data.frame(
+#   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+#   Estimate = c(risk0, risk1, rd, rr),
+#   Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
+#   Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
+# )
 
 
 # (i) Standardization: Add 95% CI for risks, RD and RR using bootstrapping ---------------
-print('Standardization creating te_plr_stand_boot_tbl')
-study_ids <- data.frame(patient_id = df$patient_id)
-
-# Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 risk time point
-te_stand_rd_rr_withCI <- function(data, indices) {
-  # Select individuals into each bootstrapped sample
-  ids <- data$patient_id
-  boot.ids <- data.frame(patient_id = ids[indices])
-  boot.ids$bid <- 1:nrow(boot.ids)
-  
-  # Subset person-time data to individuals selected into the bootstrapped sample
-  d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
-  
-  # Fit pooled logistic model to estimate discrete hazards
-  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-  plr_model_severecovid <- parglm(plr_formula_severecovid, 
-                               family = binomial(link = 'logit'),
-                               data = d)
-  
-  # Create dataset with all time points for each individual under each treatment level
-  treat0 <- d %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-  treat0$monthsqr <- treat0$month^2
-  
-  # In the no metformin arm ("force" everyone to be untreated)
-  treat0$exp_bin_treat <- 0
-  # In the metformin arm ("force" everyone to be treated)
-  treat1 <- treat0
-  treat1$exp_bin_treat <- 1
-  
-  # Extract predicted values from pooled logistic regression model for each person-time row
-  # Predicted values correspond to discrete-time hazards
-  treat0$p.event0 <- predict(plr_model_severecovid, treat0, type="response")
-  treat1$p.event1 <- predict(plr_model_severecovid, treat1, type="response")
-  # The above creates a person-time dataset where we have predicted discrete-time hazards
-  # For each person-time row in the dataset
-  
-  # Obtain predicted survival probabilities from discrete-time hazards
-  treat0.surv <- treat0 %>% group_by(bid) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-  treat1.surv <- treat1 %>% group_by(bid) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-  
-  # Estimate risks from survival probabilities
-  # Risk = 1 - S(t)
-  treat0.surv$risk0 <- 1 - treat0.surv$surv0
-  treat1.surv$risk1 <- 1 - treat1.surv$surv1
-  
-  # Get the mean in each treatment group at each month time point
-  risk0 <- aggregate(treat0.surv[c("exp_bin_treat", "month", "risk0")], by=list(treat0.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-  risk1 <- aggregate(treat1.surv[c("exp_bin_treat", "month", "risk1")], by=list(treat1.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-  
-  # Prepare data
-  graph.pred <- merge(risk0, risk1, by=c("month"))
-  # Edit data frame to reflect that risks are estimated at the END of each interval
-  graph.pred$time_0 <- graph.pred$month + 1
-  zero <- data.frame(cbind(0,0,0,1,0,0))
-  zero <- setNames(zero,names(graph.pred))
-  graph <- rbind(zero, graph.pred)
-  graph$rd <- graph$risk1-graph$risk0
-  graph$rr <- graph$risk1/graph$risk0
-  return(c(graph$risk0[which(graph$month==K-1)], # adapt time point if necessary
-           graph$risk1[which(graph$month==K-1)],
-           graph$rd[which(graph$month==K-1)],
-           graph$rr[which(graph$month==K-1)]))
-}
-
-set.seed(423)
-te_stand_rd_rr_withCI <- boot(data = study_ids, statistic = te_stand_rd_rr_withCI, R = R)
-# summary(te_stand_rd_rr_withCI$t)
-
-# Function to extract bootstrapped confidence intervals - and keep a column with the original point estimates (without CI)
-extract_ci_boot <- function(boot_obj, index) {
-  ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
-  if (!is.null(ci$percent)) {
-    return(c(ci$percent[4], ci$percent[5])) # Lower and Upper CI for the bootstrapped values
-  } else {
-    return(c(NA, NA)) # for the original value
-  }
-}
-
-# Create the results table
-te_plr_stand_boot_tbl <- data.frame(
-  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate_original = te_stand_rd_rr_withCI$t0,  # Original estimates
-  Estimate_boot = colMeans(te_stand_rd_rr_withCI$t),  # Bootstrapped mean estimate
-  Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_stand_rd_rr_withCI, i)[1]),
-  Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_stand_rd_rr_withCI, i)[2])
-)
+# print('Standardization creating te_plr_stand_boot_tbl')
+# study_ids <- data.frame(patient_id = df$patient_id)
+# 
+# # Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 risk time point
+# te_stand_rd_rr_withCI <- function(data, indices) {
+#   # Select individuals into each bootstrapped sample
+#   ids <- data$patient_id
+#   boot.ids <- data.frame(patient_id = ids[indices])
+#   boot.ids$bid <- 1:nrow(boot.ids)
+#   
+#   # Subset person-time data to individuals selected into the bootstrapped sample
+#   d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
+#   
+#   # Fit pooled logistic model to estimate discrete hazards
+#   plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+#                                               paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+#   plr_model_severecovid <- parglm(plr_formula_severecovid, 
+#                                family = binomial(link = 'logit'),
+#                                data = d)
+#   
+#   # Create dataset with all time points for each individual under each treatment level
+#   treat0 <- d %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
+#   treat0$monthsqr <- treat0$month^2
+#   
+#   # In the no metformin arm ("force" everyone to be untreated)
+#   treat0$exp_bin_treat <- 0
+#   # In the metformin arm ("force" everyone to be treated)
+#   treat1 <- treat0
+#   treat1$exp_bin_treat <- 1
+#   
+#   # Extract predicted values from pooled logistic regression model for each person-time row
+#   # Predicted values correspond to discrete-time hazards
+#   treat0$p.event0 <- predict(plr_model_severecovid, treat0, type="response")
+#   treat1$p.event1 <- predict(plr_model_severecovid, treat1, type="response")
+#   # The above creates a person-time dataset where we have predicted discrete-time hazards
+#   # For each person-time row in the dataset
+#   
+#   # Obtain predicted survival probabilities from discrete-time hazards
+#   treat0.surv <- treat0 %>% group_by(bid) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
+#   treat1.surv <- treat1 %>% group_by(bid) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
+#   
+#   # Estimate risks from survival probabilities
+#   # Risk = 1 - S(t)
+#   treat0.surv$risk0 <- 1 - treat0.surv$surv0
+#   treat1.surv$risk1 <- 1 - treat1.surv$surv1
+#   
+#   # Get the mean in each treatment group at each month time point
+#   risk0 <- aggregate(treat0.surv[c("exp_bin_treat", "month", "risk0")], by=list(treat0.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
+#   risk1 <- aggregate(treat1.surv[c("exp_bin_treat", "month", "risk1")], by=list(treat1.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
+#   
+#   # Prepare data
+#   graph.pred <- merge(risk0, risk1, by=c("month"))
+#   # Edit data frame to reflect that risks are estimated at the END of each interval
+#   graph.pred$time_0 <- graph.pred$month + 1
+#   zero <- data.frame(cbind(0,0,0,1,0,0))
+#   zero <- setNames(zero,names(graph.pred))
+#   graph <- rbind(zero, graph.pred)
+#   graph$rd <- graph$risk1-graph$risk0
+#   graph$rr <- graph$risk1/graph$risk0
+#   return(c(graph$risk0[which(graph$month==K-1)], # adapt time point if necessary
+#            graph$risk1[which(graph$month==K-1)],
+#            graph$rd[which(graph$month==K-1)],
+#            graph$rr[which(graph$month==K-1)]))
+# }
+# 
+# set.seed(423)
+# te_stand_rd_rr_withCI_boot <- boot(data = study_ids, statistic = te_stand_rd_rr_withCI, R = R)
+# # summary(te_stand_rd_rr_withCI_boot$t)
+# 
+# # Function to extract bootstrapped confidence intervals - and keep a column with the original point estimates (without CI)
+# extract_ci_boot <- function(boot_obj, index) {
+#   ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
+#   if (!is.null(ci$percent)) {
+#     return(c(ci$percent[4], ci$percent[5])) # Lower and Upper CI for the bootstrapped values
+#   } else {
+#     return(c(NA, NA)) # for the original value
+#   }
+# }
+# 
+# # Create the results table
+# te_plr_stand_boot_tbl <- data.frame(
+#   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+#   Estimate_original = te_stand_rd_rr_withCI_boot$t0,  # Original estimates
+#   Estimate_boot = colMeans(te_stand_rd_rr_withCI_boot$t),  # Bootstrapped mean estimate
+#   Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_stand_rd_rr_withCI_boot, i)[1]),
+#   Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_stand_rd_rr_withCI_boot, i)[2])
+# )
 
 
 # (i) Standardization: Marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping ----
-print('Standardization creating marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping')
-### This chapter will be removed, instead will do the graph with IPTW & IPCW ###
-
-study_ids <- data.frame(patient_id = df$patient_id)
-# same function as above, except that a) it returns all risk timepoints incl. 95% CI, and b) no RD and RR
-te_all_timepoints_withCI <- function(data, indices) {
-  # Select individuals into each bootstrapped sample
-  ids <- data$patient_id
-  boot.ids <- data.frame(patient_id = ids[indices])
-  boot.ids$bid <- 1:nrow(boot.ids)
-  
-  # Subset person-time data to individuals selected into the bootstrapped sample
-  d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
-  
-  # Fit pooled logistic model to estimate discrete hazards
-  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
-                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-  plr_model_severecovid <- parglm(plr_formula_severecovid, 
-                               family = binomial(link = 'logit'),
-                               data = d)
-  
-  # Create dataset with all time points for each individual under each treatment level
-  treat0 <- d %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-  treat0$monthsqr <- treat0$month^2
-  
-  # In the no metformin arm ("force" everyone to be untreated)
-  treat0$exp_bin_treat <- 0
-  # In the metformin arm ("force" everyone to be treated)
-  treat1 <- treat0
-  treat1$exp_bin_treat <- 1
-  
-  # Extract predicted values from pooled logistic regression model for each person-time row
-  # Predicted values correspond to discrete-time hazards
-  treat0$p.event0 <- predict(plr_model_severecovid, treat0, type="response")
-  treat1$p.event1 <- predict(plr_model_severecovid, treat1, type="response")
-  # The above creates a person-time dataset where we have predicted discrete-time hazards
-  # For each person-time row in the dataset
-  
-  # Obtain predicted survival probabilities from discrete-time hazards
-  treat0.surv <- treat0 %>% group_by(bid) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-  treat1.surv <- treat1 %>% group_by(bid) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-  
-  # Estimate risks from survival probabilities
-  # Risk = 1 - S(t)
-  treat0.surv$risk0 <- 1 - treat0.surv$surv0
-  treat1.surv$risk1 <- 1 - treat1.surv$surv1
-  
-  # Get the mean in each treatment group at each month time point
-  risk0 <- aggregate(treat0.surv[c("exp_bin_treat", "month", "risk0")], by=list(treat0.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-  risk1 <- aggregate(treat1.surv[c("exp_bin_treat", "month", "risk1")], by=list(treat1.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-  
-  # Prepare data
-  graph.pred <- merge(risk0, risk1, by=c("month"))
-  # Edit data frame to reflect that risks are estimated at the END of each interval
-  graph.pred$time_0 <- graph.pred$month + 1
-  zero <- data.frame(cbind(0,0,0,1,0,0))
-  zero <- setNames(zero,names(graph.pred))
-  graph <- rbind(zero, graph.pred)
-  
-  return(c(graph$risk0, graph$risk1))
-}
+# print('Standardization creating marginal parametric cumulative incidence (risk) curves incl. 95% CI bootstrapping')
+# ### This chapter will be removed, instead will do the graph with IPTW & IPCW ###
+# 
+# study_ids <- data.frame(patient_id = df$patient_id)
+# # same function as above, except that a) it returns all risk timepoints incl. 95% CI, and b) no RD and RR
+# te_all_timepoints_withCI <- function(data, indices) {
+#   # Select individuals into each bootstrapped sample
+#   ids <- data$patient_id
+#   boot.ids <- data.frame(patient_id = ids[indices])
+#   boot.ids$bid <- 1:nrow(boot.ids)
+#   
+#   # Subset person-time data to individuals selected into the bootstrapped sample
+#   d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
+#   
+#   # Fit pooled logistic model to estimate discrete hazards
+#   plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr) +", 
+#                                               paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+#   plr_model_severecovid <- parglm(plr_formula_severecovid, 
+#                                family = binomial(link = 'logit'),
+#                                data = d)
+#   
+#   # Create dataset with all time points for each individual under each treatment level
+#   treat0 <- d %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
+#   treat0$monthsqr <- treat0$month^2
+#   
+#   # In the no metformin arm ("force" everyone to be untreated)
+#   treat0$exp_bin_treat <- 0
+#   # In the metformin arm ("force" everyone to be treated)
+#   treat1 <- treat0
+#   treat1$exp_bin_treat <- 1
+#   
+#   # Extract predicted values from pooled logistic regression model for each person-time row
+#   # Predicted values correspond to discrete-time hazards
+#   treat0$p.event0 <- predict(plr_model_severecovid, treat0, type="response")
+#   treat1$p.event1 <- predict(plr_model_severecovid, treat1, type="response")
+#   # The above creates a person-time dataset where we have predicted discrete-time hazards
+#   # For each person-time row in the dataset
+#   
+#   # Obtain predicted survival probabilities from discrete-time hazards
+#   treat0.surv <- treat0 %>% group_by(bid) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
+#   treat1.surv <- treat1 %>% group_by(bid) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
+#   
+#   # Estimate risks from survival probabilities
+#   # Risk = 1 - S(t)
+#   treat0.surv$risk0 <- 1 - treat0.surv$surv0
+#   treat1.surv$risk1 <- 1 - treat1.surv$surv1
+#   
+#   # Get the mean in each treatment group at each month time point
+#   risk0 <- aggregate(treat0.surv[c("exp_bin_treat", "month", "risk0")], by=list(treat0.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
+#   risk1 <- aggregate(treat1.surv[c("exp_bin_treat", "month", "risk1")], by=list(treat1.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
+#   
+#   # Prepare data
+#   graph.pred <- merge(risk0, risk1, by=c("month"))
+#   # Edit data frame to reflect that risks are estimated at the END of each interval
+#   graph.pred$time_0 <- graph.pred$month + 1
+#   zero <- data.frame(cbind(0,0,0,1,0,0))
+#   zero <- setNames(zero,names(graph.pred))
+#   graph <- rbind(zero, graph.pred)
+#   
+#   return(c(graph$risk0, graph$risk1))
+# }
 
 # set.seed(423)
 # te_all_timepoints_withCI <- boot(data = study_ids, statistic = te_all_timepoints_withCI, R = R)
@@ -502,7 +507,7 @@ iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names
 iptw.denom <- parglm(iptw_denom_formula, 
                  family = binomial(link = 'logit'),
                  data = df_long_months) 
-
+# summary(iptw.denom)
 # Predict "probability of receiving their observed(!) treatment value"
 df_long_months$iptw_denom <- predict(iptw.denom, df_long_months, type="response")
 
@@ -527,7 +532,7 @@ varlist <- names(df) %>%
   # but exclude those that make no sense: 
   ## cov_num_age_spline and cov_cat_age, represented by cov_num_age
   setdiff(c("cov_num_age_spline", "cov_cat_age")) 
-print(varlist)
+# print(varlist)
 
 # Create function to take mean difference, or SMD for age
 meanfctn <- function(x){
@@ -686,44 +691,44 @@ plot_cum_risk_iptw <- ggplot(graph,
                      breaks=c('No Metformin', 'Metformin'))
 
 
-# (ii) IPTW: Add 95% CI using robust standard errors and the delta method for RD and RR ----
-print('IPTW: create te_plr_iptw_rse_tbl')
-# Compute robust standard errors
-vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
-robust_se <- sqrt(diag(vcov_robust))
-coefs <- coef(plr_model_severecovid)
-
-# standard errors for the two arms
-se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
-se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
-
-# confidence intervals for predicted risks using normal approximation
-ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
-ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
-
-# Formula for risk difference (RD)
-rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
-
-# Delta method for RD
-se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
-ci_rd_lower <- rd - 1.96 * se_rd
-ci_rd_upper <- rd + 1.96 * se_rd
-
-# Formula for risk ratio (RR)
-rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
-
-# Delta method for RR
-se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
-ci_rr_lower <- rr - 1.96 * se_rr
-ci_rr_upper <- rr + 1.96 * se_rr
-
-# Create results table
-te_plr_iptw_rse_tbl <- data.frame(
-  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate = c(risk0, risk1, rd, rr),
-  Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
-  Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
-)
+# (ii) IPTW: Add 95% CI using robust standard errors and the delta method for RD and RR | See code from Will/Fizz ----
+# print('IPTW: create te_plr_iptw_rse_tbl')
+# # Compute robust standard errors
+# vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
+# robust_se <- sqrt(diag(vcov_robust))
+# coefs <- coef(plr_model_severecovid)
+# 
+# # standard errors for the two arms
+# se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
+# se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
+# 
+# # confidence intervals for predicted risks using normal approximation
+# ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
+# ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
+# 
+# # Formula for risk difference (RD)
+# rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
+# 
+# # Delta method for RD
+# se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
+# ci_rd_lower <- rd - 1.96 * se_rd
+# ci_rd_upper <- rd + 1.96 * se_rd
+# 
+# # Formula for risk ratio (RR)
+# rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
+# 
+# # Delta method for RR
+# se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
+# ci_rr_lower <- rr - 1.96 * se_rr
+# ci_rr_upper <- rr + 1.96 * se_rr
+# 
+# # Create results table
+# te_plr_iptw_rse_tbl <- data.frame(
+#   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+#   Estimate = c(risk0, risk1, rd, rr),
+#   Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
+#   Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
+# )
 
 
 # (ii) IPTW & IPCW: Add censoring event weights -----------------------------------
@@ -787,6 +792,9 @@ df_long_months$w_treat_cens_stab_99[df_long_months$w_treat_cens_stab_99 > thresh
 ###  Min, 25th percentile, median, mean, SD, 75th percentile, and max: truncated weights ###
 summary(df_long_months$w_treat_cens_stab_99)
 sd(df_long_months$w_treat_cens_stab_99)
+# df_long_months %>% 
+#   filter(is.na(df_long_months$w_treat_cens_stab_99)) %>% 
+#   View()
 
 # (ii) IPTW & IPCW: Fit pooled logistic regression -------------------------
 print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw_ipcw')
@@ -878,67 +886,76 @@ plot_cum_risk_iptw_ipcw <- ggplot(graph,
                      breaks=c('No Metformin', 'Metformin'))
 
 
-# (ii) IPTW & IPCW: Add 95% CI using robust standard errors and the delta method for RD and RR ----
-print('IPTW & IPCW: create te_plr_iptw_ipcw_boot_tbl')
-# Compute robust standard errors
-vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
-robust_se <- sqrt(diag(vcov_robust))
-coefs <- coef(plr_model_severecovid)
-
-# standard errors for the two arms
-se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
-se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
-
-# confidence intervals for predicted risks using normal approximation
-ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
-ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
-
-# Formula for risk difference (RD)
-rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
-
-# Delta method for RD
-se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
-ci_rd_lower <- rd - 1.96 * se_rd
-ci_rd_upper <- rd + 1.96 * se_rd
-
-# Formula for risk ratio (RR)
-rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
-
-# Delta method for RR
-se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
-ci_rr_lower <- rr - 1.96 * se_rr
-ci_rr_upper <- rr + 1.96 * se_rr
-
-# Create results table
-te_plr_iptw_ipcw_rse_tbl <- data.frame(
-  Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate = c(risk0, risk1, rd, rr),
-  Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
-  Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
-)
+# (ii) IPTW & IPCW: Add 95% CI using robust standard errors and the delta method for RD and RR | See code from Will/Fizz ----
+# print('IPTW & IPCW: create te_plr_iptw_ipcw_boot_tbl')
+# # Compute robust standard errors
+# vcov_robust <- vcovHC(plr_model_severecovid, type = "HC0")
+# robust_se <- sqrt(diag(vcov_robust))
+# coefs <- coef(plr_model_severecovid)
+# 
+# # standard errors for the two arms
+# se_risk0 <- sqrt(vcov_robust["(Intercept)", "(Intercept)"])
+# se_risk1 <- sqrt(vcov_robust["exp_bin_treat", "exp_bin_treat"])
+# 
+# # confidence intervals for predicted risks using normal approximation
+# ci_risk0 <- c(risk0 - 1.96 * se_risk0, risk0 + 1.96 * se_risk0)
+# ci_risk1 <- c(risk1 - 1.96 * se_risk1, risk1 + 1.96 * se_risk1)
+# 
+# # Formula for risk difference (RD)
+# rd_formula <- "1 / (1 + exp(-((Intercept)))) - 1 / (1 + exp(-((Intercept) + exp_bin_treat)))"
+# 
+# # Delta method for RD
+# se_rd <- deltaMethod(coefs, rd_formula, vcov_robust)$SE
+# ci_rd_lower <- rd - 1.96 * se_rd
+# ci_rd_upper <- rd + 1.96 * se_rd
+# 
+# # Formula for risk ratio (RR)
+# rr_formula <- "(1 / (1 + exp(-((Intercept) + exp_bin_treat)))) / (1 / (1 + exp(-((Intercept)))))"
+# 
+# # Delta method for RR
+# se_rr <- deltaMethod(coefs, rr_formula, vcov_robust)$SE
+# ci_rr_lower <- rr - 1.96 * se_rr
+# ci_rr_upper <- rr + 1.96 * se_rr
+# 
+# # Create results table
+# te_plr_iptw_ipcw_rse_tbl <- data.frame(
+#   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
+#   Estimate = c(risk0, risk1, rd, rr),
+#   Lower_CI = c(ci_risk0[1], ci_risk1[1], ci_rd_lower, ci_rr_lower),
+#   Upper_CI = c(ci_risk0[2], ci_risk1[2], ci_rd_upper, ci_rr_upper)
+# )
 
 
 # (ii) IPTW & IPCW: Add 95% CI for risks, RD and RR using bootstrapping ----
-study_ids <- data.frame(patient_id = df$patient_id)
+
+## add more printouts and checks to help debugging when running it on real data!
 
 # Create a function to obtain risks, RD, and RR from each bootstrap sample - and return 1 risk time point
+study_ids <- data.frame(patient_id = unique(df_long_months$patient_id))
+
 te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
-  # Select individuals into each bootstrapped sample
-  ids <- data$patient_id
-  boot.ids <- data.frame(patient_id = ids[indices])
-  boot.ids$bid <- 1:nrow(boot.ids)
   
-  # Subset person-time data to individuals selected into the bootstrapped sample
+  # capture and count unsuccessful bootstraps
+  tryCatch({
+  
+  # Resample the dataset
+  boot.ids <- data[indices, , drop = FALSE] # random resampling based on data = study_ids, & force the subset to stay a data frame instead of accidentally becoming a vector
   d <- left_join(boot.ids, df_long_months, by = "patient_id", relationship = "many-to-many")
+  # d <- df_long_months %>% filter(patient_id %in% boot.ids$patient_id) # Instead of left_join, filter the df_long_months, probably faster, but does not respect "bootstrapping with replacement"
   
   ### (1) Calculate IPTW
   iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + ")))
   iptw.denom <- parglm(iptw_denom_formula, 
                        family = binomial(link = 'logit'),
-                       data = d) 
+                       data = d)
   
   # Predict "probability of receiving their observed(!) treatment value"
   d$iptw_denom <- predict(iptw.denom, d, type="response")
+  
+  # check that no NA in predictions that mess up later down the road
+  if (any(is.na(d$iptw_denom))) {
+    stop("NA in IPTW denominator predictions")
+  }
   
   # In our case, without sequential trial (i.e. no conditional assignment based on calendar period) and with a binary outcome, the numerator is simply the proportion of patients who were treated.
   d$w_treat_stab <- ifelse(d$exp_bin_treat==1,
@@ -953,15 +970,21 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   
   # Obtain predicted probabilities of being uncensored for denominator
   d$ipcw_denom <- predict(ipcw.denom, d, type="response")
+  if (any(is.na(d$ipcw_denom))) {
+    stop("NA in IPCW denominator predictions")
+  }
   
   ## For the numerator we now fit a model to include the time-varying aspect of the weights
   ipcw_num_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr"))
-  ipcw.num <- glm(ipcw_num_formula, 
+  ipcw.num <- parglm(ipcw_num_formula, 
                   family = binomial(link = 'logit'),
                   data = d) 
   
   # Obtain predicted probabilities of being uncensored for numerator
   d$ipcw_num <- predict(ipcw.num, d, type="response")
+  if (any(is.na(d$ipcw_num))) {
+    stop("NA in IPCW numerator predictions")
+  }
   
   # Take cumulative products starting at baseline
   d <- d %>%
@@ -973,6 +996,10 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   
   ### (3) Multiply IPTW * IPCW
   d$w_treat_cens_stab <- d$w_treat_stab * d$w_cens_stab
+  if (any(is.na(d$w_treat_cens_stab))) {
+    cat("NA in final weight w_treat_cens_stab:", sum(is.na(d$w_treat_cens_stab)), "\n")
+  }
+  d <- d[!is.na(d$w_treat_cens_stab), ] # Drop NA weights if there are just a few
   
   ### (4) Truncate final stabilized weight at the 99th percentile
   threshold_99 <- quantile(d$w_treat_cens_stab, 0.99)
@@ -987,7 +1014,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   plr_model_severecovid <- parglm(plr_formula_severecovid, 
                                   family = binomial(link = 'logit'),
                                   data = d[d$censor==0 & d$comp_event == 0,],
-                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_99)
+                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_99) 
   
   ### (6) Transform estimates to risks at each time point in each group
   # Create dataset with all time points for each individual under each treatment level
@@ -1008,8 +1035,8 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   # For each person-time row in the dataset
   
   # Obtain predicted survival probabilities from discrete-time hazards
-  treat0.surv <- treat0 %>% group_by(bid) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-  treat1.surv <- treat1 %>% group_by(bid) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
+  treat0.surv <- treat0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
+  treat1.surv <- treat1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
   
   # Estimate risks from survival probabilities
   # Risk = 1 - S(t)
@@ -1033,10 +1060,22 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
            graph$risk1[which(graph$month==K-1)],
            graph$rd[which(graph$month==K-1)],
            graph$rr[which(graph$month==K-1)]))
+  
+  }, error = function(e) {
+    # If any error occurs, count as a failed bootstrap
+    cat("Bootstrap sample failed due to:", conditionMessage(e), "\n")
+    boot_failures <<- boot_failures + 1
+    return(rep(NA, 4)) # Return NA values to avoid breaking the boot()
+  })
+  
 }
 
 set.seed(423)
-te_iptw_ipcw_rd_rr_withCI <- boot(data = study_ids, statistic = te_iptw_ipcw_rd_rr_withCI, R = R)
+boot_failures <- 0 # Reset failure counter
+
+# run it
+te_iptw_ipcw_rd_rr_withCI_boot <- boot(data = study_ids, statistic = te_iptw_ipcw_rd_rr_withCI, R = R)
+cat("Number of failed bootstrap samples:", boot_failures, "\n")
 
 # Function to extract bootstrapped confidence intervals - and keep a column with the original point estimates (without CI)
 extract_ci_boot <- function(boot_obj, index) {
@@ -1051,20 +1090,20 @@ extract_ci_boot <- function(boot_obj, index) {
 # Create the results table
 te_plr_iptw_ipcw_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate_original = te_iptw_ipcw_rd_rr_withCI$t0,  # Original estimates
-  Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI$t),  # Bootstrapped mean estimate
-  Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI, i)[1]),
-  Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI, i)[2])
+  Estimate_original = te_iptw_ipcw_rd_rr_withCI_boot$t0,  # Original estimates
+  Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_boot$t),  # Bootstrapped mean estimate
+  Lower_CI = sapply(1:4, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_boot, i)[1]),
+  Upper_CI = sapply(1:4, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_boot, i)[2])
 )
 
 
 # Save output -------------------------------------------------------------
 print('Save output')
 # Treatment effect (risk) estimates
-write.csv(te_plr_stand_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_rse_severecovid.csv"))
-write.csv(te_plr_stand_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_boot_severecovid.csv"))
-write.csv(te_plr_iptw_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_rse_severecovid.csv"))
-write.csv(te_plr_iptw_ipcw_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_rse_severecovid.csv"))
+# write.csv(te_plr_stand_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_rse_severecovid.csv"))
+# write.csv(te_plr_stand_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_stand_boot_severecovid.csv"))
+# write.csv(te_plr_iptw_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_rse_severecovid.csv"))
+# write.csv(te_plr_iptw_ipcw_rse_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_rse_severecovid.csv"))
 write.csv(te_plr_iptw_ipcw_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_boot_severecovid.csv"))
 
 # Marginal parametric cumulative incidence (risk) curves from plr model, with 95% CI
