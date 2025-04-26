@@ -273,12 +273,12 @@ data_processed <- data_processed %>%
 # HbA1c covariate -----------------------------------------------------------
 # Above, I excluded all with HbA1c >75 mmol/mol. Unfortunately, the cox RA still "sees" this level and would exclude the variable if left as is (due to too 0 events in that subgroup)
 data_processed <- data_processed %>% 
-  cov_cat_hba1c_mmol_mol = fn_case_when(
+  mutate(cov_cat_hba1c_mmol_mol = fn_case_when(
     cov_cat_hba1c_mmol_mol == "below 42" ~ "below 42",
     cov_cat_hba1c_mmol_mol == "42-58" ~ "42-58",
     cov_cat_hba1c_mmol_mol == "59-75" ~ "59-75",
     cov_cat_hba1c_mmol_mol == "Unknown" ~ "Unknown",
-    TRUE ~ NA_character_)
+    TRUE ~ NA_character_))
 
 # Assign Cox variables ------------------------------------------------------
 data_processed <- data_processed %>% 
