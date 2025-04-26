@@ -76,10 +76,9 @@ data_processed <- data_extracted %>%
     
     cov_cat_ethnicity = fn_case_when(
       cov_cat_ethnicity == "White" ~ "White",
-      cov_cat_ethnicity == "Mixed" ~ "Mixed",
       cov_cat_ethnicity == "Asian" ~ "Asian",
       cov_cat_ethnicity == "Black" ~ "Black",
-      cov_cat_ethnicity == "Other" | cov_cat_ethnicity == "Unknown" ~ "Other", # collapsed due to very few Unknown, to avoid variable exclusion in cox model
+      cov_cat_ethnicity == "Other" | cov_cat_ethnicity == "Unknown" | cov_cat_ethnicity == "Mixed" ~ "Other", # collapsed due to too few events in "Unknown" and "Mixed", to avoid variable exclusion in cox model
       TRUE ~ NA_character_), # will have no missing
     
     strat_cat_region = fn_case_when(
@@ -271,6 +270,15 @@ data_processed <- data_processed %>%
                                                TRUE ~ as.Date(NA))
     )
 
+# HbA1c covariate -----------------------------------------------------------
+# Above, I excluded all with HbA1c >75 mmol/mol. Unfortunately, the cox RA still "sees" this level and would exclude the variable if left as is (due to too 0 events in that subgroup)
+data_processed <- data_processed %>% 
+  cov_cat_hba1c_mmol_mol = fn_case_when(
+    cov_cat_hba1c_mmol_mol == "below 42" ~ "below 42",
+    cov_cat_hba1c_mmol_mol == "42-58" ~ "42-58",
+    cov_cat_hba1c_mmol_mol == "59-75" ~ "59-75",
+    cov_cat_hba1c_mmol_mol == "Unknown" ~ "Unknown",
+    TRUE ~ NA_character_)
 
 # Assign Cox variables ------------------------------------------------------
 data_processed <- data_processed %>% 
