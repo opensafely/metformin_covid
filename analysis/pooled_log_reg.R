@@ -951,9 +951,9 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   }
   
   # Estimate stabilized weights
-  df_long_months$w_treat_stab <- ifelse(d$exp_bin_treat==1,
-                                        mean(d$exp_bin_treat)/d$iptw_denom,
-                                        (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
+  d$w_treat_stab <- ifelse(d$exp_bin_treat==1,
+                           mean(d$exp_bin_treat)/d$iptw_denom,
+                           (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
   ## this results in 1 weight estimate for each individual (-> constant over time)
   
   ### (2) Calculate IPCW
