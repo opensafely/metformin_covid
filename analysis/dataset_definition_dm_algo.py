@@ -56,17 +56,17 @@ ethnicity_snomed = (
     clinical_events.where(clinical_events.snomedct_code.is_in(ethnicity_codes))
     .sort_by(clinical_events.date)
     .last_for_patient()
-    .snomedct_code.to_category(ethnicity_codes)
+    .snomedct_code.to_category(ethnicity_codes, default="Missing")
 )
 
 ethnicity_sus = ethnicity_from_sus.code
 
 dataset.cov_cat_ethnicity = case(
-  when((ethnicity_snomed == "1") | ((ethnicity_snomed.is_null()) & (ethnicity_sus.is_in(["A", "B", "C"])))).then("White"),
-  when((ethnicity_snomed == "2") | ((ethnicity_snomed.is_null()) & (ethnicity_sus.is_in(["D", "E", "F", "G"])))).then("Mixed"),
-  when((ethnicity_snomed == "3") | ((ethnicity_snomed.is_null()) & (ethnicity_sus.is_in(["H", "J", "K", "L"])))).then("Asian"),
-  when((ethnicity_snomed == "4") | ((ethnicity_snomed.is_null()) & (ethnicity_sus.is_in(["M", "N", "P"])))).then("Black"),
-  when((ethnicity_snomed == "5") | ((ethnicity_snomed.is_null()) & (ethnicity_sus.is_in(["R", "S"])))).then("Other"),
+  when((ethnicity_snomed == "1") | ((ethnicity_snomed == "Missing") & (ethnicity_sus.is_in(["A", "B", "C"])))).then("White"),
+  when((ethnicity_snomed == "2") | ((ethnicity_snomed == "Missing") & (ethnicity_sus.is_in(["D", "E", "F", "G"])))).then("Mixed"),
+  when((ethnicity_snomed == "3") | ((ethnicity_snomed == "Missing") & (ethnicity_sus.is_in(["H", "J", "K", "L"])))).then("Asian"),
+  when((ethnicity_snomed == "4") | ((ethnicity_snomed == "Missing") & (ethnicity_sus.is_in(["M", "N", "P"])))).then("Black"),
+  when((ethnicity_snomed == "5") | ((ethnicity_snomed == "Missing") & (ethnicity_sus.is_in(["R", "S"])))).then("Other"),
   otherwise="Unknown", 
 )
 
