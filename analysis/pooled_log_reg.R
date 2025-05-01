@@ -18,7 +18,7 @@
 ## f) Consider doing the Love/SMD plot in the separate PS branch/script only
 ## g) Move each function into a separate R script
 ## h) Consider deleting (or moving) all (i) Standardization chapters, only keep IPW approach
-## i) Discuss different spline methods, ns() versus rcs()
+## i) Discuss different spline methods, ns() versus rcs(), but rcs() does not work within parglm!
 
 
 # Import libraries and functions ------------------------------------------
@@ -157,7 +157,7 @@ df_long_months <- fn_expand_intervals(df,
 ## then standardization alone is not possible anymore, we then need time-update and time-varying weights, and simply multiply all weights
 
 ## (iii) Combination of above, useful when:
-## If we need to adjust for additional baseline confounding that can't be included when creating IPW (e.g. baseline calendar week/month in sequential trial setup), then we create IPW first and then standardize to the empirical distribution of baseline calendar week/month in the datase
+## If we need to adjust for additional baseline confounding that can't be included when creating IPW (e.g. baseline calendar week/month in sequential trial setup), then we create IPW first and then standardize to the empirical distribution of baseline calendar week/month in the dataset
 
 
 # Define interval data set and number of bootstraps ----------------------------
@@ -498,23 +498,22 @@ R <- 10 # Total bootstraps (ideally >500)
 # (ii) IPTW ----------------------------------------------------------------
 print('IPTW')
 ## The denominator of the IPTW for each individual is the probability of receiving their observed(!) treatment value, given their confounder history.
-## Similar to PS, but "probability of receiving their observed(!) treatment value", i.e. 0 or 1, not only 1 like in a PS
-## If we run sequential trials, then we usually include calendar period (and _sqr) as baseline confounder to account for a time trend between trials - and include this as the only confounder in the outcome model and then standardize over calendar period. 
-## In our current scenario, as per protocol, we do not use sequential trials and do not include calendar period as baseline confounder. CAVE: This is not the same as month and monthsqr!
+## Here, we deal with treatment that is defined at baseline, not time-varying uptake of treatment => one constant baseline treatment weight per individual
+## And, the numerator therefore is simply the proportion of patients who were actually treated.
 
 # Calculate denominator for "probability of receiving their observed(!) treatment value"
 iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 iptw.denom <- parglm(iptw_denom_formula, 
-                 family = binomial(link = 'logit'),
-                 data = df_long_months) 
+                     family = binomial(link = 'logit'),
+                     data = df_long_months) 
 # summary(iptw.denom)
-# Predict "probability of receiving their observed(!) treatment value"
 df_long_months$iptw_denom <- predict(iptw.denom, df_long_months, type="response")
 
-# In our case, without sequential trial (i.e. no conditional assignment based on calendar period) and with a binary outcome, the numerator is simply the proportion of patients who were treated.
+# Estimate stabilized weights
 df_long_months$w_treat_stab <- ifelse(df_long_months$exp_bin_treat==1,
                                       mean(df_long_months$exp_bin_treat)/df_long_months$iptw_denom,
                                       (1-mean(df_long_months$exp_bin_treat))/(1-df_long_months$iptw_denom))
+## this results in 1 weight estimate for each individual (-> constant over time)
 
 
 # (ii) IPTW: Check the weights and the balance ---------------------------------------
@@ -604,14 +603,13 @@ sd(df_long_months$w_treat_stab_99)
 # (ii) IPTW: Fit pooled logistic regression -------------------------------------
 print('IPTW: Fit pooled logistic regression and create plot_cum_risk_iptw')
 # Fit pooled logistic regression, with stabilized weights (currently only IPW for treatment, i.e. baseline confounding => same weights across time)
-# Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
+# Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time -> implement!
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-plr_model_severecovid <- parglm(plr_formula_severecovid, 
-                             family = binomial(link = 'logit'),
-                             data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
-                             weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_stab_99)
+# The stratification variable has been accounted for in the weights - do I still need to include it here, i.e. the have different baseline hazards by region?
+plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+                                family = binomial(link = 'logit'),
+                                data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
+                                weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_stab_99)
 # summary(plr_model_severecovid)
 
 ### Transform estimates to risks at each time point in each group ###
@@ -734,16 +732,13 @@ plot_cum_risk_iptw <- ggplot(graph,
 # (ii) IPTW & IPCW: Add censoring event weights -----------------------------------
 print('IPTW & IPCW: Add censoring event weights')
 ## In our case we want to censor for LTFU, i.e. "the effect had no one been lost to follow-up"
-## Informally, an uncensored individual’s inverse probability of censoring weight is the inverse of
-## their probability of remaining uncensored given their treatment and covariate history. 
-## In the context of loss to follow-up, each individual who was not lost to follow-up receives a weight that is
-## proportional to the inverse of the probability of not being lost to follow-up, given their specific history.
-## We will consider stabilized IP weights for censoring, in which the numerator of the
-## weights is the probability of remaining uncensored given an individual’s treatment.
+## Informally, an uncensored individual’s inverse probability of censoring weight is the inverse of their probability of remaining uncensored given their treatment and covariate history. 
+## In the context of loss to follow-up, each individual who was not lost to follow-up receives a weight that is proportional to the inverse of the probability of not being lost to follow-up, given their specific history.
+## We will consider stabilized IP weights for censoring, in which the numerator of the weights is the probability of remaining uncensored given an individual’s treatment.
 
-## Once an individual is censored, they receive a censoring weight of 0 from that point onward. In
-## this simplified example, we assume censoring due to loss to follow-up depends only on the baseline treatment and baseline covariates.
-## Once, we can incorporate time-varying covariates (from OpenSAFELY), we will adapt.
+## Once an individual is censored, they receive a censoring weight of 0 from that point onward. 
+## In this simplified example, we assume censoring due to loss to follow-up depends only on the baseline treatment and baseline covariates.
+## Once we can incorporate time-varying covariates (from OpenSAFELY), we will adapt, including treat_1, i.e. first time treated.
 
 # Indicator for ever being censored due to loss to follow-up
 df_long_months <- df_long_months %>%
@@ -754,7 +749,7 @@ df_long_months <- df_long_months %>%
 ## Fit a pooled logistic regression model for the denominator of the IP weights for censoring 
 ## This model should predict the probability of remaining uncensored (not being lost to follow-up) at each timepoint. 
 ## Continuous time, here months (modeled using linear and quadratic terms), will serve as the time scale for this model. 
-## Hence, we do not include any product terms in the model.
+## We do not include any product terms in the model.
 ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 ipcw.denom <- parglm(ipcw_denom_formula, 
                   family = binomial(link = 'logit'),
@@ -763,7 +758,8 @@ ipcw.denom <- parglm(ipcw_denom_formula,
 # Obtain predicted probabilities of being uncensored for denominator
 df_long_months$ipcw_denom <- predict(ipcw.denom, df_long_months, type="response")
 
-## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any confounders 
+## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any covariates
+# strat(strat_cat_region)?
 ipcw_num_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr"))
 ipcw.num <- glm(ipcw_num_formula, 
                 family = binomial(link = 'logit'),
@@ -799,11 +795,10 @@ sd(df_long_months$w_treat_cens_stab_99)
 # (ii) IPTW & IPCW: Fit pooled logistic regression -------------------------
 print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw_ipcw')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
-# Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
+# Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time. -> implement!
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-plr_model_severecovid <- parglm(plr_formula_severecovid, 
+# The stratification variable has been accounted for in the weights - do I still need to include it here, i.e. the have different baseline hazards by region?
+plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
                                 weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_cens_stab_99)
@@ -944,23 +939,22 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   # d <- df_long_months %>% filter(patient_id %in% boot.ids$patient_id) # Instead of left_join, filter the df_long_months, probably faster, but does not respect "bootstrapping with replacement"
   
   ### (1) Calculate IPTW
-  iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + ")))
+  iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   iptw.denom <- parglm(iptw_denom_formula, 
                        family = binomial(link = 'logit'),
-                       data = d)
-  
-  # Predict "probability of receiving their observed(!) treatment value"
+                       data = d) 
   d$iptw_denom <- predict(iptw.denom, d, type="response")
   
-  # check that no NA in predictions that mess up later down the road
+  # check that no NA in predictions that will mess up calculations later down the road
   if (any(is.na(d$iptw_denom))) {
     stop("NA in IPTW denominator predictions")
   }
   
-  # In our case, without sequential trial (i.e. no conditional assignment based on calendar period) and with a binary outcome, the numerator is simply the proportion of patients who were treated.
-  d$w_treat_stab <- ifelse(d$exp_bin_treat==1,
-                           mean(d$exp_bin_treat)/d$iptw_denom,
-                           (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
+  # Estimate stabilized weights
+  df_long_months$w_treat_stab <- ifelse(d$exp_bin_treat==1,
+                                        mean(d$exp_bin_treat)/d$iptw_denom,
+                                        (1-mean(d$exp_bin_treat))/(1-d$iptw_denom))
+  ## this results in 1 weight estimate for each individual (-> constant over time)
   
   ### (2) Calculate IPCW
   ipcw_denom_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
@@ -990,16 +984,14 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   d <- d %>%
     group_by(patient_id) %>%
     mutate(w_cens_stab = cumprod(ipcw_num)/cumprod(ipcw_denom)) %>%
-    ungroup() %>%
-    # ensure that individuals who are not censored are assigned a weight of 1 - but does not exist in our case due to the data setup
-    mutate(w_cens_stab = ifelse(is.na(censor), 1, w_cens_stab)) 
+    ungroup()
   
   ### (3) Multiply IPTW * IPCW
   d$w_treat_cens_stab <- d$w_treat_stab * d$w_cens_stab
   if (any(is.na(d$w_treat_cens_stab))) {
     cat("NA in final weight w_treat_cens_stab:", sum(is.na(d$w_treat_cens_stab)), "\n")
   }
-  d <- d[!is.na(d$w_treat_cens_stab), ] # Drop NA weights if there are just a few
+  # d <- d[!is.na(d$w_treat_cens_stab), ] # Drop NA weights if there are just a few
   
   ### (4) Truncate final stabilized weight at the 99th percentile
   threshold_99 <- quantile(d$w_treat_cens_stab, 0.99)
@@ -1007,14 +999,13 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   d$w_treat_cens_stab_99[d$w_treat_cens_stab_99 > threshold_99] <- threshold_99
   
   ### (5) Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
-  # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time.
+  # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time. -> implement!
   # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-  plr_formula_severecovid <- as.formula(paste("outcome ~ exp_bin_treat +", 
-                                              paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
-  plr_model_severecovid <- parglm(plr_formula_severecovid, 
+  # The stratification variable has been accounted for in the weights - do I still need to include it here, i.e. the have different baseline hazards by region?
+  plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                   family = binomial(link = 'logit'),
                                   data = d[d$censor==0 & d$comp_event == 0,],
-                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_99) 
+                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_99)
   
   ### (6) Transform estimates to risks at each time point in each group
   # Create dataset with all time points for each individual under each treatment level
