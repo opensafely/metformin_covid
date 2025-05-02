@@ -51,70 +51,70 @@ actions:
       highly_sensitive:
         csv.gz: output/data_processed.csv.gz
 
-  generate_dataset:
-    run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
-    needs: 
-    - study_dates
-    - generate_dataset_dm_algo
-    - diabetes_algo
-    outputs:
-      highly_sensitive:
-        dataset: output/dataset.arrow
+  # generate_dataset:
+  #   run: ehrql:v1 generate-dataset analysis/dataset_definition_t2dm.py --output output/dataset.arrow
+  #   needs: 
+  #   - study_dates
+  #   - generate_dataset_dm_algo
+  #   - diabetes_algo
+  #   outputs:
+  #     highly_sensitive:
+  #       dataset: output/dataset.arrow
 
-  data_process:
-    run: r:latest analysis/data_process.R
-    needs:
-    - generate_dataset
-    outputs:
-      highly_sensitive:
-        dataset1: output/data/data_processed.arrow
-        dataset2: output/data/data_processed_full.arrow
-      moderately_sensitive:
-        flowchart_tbls: output/data_description/*.csv
+  # data_process:
+  #   run: r:latest analysis/data_process.R
+  #   needs:
+  #   - generate_dataset
+  #   outputs:
+  #     highly_sensitive:
+  #       dataset1: output/data/data_processed.arrow
+  #       dataset2: output/data/data_processed_full.arrow
+  #     moderately_sensitive:
+  #       flowchart_tbls: output/data_description/*.csv
 
-  treat_strat_feasibility:
-    run: r:latest analysis/treat_strat_feasibility.R
-    needs:
-    - data_process
-    outputs:
-      highly_sensitive:
-        dataset_plots: output/data/data_plots.feather
-      moderately_sensitive:
-        desc_tbl1: output/data_description/n_exp_out_midpoint6.csv
-        desc_tbl2: output/data_description/n_exp_out.csv
+  # treat_strat_feasibility:
+  #   run: r:latest analysis/treat_strat_feasibility.R
+  #   needs:
+  #   - data_process
+  #   outputs:
+  #     highly_sensitive:
+  #       dataset_plots: output/data/data_plots.feather
+  #     moderately_sensitive:
+  #       desc_tbl1: output/data_description/n_exp_out_midpoint6.csv
+  #       desc_tbl2: output/data_description/n_exp_out.csv
   
-  table1:
-    run: r:latest analysis/table1.R
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        table1: output/data_description/table1_midpoint6.csv
+  # table1:
+  #   run: r:latest analysis/table1.R
+  #   needs:
+  #   - data_process
+  #   outputs:
+  #     moderately_sensitive:
+  #       table1: output/data_description/table1_midpoint6.csv
 
-  km_primary:
-    run: kaplan-meier-function:v0.0.17 
-      --df_input=output/data/data_processed.arrow
-      --dir_output=output/te/km
-      --exposure=exp_bin_treat
-      --origin_date=landmark_date
-      --event_date=out_date_severecovid_afterlandmark
-      --censor_date=cox_date_severecovid
-      --max_fup=990
-      --plot=TRUE
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        km_treat_estimates: output/te/km/*.csv
-        png: output/te/km/*.png
+  # km_primary:
+  #   run: kaplan-meier-function:v0.0.17 
+  #     --df_input=output/data/data_processed.arrow
+  #     --dir_output=output/te/km
+  #     --exposure=exp_bin_treat
+  #     --origin_date=landmark_date
+  #     --event_date=out_date_severecovid_afterlandmark
+  #     --censor_date=cox_date_severecovid
+  #     --max_fup=990
+  #     --plot=TRUE
+  #   needs:
+  #   - data_process
+  #   outputs:
+  #     moderately_sensitive:
+  #       km_treat_estimates: output/te/km/*.csv
+  #       png: output/te/km/*.png
 
-  cox_primary_scripted:
-    run: r:latest analysis/cox_analysis.R
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        csv: output/te/cox_scripted/*.csv
+  # cox_primary_scripted:
+  #   run: r:latest analysis/cox_analysis.R
+  #   needs:
+  #   - data_process
+  #   outputs:
+  #     moderately_sensitive:
+  #       csv: output/te/cox_scripted/*.csv
 
   
   # ELD testing
@@ -128,10 +128,42 @@ actions:
     outputs:
       highly_sensitive:
         dataset: output/*.arrow
+
+  data_process_seqtrials:
+    run: r:latest analysis/data_process_SeqTrials.R
+    needs:
+    - generate_dataset_seqtrials
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/data_processed_seqtrials.arrow
+        dataset2: output/data/data_processed_full_seqtrials.arrow
+      moderately_sensitive:
+        flowchart_tbls: output/data_description_seqtrials/*.csv
   
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   # km_estimates_metfin_RA:
   #   run: kaplan-meier-function:v0.0.8
   #     --df_input=output/data/data_plots.feather
