@@ -99,78 +99,44 @@ data_processed <- data_processed %>%
 data_processed <- data_processed %>%
   mutate(elig_date_t2dm = sample(seq(mid2018_date, pandemicstart_date, by = "day"),
                                  n(), replace = TRUE))
- 
-# # (2) increase the amount of completeness in the main intervention variables first
-# data_processed <- data_processed %>%
-#   rowwise() %>%
-#   mutate(exp_date_metfin_mono_first = ifelse(
-#     is.na(exp_date_metfin_mono_first) & !is.na(elig_date_t2dm) & (elig_date_t2dm < studyend_date),
-#     sample(seq(elig_date_t2dm + 1, studyend_date, by = "day"), 1),
-#     exp_date_metfin_mono_first
-#   )) %>%
-#   ungroup()
-# data_processed <- data_processed %>%
-#   rowwise() %>%
-#   mutate(exp_date_metfin_first = ifelse(
-#     is.na(exp_date_metfin_first) & !is.na(elig_date_t2dm) & (elig_date_t2dm < studyend_date),
-#     sample(seq(elig_date_t2dm + 1, studyend_date, by = "day"), 1),
-#     exp_date_metfin_first
-#   )) %>%
-#   ungroup()
-# # Now, introduce ~10% missing values randomly in these
-# data_processed <- data_processed %>%
-#   mutate(exp_date_metfin_mono_first = ifelse(
-#     runif(n()) < 0.1,  # 10% probability of NA
-#     NA,
-#     exp_date_metfin_mono_first
-#   ))
-# data_processed <- data_processed %>%
-#   mutate(exp_date_metfin_first = ifelse(
-#     runif(n()) < 0.1,  # 10% probability of NA
-#     NA,
-#     exp_date_metfin_first
-#   ))
-# data_processed <- data_processed %>%
-#   mutate(exp_date_metfin_mono_first = as.Date(exp_date_metfin_mono_first, origin = "1970-01-01")) %>% 
-#   mutate(exp_date_metfin_first = as.Date(exp_date_metfin_first, origin = "1970-01-01"))
 
-# (3) Ensure all exposure variables are between baseline date (elig_date_t2dm) and studyend date
+# (2) Ensure all exposure/treatment variables are between baseline date (pandemicstart_date) and studyend date
 ## If the date is NA, leave it as NA.
-## If the date is before elig_date_t2dm, replace it with a random valid date.
+## If the date is before pandemicstart_date, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
+exp_vars <- c(
+  "exp_date_metfin_first", "exp_date_metfin_mono_first",
+  "exp_date_sulfo_first",
+  "exp_date_dpp4_first", "exp_date_tzd_first", "exp_date_sglt2_first",
+  "exp_date_glp1_first", "exp_date_megli_first", "exp_date_agi_first",
+  "exp_date_insulin_first")
+data_processed <- data_processed %>%
+  rowwise() %>%
+  mutate(across(all_of(exp_vars), ~ fn_dd_exp_out_dates(.x, pandemicstart_date, studyend_date))) %>%
+  ungroup() %>%
+  mutate(across(all_of(exp_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
-# exp_vars <- c(
-#   "exp_date_metfin_first", "exp_date_metfin_mono_first",
-#   "exp_date_sulfo_first",
-#   "exp_date_dpp4_first", "exp_date_tzd_first", "exp_date_sglt2_first",
-#   "exp_date_glp1_first", "exp_date_megli_first", "exp_date_agi_first",
-#   "exp_date_insulin_first")
-# data_processed <- data_processed %>%
-#   rowwise() %>%
-#   mutate(across(all_of(exp_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm, studyend_date))) %>%
-#   ungroup() %>%
-#   mutate(across(all_of(exp_vars), ~ as.Date(.x, origin = "1970-01-01")))
-
-# (4) Ensure all outcome dates are between landmark date and studyend date
+# (3) Ensure all outcome dates are between pandemicstart_date and studyend date
 ## If the date is NA, leave it as NA.
-## If the date is before landmark, replace it with a random valid date.
+## If the date is before pandemicstart_date, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
+## Lastly, ensure that out_date_covid_death is not part of out_date_death, as per data_process
+out_vars <- c(
+  "out_date_death", "out_date_covid_death",
+  "out_date_severecovid")
+data_processed <- data_processed %>%
+  rowwise() %>%
+  mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, pandemicstart_date, studyend_date))) %>%
+  ungroup() %>%
+  mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
+data_processed <- data_processed %>%
+  mutate(out_date_death = case_when(out_date_death == out_date_covid_death ~ as.Date(NA),
+                                    TRUE ~ out_date_death))
 
-# out_vars <- c(
-#   "out_date_covid_hosp", "out_date_covid_death",
-#   "out_date_severecovid", "out_date_covid", "out_date_longcovid",
-#   "out_date_virfat", "out_date_longcovid_virfat", "qa_date_of_death")
-# data_processed <- data_processed %>%
-#   rowwise() %>%
-#   mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm + days(183), studyend_date))) %>%
-#   ungroup() %>%
-#   mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
-
-# (5) Ensure all censoring dates are between baseline date (elig_date_t2dm) and studyend date
+# (4) Ensure all censoring dates are between baseline date (pandemicstart_date) and studyend date
 ## cens_date_dereg is completely missing in the current dummy data, so replace all
 ## but impute only 5% of cens_date_dereg date variables
-
-# data_processed$cens_date_dereg <- sapply(data_processed$elig_date_t2dm, function(baseline_date) {
-#   fn_dd_cens_dates(baseline_date, studyend_date)
-# })
-# data_processed$cens_date_dereg <- as.Date(data_processed$cens_date_dereg, origin = "1970-01-01")
+data_processed <- data_processed %>%
+  rowwise() %>%
+  mutate(cens_date_dereg = fn_dd_cens_dates(pandemicstart_date, studyend_date)) %>%
+  ungroup()

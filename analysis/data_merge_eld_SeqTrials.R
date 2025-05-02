@@ -10,12 +10,15 @@ print('Import libraries and functions')
 library(arrow)
 library(here)
 library(tidyverse)
+library(lubridate)
 source(here::here("analysis", "functions", "fn_extract_data.R"))
+
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_description_seqtrials"))
+
 
 # Import dates ------------------------------------------------------------
 print('Import the dates')
@@ -23,9 +26,11 @@ source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
+
 # Import the data ---------------------------------------------------------
 print('Import the data')
-df <- read_feather(here("output", "data", "df_expanded_seqtrials.arrow"))
+df_long_months <- read_feather(here("output", "data", "df_long_months.arrow"))
+
 
 # Import ELD tables and pre-process --------------------------------------
 input_filename <- "bmi.arrow"

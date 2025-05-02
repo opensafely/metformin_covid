@@ -462,17 +462,22 @@ dataset.add_event_table("hdl", date = hdl_events.date, eld_cov_num_hdl = hdl_eve
 #######################################################################################
 
 ### CATEGORY (1): "first ever & time-fixed" outcomes
-## COVID-related DEATH (all-cause death is defined above already among the qa variables)
+## COVID-related DEATH (all-cause deaths already defined above in QA)
 # Between pandemicstart_date and studyend_date (incl. those dates), stated anywhere on any of the 15 death certificate options
 tmp_out_bin_death_covid = matching_death_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date)
 dataset.out_date_covid_death = case(when(tmp_out_bin_death_covid).then(ons_deaths.date))
 
-## Deregistration, for censoring
+## Composite: first COVID-related DEATH or COVID-related hospitalization
+tmp_out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, pandemicstart_date, studyend_date, only_prim_diagnoses=True).admission_date
+tmp_out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, pandemicstart_date, studyend_date).arrival_date
+dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, tmp_out_date_covid_hes, tmp_out_date_covid_emergency)
+
+## Deregistration, for censoring for LTFU
 dataset.cens_date_dereg = registered.end_date
 
 
 ### CATEGORY (2): TIME-VARYING outcomes (they may reduce/increase) between pandemic start (= study start) and study end
-### they are also relevant for time-updated eligibility to be included in SeqTrials => use event-level data
+### they are also relevant for time-updated eligibility to be included in SeqTrials => use ELD
 
 ## COVID-related hospitalizations, diagnosis recorded only in primary diagnosis field
 covid_hosp = sc_events.where(sc_events.primary_diagnosis.is_in(covid_codes_incl_clin_diag))

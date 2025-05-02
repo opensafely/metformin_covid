@@ -139,6 +139,14 @@ actions:
         dataset2: output/data/data_processed_full_seqtrials.arrow
       moderately_sensitive:
         flowchart_tbls: output/data_description_seqtrials/*.csv
+
+  data_expand_seqtrials:
+    run: r:latest analysis/data_expand_SeqTrials.R
+    needs:
+    - data_process_seqtrials
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/df_long_months.arrow
   
 
 

@@ -39,6 +39,7 @@ fs::dir_create(here::here("output", "data_description_seqtrials"))
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
+pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
 
 
 # Define redaction threshold ----------------------------------------------
@@ -134,6 +135,15 @@ data_processed <- data_extracted %>%
     )
 
 
+# Clarify mortality outcomes ----------------------------------------------
+data_processed <- data_processed %>%
+  mutate(
+    out_bin_death = (!is.na(qa_date_of_death) & qa_date_of_death > pandemicstart_date) & is.na(out_date_covid_death),
+    out_date_death = case_when(out_bin_death == TRUE ~ qa_date_of_death, 
+                               TRUE ~ as.Date(NA))
+  )
+
+
 # Modify dummy data -------------------------------------------------------
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data")
@@ -179,7 +189,8 @@ data_processed <- data_processed %>%
          starts_with("exp_"), # Exposures
          starts_with("cov_"), # Covariates
          starts_with("strat_"), # Stratification variable
-         starts_with("out_") # Outcomes
+         starts_with("out_"), # Outcomes
+         starts_with("cens_") # Censoring event
   )
 
 
