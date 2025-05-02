@@ -42,6 +42,7 @@ print('Expand the dataset')
 # b) If competing event (out_date_death) is reached first, stop expanding, assign to the CURRENT interval: outcome=NA, censor=0, comp_event=1
 # c) If censoring event (cens_date_dereg) is reached first, stop expanding, assign to the CURRENT interval: outcome=NA, censor=1, comp_event=NA
 # d) If studyend_date is reached first, stop expanding, assign to the CURRENT interval: outcome=0, censor=0, comp_event=0
+# other rules see in function R script
 
 start_date_variable <- pandemicstart_date
 stop_date_columns <- c("out_date_covid_death", "out_date_death", "cens_date_dereg")
@@ -70,6 +71,9 @@ df_long_months <- fn_expand_intervals(df,
                                       censor_date_variable,
                                       interval_type = "month")
 
+# df_long_months %>%
+#   dplyr::select(patient_id, start_date_month, month, end_date_month) %>% 
+#   View()
 ## To double-check | to check how events are treated in interval the event happend
 # df_long_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, out_date_covid_death, out_date_death, cens_date_dereg,

@@ -12,8 +12,7 @@
 # e) if outcome and censoring (i.e. LTFU) event have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order below.
 # f) if outcome and competing event (i.e. non-covid death) event have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order below.
 # g) if censoring and competing event event have the EXACT same date, then pick the competing event as the defining event. Ensured by case_when() order below.
-
-# Weekly and monthly intervals (for now). Weekly intervals fixed to 7 days. Monthly intervals fixed to 31 days (to ensure max possible length of a month)
+# h) Weekly and monthly intervals (for now), and I take calendar month and calendar week
 ####
 fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, studyend_date, outcome_date_variable, comp_date_variable, censor_date_variable, interval_type = c("week", "month")) {
   interval_type <- match.arg(interval_type)  # Ensure only valid options are chosen
@@ -43,11 +42,16 @@ fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, st
     
     # Group by patient_id and assign interval-specific information
     group_by(patient_id) %>%
+    
+    # Rename/explicitely show intervals
+    mutate(
+      !!paste0("end_date_", interval_type) := lead(intervals_list, default = stop_date[1] + 1) - days(1)
+    ) %>%
     mutate(
       interval = row_number() - 1, # Start interval count at 0
       
       # Flag intervals where an event (outcome, competing, or censoring) occurs
-      is_event_interval = intervals_list <= stop_date & stop_date < intervals_list + ifelse(interval_type == "week", 7, 31),  # last day of interval_length is baseline of next interval, i.e., inclusive at the start and exclusive at the end
+      is_event_interval = intervals_list <= stop_date & stop_date <= (!!sym(paste0("end_date_", interval_type))),  # left-closed, right-open
       
       # Flag outcome event intervals
       is_outcome_event = if_else(is_event_interval & stop_date == .data[[outcome_date_variable]], 1L, 0L),
@@ -90,9 +94,9 @@ fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, st
     # c) a row with outcome==1, censor==NA, comp_event==NA -> exclude now
     filter(!(is.na(censor) & is.na(comp_event))) %>% 
     
-    # Rename the columns dynamically based on the interval type
+    # Assign either "week" or "month" as interval column name
     rename(
       !!paste0("start_date_", interval_type) := intervals_list,
-      !!interval_type := interval  # Assign either "week" or "month" as column names
+      !!interval_type := interval 
     )
 }

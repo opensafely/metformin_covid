@@ -407,7 +407,7 @@ covid_vaccinations = (
 dataset.add_event_table(
   "covid_vaccinations",
   date=covid_vaccinations.date,
-  eld_cov_cat_vacc = covid_vaccinations.product_name # not sure I need it, currently for testing purpose
+  eld_cov_cat_vacc = covid_vaccinations.target_disease.is_in(["SARS-2 CORONAVIRUS"])
 )
 
 ## Obesity, HbA1c, lipids recordings during study period
