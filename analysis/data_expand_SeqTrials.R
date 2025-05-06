@@ -11,7 +11,12 @@ library(arrow)
 library(here)
 library(tidyverse)
 library(lubridate)
+library(zoo) # for fn_add_events_to_intervals_SeqTrials.R
+library(purrr) # for fn_add_events_to_intervals_SeqTrials.R and fn_expand_intervals_SeqTrials.R
+library(rlang) # for fn_add_events_to_intervals_SeqTrials.R
+library(stringr) # for fn_add_events_to_intervals_SeqTrials.R
 source(here::here("analysis", "functions", "fn_expand_intervals_SeqTrials.R"))
+source(here::here("analysis", "functions", "fn_add_events_to_intervals_SeqTrials.R"))
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -77,8 +82,8 @@ df_long_months <- fn_expand_intervals(df,
 ## To double-check | to check how events are treated in interval the event happend
 # df_long_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, out_date_covid_death, out_date_death, cens_date_dereg,
-#                 stop_date, start_date_month, month, outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
-#                 cov_cat_sex, cov_num_age) %>%
+#                 stop_date, start_date_month, end_date_month, month, outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
+#                 cov_cat_sex, cov_num_age, everything()) %>%
 #   # dplyr::filter(!is.na(out_date_death)) %>%
 #   # dplyr::filter(!is.na(cens_date_dereg)) %>%
 #   # dplyr::filter(!is.na(out_date_covid_death)) %>%
@@ -86,6 +91,37 @@ df_long_months <- fn_expand_intervals(df,
 #   # dplyr::filter(is_event_interval == TRUE & !is.na(out_date_covid_death)) %>% # should only have 1 row per person
 #   # dplyr::filter(patient_id == "1571") %>%
 #   View()
+
+
+# Add a bin flag to monthly intervals for all "first ever" date variables ----
+# a) if event date is recorded and happening before min start date intervals, then assign 1 to corresponding bin variable to all person-intervals
+# b) if event date is recorded and happening after max end date intervals, then assign 0 to corresponding bin variable to all person-intervals
+# c) if no event date is recorded (date variable == NA), then assign 0 to corresponding bin variable to all person-intervals
+# d) if event date is recorded during follow-up, then assign 1 to corresponding bin variable in corresponding interval and 0 to all intervals before and 1 to all intervals after
+
+# Specify the variables to process
+date_vars <- c("elig_date_metfin_allergy_first", "elig_date_ckd_45_first", "elig_date_liver_cirrhosis_first",
+               "elig_date_metfin_interaction_first", "exp_date_metfin_first", "exp_date_metfin_mono_first", "exp_date_sulfo_first",
+               "exp_date_dpp4_first", "exp_date_tzd_first", "exp_date_sglt2_first", "exp_date_glp1_first", "exp_date_megli_first", "exp_date_agi_first", 
+               "exp_date_insulin_first", 
+               "out_date_severecovid" # here are the covid hosp. "hidden", will do this in a clean way using ELD in a second step, but added for now just to double-check
+               )
+
+# Run the function
+df_long_months <- fn_add_events_to_intervals(df_long_months, date_vars,
+                                             id_var = "patient_id", 
+                                             start_var = "start_date_month", 
+                                             end_var = "end_date_month")
+
+## To double-check
+# df_long_months %>%
+#   dplyr::select(patient_id, elig_date_t2dm, start_date_month, end_date_month, month, out_date_severecovid, out_bin_severecovid,
+#                 elig_date_ckd_45_first, elig_bin_ckd_45_first, exp_date_sulfo_first, exp_bin_sulfo_first, 
+#                 exp_date_insulin_first, exp_bin_insulin_first, 
+#                 outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
+#                 cov_cat_sex, cov_num_age) %>%
+#   View()
+
 
 # Save the dataset ------------------------------------------------------
 arrow::write_feather(df_long_months, here::here("output", "data", "df_long_months.arrow"))
