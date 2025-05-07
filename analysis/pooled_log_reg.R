@@ -114,8 +114,9 @@ df_long_months <- fn_expand_intervals(df,
 ## To double-check | to check how events are treated in interval the event happend, see stop_date and start_date_month
 # df_long_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
-#                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, month, outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
-#                 cov_cat_sex, cov_num_age) %>%
+#                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, end_date_month, month, outcome, comp_event, censor, is_event_interval, is_outcome_event, followup_stop,
+#                 cov_cat_sex, cov_num_age
+#                 ) %>%
 #   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(out_date_severecovid_afterlandmark)) %>%

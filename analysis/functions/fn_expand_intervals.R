@@ -21,8 +21,8 @@ fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, st
   data %>%
     rowwise() %>%
     mutate(
-      # Assign start date of interval expansion (in our case: landmark_date)
-      start_date = .data[[start_date_variable]],
+      # Assign start date of interval expansion (in our case: landmark_date & allow for both: direct import of a date, or a string name of the dataset)
+      start_date = if (is.character(start_date_variable)) .data[[start_date_variable]] else start_date_variable,
       
       # Calculate stop_date as the earliest of the defined dates, including administrative end of study (usually defined separately)
       stop_date = pmin(!!!syms(stop_date_columns), studyend_date, na.rm = TRUE),
@@ -43,14 +43,22 @@ fn_expand_intervals <- function(data, start_date_variable, stop_date_columns, st
     
     # Group by patient_id and assign interval-specific information
     group_by(patient_id) %>%
+    
+    # Rename/explicitly show intervals
+    mutate(
+      !!paste0("end_date_", interval_type) := lead(intervals_list, default = stop_date[1] + 1) - days(1)
+    ) %>%
+    
     mutate(
       interval = row_number() - 1, # Start interval count at 0
       
-      # Flag intervals where an event (outcome, competing, or censoring) occurs
-      is_event_interval = intervals_list <= stop_date & stop_date < intervals_list + ifelse(interval_type == "week", 7, 31),  # last day of interval_length is baseline of next interval, i.e., inclusive at the start and exclusive at the end
+      # Flag end event interval (i.e. where outcome, competing, or censoring occurs)
+      is_event_interval = intervals_list <= stop_date & stop_date <= (!!sym(paste0("end_date_", interval_type))),  # left-closed, right-open
       
-      # Flag outcome event intervals
+      # Flag what kind of end event ocurred
       is_outcome_event = if_else(is_event_interval & stop_date == .data[[outcome_date_variable]], 1L, 0L),
+      is_cens_event = if_else(is_event_interval & stop_date == .data[[censor_date_variable]], 1L, 0L),
+      is_comp_event = if_else(is_event_interval & stop_date == .data[[comp_date_variable]], 1L, 0L),
       
       # Assign outcome column, see rules a-d above
       outcome = case_when(
