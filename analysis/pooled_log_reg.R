@@ -166,7 +166,7 @@ df_long_months$monthsqr <- df_long_months$month^2 # add months square to model t
 R <- 10 # Total bootstraps (ideally >500)
 
 
-# (ii) IPTW ----------------------------------------------------------------
+# IPTW: Fit treatment model and truncate the weights ----------------------
 print('IPTW')
 ## The denominator of the IPTW for each individual is the probability of receiving their observed(!) treatment value, given their confounder history.
 ## Here, we deal with treatment that is defined at baseline, not time-varying uptake of treatment => one constant baseline treatment weight per individual
@@ -176,7 +176,7 @@ print('IPTW')
 iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
 iptw.denom <- parglm(iptw_denom_formula, 
                      family = binomial(link = 'logit'),
-                     data = df_long_months) 
+                     data = df_long_months[df_long_months$month == 0, ]) 
 # summary(iptw.denom)
 df_long_months$iptw_denom <- predict(iptw.denom, df_long_months, type="response")
 
@@ -186,76 +186,21 @@ df_long_months$w_treat_stab <- ifelse(df_long_months$exp_bin_treat==1,
                                       (1-mean(df_long_months$exp_bin_treat))/(1-df_long_months$iptw_denom))
 ## this results in 1 weight estimate for each individual (-> constant over time)
 
+print('IPTW: Truncate weights at 1st and 99th percentile')
+lower_threshold <- quantile(df_long_months$w_treat_stab, 0.01, na.rm = TRUE)
+upper_threshold <- quantile(df_long_months$w_treat_stab, 0.99, na.rm = TRUE)
+df_long_months$w_treat_stab_trunc <- df_long_months$w_treat_stab
+df_long_months$w_treat_stab_trunc[df_long_months$w_treat_stab_trunc < lower_threshold] <- lower_threshold
+df_long_months$w_treat_stab_trunc[df_long_months$w_treat_stab_trunc > upper_threshold] <- upper_threshold
 
-# (ii) IPTW: Check the weights and the balance ---------------------------------------
-print('IPTW: Check the weights and the balance')
+## Min, 25th percentile, median, mean, SD, 75th percentile, and max:
 summary(df_long_months$w_treat_stab)
 sd(df_long_months$w_treat_stab)
-
-# Create subsets of data, according to treat_b status
-treat_b0 <- subset(df_long_months,exp_bin_treat==0)
-treat_b1 <- subset(df_long_months,exp_bin_treat==1)
-
-# List of variables to compare (include more, not only covariate_names, e.g. also the numeric variables for HbA1c and TC/HDL ratio)
-varlist <- names(df) %>%
-  grep("^cov", ., value = TRUE) %>% 
-  # but exclude those that make no sense: 
-  ## cov_num_age_spline and cov_cat_age, represented by cov_num_age
-  setdiff(c("cov_num_age_spline", "cov_cat_age")) 
-# print(varlist)
-
-### Check standardized mean difference BEFORE weighting
-smd_before <- lapply(varlist, fn_smd_before)
-smd_before_df <- as.data.frame(do.call(rbind, smd_before), stringsAsFactors = FALSE)
-smd_before_df <- transform(smd_before_df,
-                           var = as.character(var),
-                           type = as.character(type),
-                           smd = as.numeric(smd))
-covplot_unweighted <- ggplot(smd_before_df, aes(x = smd, y = reorder(var, smd))) +
-  geom_point(color = "steelblue", size = 3) +
-  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", color = "red") +
-  labs(title = "Love Plot: Standardized Mean Differences before weighting",
-       x = "Standardized Mean Difference (SMD)",
-       y = "Covariate") +
-  theme_minimal()
-
-### Check standardized mean difference AFTER weighting
-w_treat_0 <- treat_b0$w_treat_stab
-w_treat_1 <- treat_b1$w_treat_stab
-smd_after <- lapply(varlist, 
-                    fn_smd_after, 
-                    w_treat_0 = w_treat_0, 
-                    w_treat_1 = w_treat_1)
-smd_after_df <- as.data.frame(do.call(rbind, smd_after), stringsAsFactors = FALSE)
-smd_after_df <- transform(smd_after_df,
-                          var = as.character(var),
-                          type = as.character(type),
-                          smd = as.numeric(smd))
-covplot_weighted <- ggplot(smd_after_df, aes(x = smd, y = reorder(var, smd))) +
-  geom_point(color = "darkorange", size = 3) +
-  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", color = "red") +
-  labs(title = "Love Plot: Standardized Mean Differences after weighting",
-       x = "Standardized Mean Difference (SMD)",
-       y = "Covariate") +
-  theme_minimal()
-## Note re dummy data: cov_num_tc_hdl_ratio, _hba1c, _bmi, were not modified in dummy data adaptation since not used for modelling (only their categorical counterparts) => missing
+summary(df_long_months$w_treat_stab_trunc)
+sd(df_long_months$w_treat_stab_trunc)
 
 
-# (ii) IPTW: Truncate weights --------------------------------------------------------
-print('IPTW: Truncate weights')
-# Truncate stabilized weights at the 99th percentile
-threshold_99 <- quantile(df_long_months$w_treat_stab, 0.99)
-df_long_months$w_treat_stab_99 <- df_long_months$w_treat_stab
-df_long_months$w_treat_stab_99[df_long_months$w_treat_stab_99 > threshold_99] <- threshold_99
-
-###  Min, 25th percentile, median, mean, SD, 75th percentile, and max:
-summary(df_long_months$w_treat_stab)
-sd(df_long_months$w_treat_stab)
-summary(df_long_months$w_treat_stab_99)
-sd(df_long_months$w_treat_stab_99)
-
-
-# (ii) IPTW: Fit pooled logistic regression -------------------------------------
+# IPTW: Fit pooled logistic regression -------------------------------------
 print('IPTW: Fit pooled logistic regression and create plot_cum_risk_iptw')
 # Fit pooled logistic regression, with stabilized weights (currently only IPW for treatment, i.e. baseline confounding => same weights across time)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time -> implement!
@@ -264,7 +209,7 @@ print('IPTW: Fit pooled logistic regression and create plot_cum_risk_iptw')
 plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
-                                weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_stab_99)
+                                weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_stab_trunc)
 # summary(plr_model_severecovid)
 
 ### Transform estimates to risks at each time point in each group ###
@@ -325,13 +270,7 @@ plot_cum_risk_iptw <- ggplot(graph,
   geom_line(aes(y = risk0,
                 color = "No Metformin"), linewidth = 1.5) +
   xlab("Months") +
-  # scale_x_continuous(limits = c(0, 24),
-  #                    breaks=c(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)) +
   ylab("Cumulative Incidence (%)") + 
-  # scale_y_continuous(limits=c(0, 0.125), # format y axis
-  #                    breaks=c(0, 0.025, 0.05, 0.075, 0.1, 0.125),
-  #                    labels=c("0.0%", "2.5%", "5.0%",
-  #                             "7.5%", "10.0%", "12.5%")) +
   theme_minimal()+ # set plot theme elements
   theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
         axis.line = element_line(colour = "black"),
@@ -344,7 +283,7 @@ plot_cum_risk_iptw <- ggplot(graph,
                      breaks=c('No Metformin', 'Metformin'))
 
 
-# (ii) IPTW & IPCW: Add censoring event weights -----------------------------------
+# IPTW & IPCW: Add censoring event weights ----------------------------------
 print('IPTW & IPCW: Add censoring event weights')
 ## In our case we want to censor for LTFU, i.e. "the effect had no one been lost to follow-up"
 ## Informally, an uncensored individual’s inverse probability of censoring weight is the inverse of their probability of remaining uncensored given their treatment and covariate history. 
@@ -355,7 +294,7 @@ print('IPTW & IPCW: Add censoring event weights')
 ## In this simplified example, we assume censoring due to loss to follow-up depends only on the baseline treatment and baseline covariates.
 ## Once we can incorporate time-varying covariates (from OpenSAFELY), we will adapt, including treat_1, i.e. first time treated.
 
-# Indicator for ever being censored due to loss to follow-up
+# Indicator for ever being censored due to loss to follow-up (just for descriptive)
 df_long_months <- df_long_months %>%
   group_by(patient_id) %>%
   mutate(censor_any = ifelse(is.na(censor), NA, max(censor, na.rm = T))) %>%
@@ -375,7 +314,7 @@ df_long_months$ipcw_denom <- predict(ipcw.denom, df_long_months, type="response"
 
 ## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any covariates
 # strat(strat_cat_region)?
-ipcw_num_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr"))
+ipcw_num_formula <- as.formula(paste("censor == 0 ~ month + monthsqr"))
 ipcw.num <- glm(ipcw_num_formula, 
                 family = binomial(link = 'logit'),
                 data = df_long_months) 
@@ -388,28 +327,76 @@ df_long_months$ipcw_num <- predict(ipcw.num, df_long_months, type="response")
 df_long_months <- df_long_months %>%
   group_by(patient_id) %>%
   mutate(w_cens_stab = cumprod(ipcw_num)/cumprod(ipcw_denom)) %>%
-  ungroup() %>%
-  # ensure that individuals who are not censored are assigned a weight of 1 - but does not exist in our case due to the data setup
-  mutate(w_cens_stab = ifelse(is.na(censor), 1, w_cens_stab)) 
+  ungroup()
 
 # Take product of weight for censoring and treatment for each individual (take the untruncated w_treat_stab from above)
 df_long_months$w_treat_cens_stab <- df_long_months$w_treat_stab * df_long_months$w_cens_stab
 
-### Truncate final stabilized weight at the 99th percentile ###
-threshold_99 <- quantile(df_long_months$w_treat_cens_stab, 0.99)
-df_long_months$w_treat_cens_stab_99 <- df_long_months$w_treat_cens_stab
-df_long_months$w_treat_cens_stab_99[df_long_months$w_treat_cens_stab_99 > threshold_99] <- threshold_99
+### Truncate final stabilized weight at the 1st and 99th percentile ###
+lower_threshold <- quantile(df_long_months$w_treat_cens_stab, 0.01, na.rm = TRUE)
+upper_threshold <- quantile(df_long_months$w_treat_cens_stab, 0.99, na.rm = TRUE)
+df_long_months$w_treat_cens_stab_trunc <- df_long_months$w_treat_cens_stab
+df_long_months$w_treat_cens_stab_trunc[df_long_months$w_treat_cens_stab_trunc < lower_threshold] <- lower_threshold
+df_long_months$w_treat_cens_stab_trunc[df_long_months$w_treat_cens_stab_trunc > upper_threshold] <- upper_threshold
 
 ###  Min, 25th percentile, median, mean, SD, 75th percentile, and max: truncated weights ###
-summary(df_long_months$w_treat_cens_stab_99)
-sd(df_long_months$w_treat_cens_stab_99)
-
-# df_long_months %>% 
-#   filter(is.na(df_long_months$w_treat_cens_stab_99)) %>% 
-#   View()
+summary(df_long_months$w_treat_cens_stab_trunc)
+sd(df_long_months$w_treat_cens_stab_trunc)
 
 
-# (ii) IPTW & IPCW: Fit pooled logistic regression -------------------------
+# IPTW & IPCW: Check the summary weights and the balance ---------------------------------------
+print('IPTW: Check the weights and the balance')
+
+# Create subsets of data, according to treat_b status
+treat_b0 <- subset(df_long_months, exp_bin_treat==0)
+treat_b1 <- subset(df_long_months, exp_bin_treat==1)
+
+# List of variables to compare (include more, not only covariate_names, e.g. also the numeric variables for HbA1c and TC/HDL ratio)
+varlist <- names(df) %>%
+  grep("^cov", ., value = TRUE) %>% 
+  # but exclude those that make no sense: 
+  ## cov_num_age_spline and cov_cat_age, represented by cov_num_age
+  setdiff(c("cov_num_age_spline", "cov_cat_age")) 
+# print(varlist)
+
+### Check standardized mean difference BEFORE weighting
+smd_before <- lapply(varlist, fn_smd_before)
+smd_before_df <- as.data.frame(do.call(rbind, smd_before), stringsAsFactors = FALSE)
+smd_before_df <- transform(smd_before_df,
+                           var = as.character(var),
+                           type = as.character(type),
+                           smd = as.numeric(smd))
+covplot_unweighted <- ggplot(smd_before_df, aes(x = smd, y = reorder(var, smd))) +
+  geom_point(color = "steelblue", size = 3) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", color = "red") +
+  labs(title = "Love Plot: Standardized Mean Differences before weighting",
+       x = "Standardized Mean Difference (SMD)",
+       y = "Covariate") +
+  theme_minimal()
+
+### Check standardized mean difference AFTER weighting
+w_treat_0 <- treat_b0$w_treat_cens_stab_trunc
+w_treat_1 <- treat_b1$w_treat_cens_stab_trunc
+smd_after <- lapply(varlist, 
+                    fn_smd_after, 
+                    w_treat_0 = w_treat_0, 
+                    w_treat_1 = w_treat_1)
+smd_after_df <- as.data.frame(do.call(rbind, smd_after), stringsAsFactors = FALSE)
+smd_after_df <- transform(smd_after_df,
+                          var = as.character(var),
+                          type = as.character(type),
+                          smd = as.numeric(smd))
+covplot_weighted <- ggplot(smd_after_df, aes(x = smd, y = reorder(var, smd))) +
+  geom_point(color = "darkorange", size = 3) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", color = "red") +
+  labs(title = "Love Plot: Standardized Mean Differences after weighting",
+       x = "Standardized Mean Difference (SMD)",
+       y = "Covariate") +
+  theme_minimal()
+## Note re dummy data: cov_num_tc_hdl_ratio, _hba1c, _bmi, were not modified in dummy data adaptation since not used for modelling (only their categorical counterparts) => missing
+
+
+# IPTW & IPCW: Fit pooled logistic regression -------------------------
 print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw_ipcw')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time. -> implement!
@@ -418,7 +405,7 @@ print('IPTW & IPCW: Fit pooled logistic regression and create plot_cum_risk_iptw
 plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,],
-                                weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_cens_stab_99)
+                                weights = df_long_months[df_long_months$censor==0 & df_long_months$comp_event == 0,]$w_treat_cens_stab_trunc)
 # summary(plr_model_severecovid)
 
 ### Transform estimates to risks at each time point in each group ###
@@ -479,13 +466,7 @@ plot_cum_risk_iptw_ipcw <- ggplot(graph,
   geom_line(aes(y = risk0,
                 color = "No Metformin"), linewidth = 1.5) +
   xlab("Months") +
-  # scale_x_continuous(limits = c(0, 24),
-  #                    breaks=c(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)) +
   ylab("Cumulative Incidence (%)") + 
-  # scale_y_continuous(limits=c(0, 0.125), # format y axis
-  #                    breaks=c(0, 0.025, 0.05, 0.075, 0.1, 0.125),
-  #                    labels=c("0.0%", "2.5%", "5.0%",
-  #                             "7.5%", "10.0%", "12.5%")) +
   theme_minimal()+ # set plot theme elements
   theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
         axis.line = element_line(colour = "black"),
@@ -498,12 +479,11 @@ plot_cum_risk_iptw_ipcw <- ggplot(graph,
                      breaks=c('No Metformin', 'Metformin'))
 
 
-# (ii) IPTW & IPCW: Add 95% CI using robust standard errors and the delta method for RD and RR | See code from Will/Fizz ----
+# IPTW & IPCW: Add 95% CI using robust standard errors and the delta method for RD and RR | See code from Will/Fizz ----
 # print('IPTW & IPCW: create te_plr_iptw_ipcw_boot_tbl')
 
 
-# (ii) IPTW & IPCW: Add 95% CI for risks, RD and RR using bootstrapping ----
-
+# IPTW & IPCW: Add 95% CI using bootstrapping ----
 study_ids <- data.frame(patient_id = unique(df_long_months$patient_id))
 
 te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
@@ -524,7 +504,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   iptw_denom_formula <- as.formula(paste("exp_bin_treat ~ ", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
   iptw.denom <- parglm(iptw_denom_formula, 
                        family = binomial(link = 'logit'),
-                       data = d) 
+                       data = d[d$month == 0, ]) # restrict to baseline person-month for model fitting
   d$iptw_denom <- predict(iptw.denom, d, type="response")
   
   # check that no NA in predictions that will mess up calculations later down the road
@@ -551,7 +531,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   }
   
   ## For the numerator we now fit a model to include the time-varying aspect of the weights
-  ipcw_num_formula <- as.formula(paste("censor == 0 ~ exp_bin_treat + month + monthsqr"))
+  ipcw_num_formula <- as.formula(paste("censor == 0 ~ month + monthsqr")) # TBD if exp_bin_treat included or not
   ipcw.num <- parglm(ipcw_num_formula, 
                   family = binomial(link = 'logit'),
                   data = d) 
@@ -575,19 +555,22 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices) {
   }
   # d <- d[!is.na(d$w_treat_cens_stab), ] # Drop NA weights if there are just a few
   
-  ### (4) Truncate final stabilized weight at the 99th percentile
-  threshold_99 <- quantile(d$w_treat_cens_stab, 0.99)
-  d$w_treat_cens_stab_99 <- d$w_treat_cens_stab
-  d$w_treat_cens_stab_99[d$w_treat_cens_stab_99 > threshold_99] <- threshold_99
+  ### (4) Truncate final stabilized weight at the 1st and 99th percentile
+  lower_threshold <- quantile(d$w_treat_cens_stab, 0.01)
+  upper_threshold <- quantile(d$w_treat_cens_stab, 0.99)
+  d$w_treat_cens_stab_trunc <- d$w_treat_cens_stab
+  d$w_treat_cens_stab_trunc[d$w_treat_cens_stab_trunc < lower_threshold] <- lower_threshold
+  d$w_treat_cens_stab_trunc[d$w_treat_cens_stab_trunc > upper_threshold] <- upper_threshold
   
   ### (5) Fit pooled logistic regression, with stabilized weights for IPTW and IPCW
   # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time. -> implement!
   # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
   # The stratification variable has been accounted for in the weights - do I still need to include it here, i.e. the have different baseline hazards by region?
+  # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it would mirror the cox model
   plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                   family = binomial(link = 'logit'),
                                   data = d[d$censor==0 & d$comp_event == 0,],
-                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_99)
+                                  weights = d[d$censor==0 & d$comp_event == 0,]$w_treat_cens_stab_trunc)
   
   ### (6) Transform estimates to risks at each time point in each group
   # Create dataset with all time points for each individual under each treatment level
