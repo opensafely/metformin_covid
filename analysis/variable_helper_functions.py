@@ -415,3 +415,37 @@ def most_recent_bmi(*, minimum_age_at_measurement, where=True):
         .sort_by(clinical_events.date)
         .last_for_patient()
     )
+
+#######################################################################################
+### Any future events (including baseline_date and study end_date) for ELD EC table
+#######################################################################################
+### Diagnosis recorded in any diagnosis field
+def ec_eld(codelist, start_date, end_date, where=True):
+    conditions = [
+        getattr(emergency_care_attendances, column_name).is_in(codelist)
+        for column_name in ([f"diagnosis_{i:02d}" for i in range(1, 25)])
+    ]
+    return(
+        emergency_care_attendances.where(where)
+        .where(any_of(conditions))
+        .where(emergency_care_attendances.arrival_date.is_after(start_date))
+        .where(emergency_care_attendances.arrival_date.is_on_or_before(end_date))
+        .sort_by(emergency_care_attendances.arrival_date)
+    )
+
+### BMI
+def bmi_eld(*, minimum_age_at_measurement, where=True):
+    age_threshold = patients.date_of_birth + days(
+        # This is obviously inexact but, given that the dates of birth are rounded to
+        # the first of the month anyway, there's no point trying to be more accurate
+        int(365.25 * minimum_age_at_measurement)
+    )
+    return (
+        # This captures just explicitly recorded BMI observations rather than attempting
+        # to calculate it from height and weight measurements. Investigation has shown
+        # this to have no real benefit it terms of coverage or accuracy.
+        clinical_events.where(where)
+        .where(clinical_events.ctv3_code == CTV3Code("22K.."))
+        .where(clinical_events.date >= age_threshold)
+        .sort_by(clinical_events.date)
+    )

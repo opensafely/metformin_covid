@@ -348,3 +348,34 @@ actions:
   #   outputs:
   #     moderately_sensitive:
   #       plot: output/data_description/*.png
+
+  # ELD
+  generate_dataset_seqtrials:
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_SeqTrials.py 
+      --output output:arrow
+    needs: 
+    - study_dates
+    - generate_dataset_dm_algo
+    - diabetes_algo
+    outputs:
+      highly_sensitive:
+        dataset: output/*.arrow
+
+  data_process_seqtrials:
+    run: r:latest analysis/data_process_SeqTrials.R
+    needs:
+    - generate_dataset_seqtrials
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/data_processed_seqtrials.arrow
+        dataset2: output/data/data_processed_full_seqtrials.arrow
+      moderately_sensitive:
+        flowchart_tbls: output/data_description_seqtrials/*.csv
+
+  data_add_intervals:
+    run: r:latest analysis/data_add_intervals.R
+    needs:
+    - data_process_seqtrials
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/df_months_tot.arrow
