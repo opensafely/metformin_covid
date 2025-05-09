@@ -135,12 +135,12 @@ data_processed <- data_extracted %>%
     )
 
 
-# Clarify mortality outcomes ----------------------------------------------
+# Clarify mortality variable ----------------------------------------------
 data_processed <- data_processed %>%
   mutate(
-    out_bin_death = (!is.na(qa_date_of_death) & qa_date_of_death > pandemicstart_date) & is.na(out_date_covid_death),
-    out_date_death = case_when(out_bin_death == TRUE ~ qa_date_of_death, 
-                               TRUE ~ as.Date(NA))
+    out_bin_noncovid_death = (!is.na(qa_date_of_death) & qa_date_of_death > pandemicstart_date) & is.na(out_date_covid_death),
+    out_date_noncovid_death = case_when(out_bin_noncovid_death == TRUE ~ qa_date_of_death, 
+                                       TRUE ~ as.Date(NA))
   )
 
 
