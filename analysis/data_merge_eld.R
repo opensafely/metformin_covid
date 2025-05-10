@@ -183,23 +183,23 @@ df_months_eld <- df_months_eld %>%
     )
   ))
 
-df_months_eld <- df_months_eld %>%
-  group_by(patient_id) %>%
-  arrange(start_date_month, .by_group = TRUE) %>%
-  mutate(across(all_of(eld_num_cols), ~ {
-    # Identify where first non-NA occurs
-    first_non_na <- which(!is.na(.x))[1]
-    if (is.na(first_non_na)) {
-      # all NA → return as is
-      .x
-    } else {
-      # mask values before first non-NA
-      masked <- .x
-      masked[1:(first_non_na - 1)] <- NA
-      # forward fill
-      tidyr::fill(data.frame(masked), masked, .direction = "down")$masked
-    }
-  }))
+# df_months_eld <- df_months_eld %>%
+#   group_by(patient_id) %>%
+#   arrange(start_date_month, .by_group = TRUE) %>%
+#   mutate(across(all_of(eld_num_cols), ~ {
+#     # Identify where first non-NA occurs
+#     first_non_na <- which(!is.na(.x))[1]
+#     if (is.na(first_non_na)) {
+#       # all NA → return as is
+#       .x
+#     } else {
+#       # mask values before first non-NA
+#       masked <- .x
+#       masked[1:(first_non_na - 1)] <- NA
+#       # forward fill
+#       tidyr::fill(data.frame(masked), masked, .direction = "down")$masked
+#     }
+#   }))
 
 
 # Assign time-varying treatment and eligibility variables --------------
