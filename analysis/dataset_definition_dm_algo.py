@@ -42,7 +42,7 @@ pandemicstart_date = study_dates["pandemicstart_date"]
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=8000)
+dataset.configure_dummy_data(population_size=5000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################

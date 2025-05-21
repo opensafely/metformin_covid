@@ -108,14 +108,14 @@ actions:
         km_treat_estimates: output/te/km/*.csv
         png: output/te/km/*.png
 
-  cox_primary_scripted:
-    run: r:latest analysis/cox_analysis.R
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        csv: output/te/cox_scripted/*.csv
-        plot: output/te/cox_scripted/*.png
+  # cox_primary_scripted:
+  #   run: r:latest analysis/cox_analysis.R
+  #   needs:
+  #   - data_process
+  #   outputs:
+  #     moderately_sensitive:
+  #       csv: output/te/cox_scripted/*.csv
+  #       plot: output/te/cox_scripted/*.png
 
   # ps:
   #   run: r:latest analysis/ps.R
