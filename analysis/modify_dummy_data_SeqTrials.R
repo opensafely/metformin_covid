@@ -120,19 +120,25 @@ data_processed <- data_processed %>%
 ## If the date is NA, leave it as NA.
 ## If the date is before pandemicstart_date, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
-## Lastly, ensure that out_date_noncovid_death is not part of out_date_covid_death, as per data_process
+## Lastly, ensure that out_date_noncovid_death is not part of out_date_covid_death and out_date_death is the composite, as per data_process
 out_vars <- c(
-  "out_date_noncovid_death", "out_date_covid_death",
-  "out_date_severecovid")
+  "out_date_noncovid_death", "out_date_covid_death", "out_date_death",
+  "out_date_severecovid", "out_date_longcovid", "out_date_longcovid_virfat")
 data_processed <- data_processed %>%
   rowwise() %>%
   mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, pandemicstart_date, studyend_date))) %>%
   ungroup() %>%
   mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
+
 data_processed <- data_processed %>%
   mutate(out_date_noncovid_death = case_when(
-    out_date_noncovid_death == out_date_covid_death ~ as.Date(NA),
+    out_date_noncovid_death == out_date_covid_death ~ as.Date(NA_character_),
     TRUE ~ out_date_noncovid_death
+  ))
+data_processed <- data_processed %>%
+  mutate(out_date_death = case_when(
+    (!is.na(out_date_death)) & (out_date_death != out_date_covid_death | out_date_death != out_date_noncovid_death) ~ as.Date(NA_character_),
+    TRUE ~ out_date_death
   ))
 
 # (4) Ensure all censoring dates are between baseline date (pandemicstart_date) and studyend date

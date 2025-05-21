@@ -157,7 +157,7 @@ actions:
 
 
 
-  # ELD
+  # Sequential trial setup, including ELD
   generate_dataset_seqtrials:
     run: ehrql:v1 generate-dataset analysis/dataset_definition_SeqTrials.py 
       --output output:arrow
@@ -170,7 +170,7 @@ actions:
         dataset: output/*.arrow
 
   data_process_seqtrials:
-    run: r:latest analysis/data_process_SeqTrials.R
+    run: r:latest analysis/01_data_process_SeqTrials.R
     needs:
     - generate_dataset_seqtrials
     outputs:
@@ -181,12 +181,27 @@ actions:
         flowchart_tbls: output/data_description_seqtrials/*.csv
 
   data_add_intervals:
-    run: r:latest analysis/data_add_intervals.R
+    run: r:latest analysis/02_data_add_intervals.R
     needs:
     - data_process_seqtrials
     outputs:
       highly_sensitive:
         dataset1: output/data/df_months_tot.arrow
+
+  data_merge_eld:
+    run: r:latest analysis/03_data_merge_eld.R
+    needs:
+    - data_add_intervals
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/df_months_severecovid.arrow
+        dataset2: output/data/df_months_covid_death.arrow
+        dataset3: output/data/df_months_covid_event.arrow
+        dataset4: output/data/df_months_longcovid.arrow
+
+
+
+
   
   # km_estimates_metfin_RA:
   #   run: kaplan-meier-function:v0.0.8

@@ -1,14 +1,14 @@
 ####
 ## This script does the following:
-# 1. Import/extract feather dataset from OpenSAFELY
-# 2. Basic type formatting of variables -> fn_extract_data.R()
+# 1. Import/extract feather one-person-per-row main dataset from OpenSAFELY
+# 2. Basic type formatting -> fn_extract_data.R()
 # 3. Process covariates
 # 4. Modify dummy data if run locally
 # 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance
-# 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria
-# 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria
-# 8. Restrict the dataset
-# 9. Save the full dataset, the restricted dataset, the codebook and all flowchart tables
+# 6. Evaluate/apply the completeness criteria -> fn_completeness_criteria
+# 7. Evaluate/apply the eligibility criteria -> fn_elig_criteria
+# 8. Restrict the dataset to only the eligible ones
+# 9. Save the full dataset, the restricted dataset, the codebooks, and all flowchart tables
 ####
 
 # Import libraries and user functions -------------------------------------
@@ -27,7 +27,7 @@ source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
-source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6_SeqTrials.R"))
+source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6_SeqTrials.R")) # the eligibility criteria has to be slightly adapted for SeqTrial approach
 
 
 # Create directories for output -------------------------------------------
@@ -138,9 +138,14 @@ data_processed <- data_extracted %>%
 # Clarify mortality variable ----------------------------------------------
 data_processed <- data_processed %>%
   mutate(
-    out_bin_noncovid_death = (!is.na(qa_date_of_death) & qa_date_of_death > pandemicstart_date) & is.na(out_date_covid_death),
-    out_date_noncovid_death = case_when(out_bin_noncovid_death == TRUE ~ qa_date_of_death, 
-                                       TRUE ~ as.Date(NA))
+    out_date_death = case_when(
+      !is.na(qa_date_of_death) & qa_date_of_death > pandemicstart_date ~ qa_date_of_death,
+      TRUE ~ as.Date(NA_character_)
+    ),
+    out_date_noncovid_death = case_when(
+      !is.na(out_date_death) & is.na(out_date_covid_death) ~ out_date_death,
+      TRUE ~ as.Date(NA_character_)
+    )
   )
 
 

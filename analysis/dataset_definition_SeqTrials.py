@@ -57,7 +57,7 @@ random.seed(19283) # random seed
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=8000)
+dataset.configure_dummy_data(population_size=5000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################
@@ -476,34 +476,57 @@ dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_death, tmp_out_
 dataset.cens_date_dereg = registered.end_date
 
 
-### CATEGORY (2): TIME-VARYING outcomes (they may reduce/increase) between pandemic start (= study start) and study end
-### they are also relevant for time-updated eligibility to be included in SeqTrials => use ELD
+### CATEGORY (2): not "first ever & time-fixed" outcomes BUT are part of eligibility and hence only first ever is relevant
+### Any COVID-related EVENT/DIAGNOSIS
+## First COVID-19 diagnosis in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
+tmp_covid19_primary_care_date = first_matching_event_clinical_ctv3_between(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, pandemicstart_date, studyend_date).date
+## First positive SARS-COV-2 PCR in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
+tmp_covid19_sgss_date = (
+  sgss_covid_all_tests.where(sgss_covid_all_tests.specimen_taken_date.is_on_or_between(pandemicstart_date, studyend_date))
+  .where(sgss_covid_all_tests.is_positive)
+  .sort_by(sgss_covid_all_tests.specimen_taken_date)
+  .first_for_patient()
+  .specimen_taken_date
+)
+## First COVID-19 diagnosis in primary care, or pos. test in primary care, or covid-19 hosp, or covid-19 death, between pandemicstart_date and studyend_date (incl. those dates)
+dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_sgss_date, dataset.out_date_severecovid)
+
+### LONG COVID
+## First Long COVID code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
+dataset.out_date_longcovid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
+## First Viral fatigue code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
+dataset.out_date_virfat = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
+# combined: First Long COVID code or Viral Fatigue code after elig_date_t2dm = primary outcome
+dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_virfat)
+
+
+### CATEGORY (3): TIME-VARYING outcomes (they may reduce/increase) AND that are not part of eligibility -> NA for this study definition
 
 ## COVID-related hospitalizations, diagnosis recorded only in primary diagnosis field
-covid_hosp = sc_events.where(sc_events.primary_diagnosis.is_in(covid_codes_incl_clin_diag))
-dataset.add_event_table("covid_hosp", date = covid_hosp.admission_date, eld_out_bin_covid_hosp = covid_hosp.primary_diagnosis.is_in(covid_codes_incl_clin_diag))
+#covid_hosp = sc_events.where(sc_events.primary_diagnosis.is_in(covid_codes_incl_clin_diag))
+#dataset.add_event_table("covid_hosp", date = covid_hosp.admission_date, eld_out_bin_covid_hosp = covid_hosp.primary_diagnosis.is_in(covid_codes_incl_clin_diag))
 
 ## COVID-related emergency care admissions
-covid_ec = ec_eld(covid_emergency, pandemicstart_date, studyend_date)
-dataset.add_event_table(
-  "covid_ec",
-  date = covid_ec.arrival_date
-)
+#covid_ec = ec_eld(covid_emergency, pandemicstart_date, studyend_date)
+#dataset.add_event_table(
+#  "covid_ec",
+#  date = covid_ec.arrival_date
+#)
 
 ## COVID pos. tests
-covid_sgss = (
-   sgss_covid_all_tests
-   .where(sgss_covid_all_tests.specimen_taken_date.is_after(pandemicstart_date))
-   .where(sgss_covid_all_tests.specimen_taken_date.is_on_or_before(studyend_date))
-   .where(sgss_covid_all_tests.is_positive)
-   .sort_by(sgss_covid_all_tests.specimen_taken_date)
-)
-dataset.add_event_table(
-  "covid_sgss",
-  date = covid_sgss.specimen_taken_date,
-  eld_out_bin_covid_test = covid_sgss.is_positive
-)
+#covid_sgss = (
+#   sgss_covid_all_tests
+#   .where(sgss_covid_all_tests.specimen_taken_date.is_after(pandemicstart_date))
+#   .where(sgss_covid_all_tests.specimen_taken_date.is_on_or_before(studyend_date))
+#   .where(sgss_covid_all_tests.is_positive)
+#   .sort_by(sgss_covid_all_tests.specimen_taken_date)
+#)
+#dataset.add_event_table(
+#  "covid_sgss",
+#  date = covid_sgss.specimen_taken_date,
+#  eld_out_bin_covid_test = covid_sgss.is_positive
+#)
 
 ## COVID diagnosis/events in primary care
-covid_pc = pc_events.where(pc_events.ctv3_code.is_in(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae))
-dataset.add_event_table("covid_pc", date = covid_pc.date, eld_out_bin_covid_pc = covid_pc.ctv3_code.is_in(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae))
+#covid_pc = pc_events.where(pc_events.ctv3_code.is_in(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae))
+#dataset.add_event_table("covid_pc", date = covid_pc.date, eld_out_bin_covid_pc = covid_pc.ctv3_code.is_in(covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae))
