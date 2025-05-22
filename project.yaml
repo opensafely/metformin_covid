@@ -385,6 +385,7 @@ actions:
     run: r:latest analysis/03_data_merge_eld.R
     needs:
     - data_add_intervals
+    - generate_dataset_seqtrials
     outputs:
       highly_sensitive:
         dataset1: output/data/df_months_severecovid.arrow
