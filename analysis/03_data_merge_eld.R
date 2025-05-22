@@ -202,7 +202,9 @@ df_months_eld <- df_months_eld %>%
 # d) for obesity, create combined covariate based on eld_cov_num_bmi, eld_cov_bin_obesity_pc, eld_cov_bin_obesity_sc
 df_months_eld <- df_months_eld %>%
   group_by(patient_id) %>%
-  mutate(eld_cov_bin_obesity = case_when(eld_cov_bin_obesity_pc == 1 | eld_cov_bin_obesity_sc == 1 | (!is.na(eld_cov_num_bmi) & eld_cov_num_bmi > 30) ~ 1L,
+  mutate(eld_cov_bin_obesity = case_when(
+    (cov_bin_obesity_b == TRUE & month == 0) | # incorporate baseline variable
+    eld_cov_bin_obesity_pc == 1 | eld_cov_bin_obesity_sc == 1 | (!is.na(eld_cov_num_bmi) & eld_cov_num_bmi > 30) ~ 1L,
     TRUE ~ 0L)) %>%
   ungroup()
 

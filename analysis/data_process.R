@@ -48,7 +48,7 @@ threshold <- 6
 
 
 # Import the dataset and pre-process --------------------------------------
-input_filename <- "dataset.arrow"
+input_filename <- "dataset_main"
 data_extracted <- fn_extract_data(input_filename)
 
 
