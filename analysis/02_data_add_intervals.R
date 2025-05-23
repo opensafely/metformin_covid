@@ -68,7 +68,7 @@ print('Add first-ever date events to correct interval with a bin flag')
 # c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals
 # d) if event date happened during follow-up (i.e. existing interval date), then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after
 
-date_vars <- c("elig_date_metfin_allergy_first", "elig_date_ckd_45_first", "elig_date_liver_cirrhosis_first",
+date_vars <- c("elig_date_t2dm", "elig_date_metfin_allergy_first", "elig_date_ckd_45_first", "elig_date_liver_cirrhosis_first",
                "elig_date_metfin_interaction_first", 
                "exp_date_metfin_first", "exp_date_metfin_mono_first", "exp_date_sulfo_first",
                "exp_date_dpp4_first", "exp_date_tzd_first", "exp_date_sglt2_first", "exp_date_glp1_first", "exp_date_megli_first", "exp_date_agi_first", 

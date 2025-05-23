@@ -17,6 +17,7 @@ source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
+mid2019_date <- as.Date(study_dates$mid2019_date, format = "%Y-%m-%d")
 pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
 
 
@@ -95,12 +96,12 @@ data_processed <- data_processed %>%
 
 
 # Modify dates ------------------------------------------------------------
-# (1) Ensure more diabetes diagnoses and elig_date_t2dm are in the window (mid2018 to pandemic start)
+# (1) Ensure more diabetes diagnoses and elig_date_t2dm are in the window (mid2019 to studyend_date)
 data_processed <- data_processed %>%
-  mutate(elig_date_t2dm = sample(seq(mid2018_date, pandemicstart_date, by = "day"),
+  mutate(elig_date_t2dm = sample(seq(mid2019_date, studyend_date, by = "day"),
                                  n(), replace = TRUE))
 
-# (2) Ensure all exposure/treatment variables are between baseline date (pandemicstart_date) and studyend date
+# (2) Ensure all exposure/treatment variables are between baseline date (pandemicstart_date) and studyend_date
 ## If the date is NA, leave it as NA.
 ## If the date is before pandemicstart_date, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.

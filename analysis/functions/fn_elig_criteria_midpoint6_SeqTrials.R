@@ -1,17 +1,17 @@
 ################################################################################
 # Custom made function to assess the eligibility criteria
 ################################################################################
-fn_elig_criteria_midpoint6_SeqTrials <- function(data_processed, study_dates, years_in_days) {
+fn_elig_criteria_midpoint6_SeqTrials <- function(data_processed, study_dates, months_in_days) {
   # Extract dates from the study_dates list
   pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
   mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
     
-    # Apply the main eligibility criteria (Aged ≥ 18 years already applied in completeness criteria)
+    # Apply the main eligibility criteria
     data_processed <- data_processed %>%
       mutate(
-       # Exclusion 1: no T2DM diagnosis or out of window (max back to mid2028)
-        no_t2dm_or_outofwindow = is.na(elig_date_t2dm)
-        | (elig_date_t2dm < mid2018_date - days(years_in_days))) # older than mid2018
+       # Exclusion 1: no T2DM diagnosis a diagnosis more than 6 months prior to pandemic
+        no_t2dm_or_outofwindow = is.na(elig_date_t2dm) # non-diabetics already excluded in completeness criteria...so, here it's only those with a diagnosis more than 6 months ago
+        | (elig_date_t2dm < pandemicstart_date - days(months_in_days)))
     
     # Filter 1: main eligibility criteria: T2DM diagnosis
     data_filtered_T2DM <- data_processed %>%

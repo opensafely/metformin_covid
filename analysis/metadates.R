@@ -20,7 +20,8 @@ study_dates <-
   list(
     studyend_date = "2022-04-01",
     pandemicstart_date = "2020-02-01",
-    mid2018_date = "2018-07-01"
+    mid2018_date = "2018-07-01",
+    mid2019_date = "2019-08-01"
   )
 
 write_json(study_dates, path = "output/study_dates.json", auto_unbox = TRUE, pretty=TRUE)

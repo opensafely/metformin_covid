@@ -170,9 +170,8 @@ data_processed <- completeness$data_processed
 
 
 # Apply the eligibility criteria ------------------------------------------
-# Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
-# => use function with loop that can be mapped to other windows, depending on "years_in_days" input
-eligibility <- fn_elig_criteria_midpoint6_SeqTrials(data_processed, study_dates, years_in_days = 0)
+# Our primary eligibility window now includes: "New T2DM diagnosis in prior 6 months" -> get 1 dataset for first month in pandemic for flowchart
+eligibility <- fn_elig_criteria_midpoint6_SeqTrials(data_processed, study_dates, months_in_days = 180)
 n_elig_excluded <- eligibility$n_elig_excluded
 n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 data_processed <- eligibility$data_processed

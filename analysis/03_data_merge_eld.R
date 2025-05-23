@@ -13,6 +13,7 @@ print('Import libraries and functions')
 library(arrow)
 library(here)
 library(tidyverse)
+library(lubridate)
 library(data.table) # only for interval joining with "on"... reconsider using tidyverse (or data.table), not both
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "fn_add_and_shift_out_comp_cens_events.R"))
@@ -210,7 +211,8 @@ df_months_eld <- df_months_eld %>%
 
 
 # df_months_eld %>%
-#   dplyr::select(patient_id, elig_date_t2dm, start_date_month, end_date_month, month, stop_date,
+#   dplyr::select(patient_id, elig_date_t2dm, elig_bin_t2dm, months_since_dx, elig_t2dm_past6m,
+#                 start_date_month, end_date_month, month, stop_date,
 #                 out_date_covid_death, out_bin_covid_death,
 #                 out_date_noncovid_death, out_bin_noncovid_death,
 #                 cens_date_dereg, cens_bin_dereg,
@@ -221,7 +223,6 @@ df_months_eld <- df_months_eld %>%
 #                 exp_date_sulfo_first, exp_bin_sulfo_first,
 #                 contains("eld_"),
 #                 cov_cat_sex, cov_num_age) %>%
-#   dplyr::filter(patient_id == 4005) %>%
 #   View()
 
 
@@ -240,50 +241,73 @@ df_months_eld <- df_months_eld %>%
 print('Assign time-varying eligibility variable')
 ## Notes:
 ### 1) We use mix of a) "one-time / first-ever" variables whereby once it happened all subsequent person-intervals have the event (e.g. metfin allergy) and b) time-varying eligibility through ELD
-### 2) Make use of lag variables where appropriate: for prior history of ...
-### 3) For HbA1c: Use the flag variable created above since we look back total 2 years (see elig criteria) which is exactly the entire duration of the study.
-### 4) The 4 analyses (= analysis sets) do not necessarily use the exact same eligibility criteria. E.g. for the long covid analysis, I also want to exclude prior "viral fatigue" history => Re-apply elig after dataset creation.
+### 2) For HbA1c: Use the flag variable created above since we look back total 2 years (see elig criteria) which is exactly the entire duration of the study.
+### 3) The 4 analysis sets do not necessarily use the exact same eligibility criteria. E.g. for the long covid analysis, I also want to exclude prior "viral fatigue" history => Re-apply elig after dataset creation, see next chapter
+### 4) elig criteria "diabetes diagnosis in prior 6 months": 
+# I know my dataset includes only people who are eligible at first month (i.e. no contraindication and age >18 at pandemic start, etc.), but I included all with an incident T2DM diagnosis from 6m prior to pandemic to study end
+# My function fn_add_firstever_events_to_intervals assigned elig_bin_t2dm == 1 to those with a diagnosis in 6m prior to pandemic => baseline month info is correctly incorporating prior 6m info. 
+# BUT it assigned 1 to all subsequent intervals and we don't know WHEN exactly in prior 6months before pandemic, so, not useful for "diagnosis in prior 6 months" elig criteria further down the line.
+# => Use elig_date_t2dm instead.
+### 5) For all other eligibility criteria include default = 0 in lag() since we know, for the first interval, that they are by default eligible.
+
+df_months_eld <- df_months_eld %>%
+  mutate(
+    # Use accurate calendar-based interval-based calculation as in the other functions.
+    # So, this is already a lag info variable (no need to use lag below)
+    months_since_dx = time_length(interval(elig_date_t2dm, start_date_month), "months"),
+    elig_t2dm_past6m = case_when(
+      is.na(months_since_dx) ~ 0L,
+      months_since_dx >= 0.0001 & months_since_dx <= 6 ~ 1L, # avoid diagnoses on the same day as interval start receiving elig_t2dm_past6m == 1
+      TRUE ~ 0L
+    )
+  )
+
 df_months_eld <- df_months_eld %>%
   group_by(patient_id) %>%
+  arrange(month) %>%
   mutate(elig = case_when(
     # any prior medical history that is an exclusion criteria (first-time/one-time ever events), i.e. can simply look at prior interval since these events have ==1 once it occurred
     # lag default = 0 ensures that lag code works for first interval (i.e. eligible per default)
-    lag(elig_bin_metfin_allergy_first, default = 0) == 1 | 
-      lag(elig_bin_ckd_45_first, default = 0) == 1 | 
-      lag(elig_bin_liver_cirrhosis_first, default = 0) == 1 | 
+    lag(elig_bin_metfin_allergy_first, default = 0) == 1 |
+      lag(elig_bin_ckd_45_first, default = 0) == 1 |
+      lag(elig_bin_liver_cirrhosis_first, default = 0) == 1 |
       # any documented history of coronavirus infection, i.e. in prior interval
       lag(out_bin_covid, default = 0) == 1 | # includes death, hosp, diagnoses, tests
       lag(out_bin_longcovid, default = 0) == 1 | # includes long covid codes (but not viral fatigue)
-      # dead 
+      # deador LTFU
       lag(out_bin_covid_death, default = 0) == 1 |
       lag(out_bin_noncovid_death, default = 0) == 1 |
-      # LTFU 
       lag(cens_bin_dereg, default = 0) == 1 |
       # Ensure that prior AND current treatment with another antidiabetic treatment is excluded, otherwise my starting point is not metformin vs nothing.
-      exp_bin_sulfo_first == 1 | 
-      exp_bin_dpp4_first == 1 | 
-      exp_bin_tzd_first == 1 | 
-      exp_bin_sglt2_first == 1 | 
-      exp_bin_glp1_first == 1 | 
-      exp_bin_megli_first == 1 | 
-      exp_bin_agi_first == 1 | 
-      exp_bin_insulin_first == 1 | 
+      exp_bin_sulfo_first == 1 |
+      exp_bin_dpp4_first == 1 |
+      exp_bin_tzd_first == 1 |
+      exp_bin_sglt2_first == 1 |
+      exp_bin_glp1_first == 1 |
+      exp_bin_megli_first == 1 |
+      exp_bin_agi_first == 1 |
+      exp_bin_insulin_first == 1 |
       # prior treatment with metformin
       lag(treat, default = 0) == 1 |
-      # prior very high HbA1c (above 75 mmol/mol) in prior 2 years (or also in CURRENT treatment interval?, i.e. lag or no lag?)
+      # prior very high HbA1c (above 75 mmol/mol) in prior 2 years
       lag(elig_bin_hba1c, default = 0) == 1 |
       # metfin interaction in prior 14-30 days ONLY => use ELD
-      lag(eld_elig_bin_metfin_interaction, default = 0) == 1 # remember the difference between eld_elig_ and other elig_ is that elig_bin are filled up with ==1 after event happened until end of follow-up
-    ~ 0L,
-    TRUE ~ 1L)) %>% 
+      # remember the difference between eld_elig_ and other elig_ is that elig_bin are filled up with ==1 after event happened until end of follow-up
+      lag(eld_elig_bin_metfin_interaction, default = 0) == 1 |
+      # Diagnosis of T2DM in prior 6m, # use current info for baseline month
+      elig_t2dm_past6m == 0
+    ~ 0L, 
+    TRUE ~ 1L
+    )
+  ) %>%
   ungroup()
 
 
 # df_months_eld %>%
-#   dplyr::select(patient_id, elig_date_t2dm, stop_date, start_date_month, end_date_month, month,
-#                 elig, out_date_covid_death, out_date_severecovid, out_date_noncovid_death, cens_date_dereg,
-#                 treat, 
-#                 elig_bin_metfin_allergy_first, elig_bin_ckd_45_first, elig_bin_liver_cirrhosis_first, 
+#   dplyr::select(patient_id, start_date_month, end_date_month, month,
+#                 elig, elig_date_t2dm, elig_t2dm_past6m, months_since_dx, out_date_covid_death, out_date_severecovid, out_date_noncovid_death, cens_date_dereg,
+#                 stop_date, treat, 
+#                 elig_bin_metfin_allergy_first, elig_bin_ckd_45_first, elig_bin_liver_cirrhosis_first,
 #                 out_bin_covid, out_bin_longcovid, out_bin_covid_death, out_bin_noncovid_death, cens_bin_dereg, exp_bin_sulfo_first, exp_bin_dpp4_first,
 #                 exp_bin_tzd_first, exp_bin_sglt2_first, exp_bin_glp1_first, exp_bin_megli_first, exp_bin_agi_first, exp_bin_insulin_first, elig_bin_hba1c, eld_elig_bin_metfin_interaction,
 #                 cov_cat_sex, cov_num_age, everything()) %>%
