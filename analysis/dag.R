@@ -3,34 +3,33 @@
 # # # # # # # # # # # # # # # # # # # # #
 
 # Import libraries ----
+# install.packages("ggdag")
 library(dagitty)
 library(ggdag)
 library(ggplot2)
-library(dplyr)
+library(tidyverse)
+
 
 # Create the DAG ----
-dag <- dagify(covidoutcome ~ metformin + agesexsmoking + ethnicity + region + cvdcomorb + othercomorb + DMseverity + hsb,
-              metformin ~ agesexsmoking + ethnicity + region + cvdcomorb + hsb,
-              otherDMdrugs ~ DMseverity + region,
+dag <- dagify(covidoutcome ~ metformin + agesexsmoking + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
+              metformin ~ agesexsmoking + ethnicity + cvdcomorb + DMseverity + hsb,
               DMseverity ~ agesexsmoking,
-              cvdcomorb ~ hsb + agesexsmoking,
-              othercomorb ~ hsb + agesexsmoking,
-              region ~ imd,
+              cvdcomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
+              othercomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
+              rural_urban ~ imd,
               ethnicity ~ imd,
-              hsb  ~ ethnicity,
-              othercomorb ~ ethnicity + region + agesexsmoking,
+              hsb ~ ethnicity + rural_urban + imd + agesexsmoking,
               labels = c("covidoutcome" = "COVID outcomes",
                          "metformin" = "Metformin",
                          "agesexsmoking" = "Age, Sex, Smoking",
-                         "region" = "Region, Practice,\n Rural/urban",
+                         "rural_urban" = "Rural/urban",
                          "ethnicity" = "Ethnicity",
                          "cvdcomorb" = "CVDs other\n than T2DM*",
                          "othercomorb" = "Non-CVD comorbidities**",
                          "DMseverity" = "Diabetes severity****",
-                         "otherDMdrugs" = "Other antidiabetic treatment",
                          "imd" = "Deprivation",
                          "hsb" = "Health seeking behaviour***"
-                         ),
+              ),
               exposure = "metformin",
               outcome = "covidoutcome"
 )
