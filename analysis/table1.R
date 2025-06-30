@@ -59,6 +59,7 @@ var_labels <- list(
   cov_num_hba1c_mmol_mol ~ "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio ~ "TC/Chol ratio",
   
+  cov_num_period_month ~ "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark ~ "COVID hosp or death",
   out_bin_covid_hosp_afterlandmark ~ "COVID hosp",
   out_bin_covid_death_afterlandmark ~ "COVID death",

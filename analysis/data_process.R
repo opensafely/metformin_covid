@@ -41,6 +41,9 @@ fs::dir_create(here::here("output", "data_description"))
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
+mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
+mid2019_date <- as.Date(study_dates$mid2019_date, format = "%Y-%m-%d")
+pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
 
 
 # Define redaction threshold ----------------------------------------------
@@ -138,8 +141,28 @@ data_processed <- data_extracted %>%
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE),
     elig_cat_hba1c_landmark_mmol_mol = case_when(is.na(elig_cat_hba1c_landmark_mmol_mol) ~ factor("Unknown", 
-                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ elig_cat_hba1c_landmark_mmol_mol),
+                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ elig_cat_hba1c_landmark_mmol_mol)
     )
+
+
+# Assign calendar period of T2DM diagnosis --------------------------------
+# Sequence of dates, in period of possible eligible T2DM dates, to use as monthly break points
+seq_dates_start_interval_month <- seq(
+  from = mid2018_date,
+  to = mid2019_date,
+  by = "1 month"
+)
+# Create period_month column
+data_processed <- data_processed %>%
+  mutate(
+    cov_num_period_month = cut(
+      elig_date_t2dm,
+      breaks = seq_dates_start_interval_month,
+      include.lowest = TRUE,
+      right = FALSE,
+      labels = 1:12 
+    )
+  )
 
 
 # Modify dummy data -------------------------------------------------------
@@ -148,6 +171,12 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   source("analysis/modify_dummy_data.R")
   message("Dummy data successfully modified")
 }
+
+
+# Assign the landmark date and max follow-up date -------------------------
+data_processed <- data_processed %>% 
+  mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
+  mutate(max_fup_date = landmark_date + days(730))
 
 
 # Apply the quality assurance criteria ------------------------------------
@@ -169,12 +198,6 @@ eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_
 n_elig_excluded <- eligibility$n_elig_excluded
 n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 data_processed <- eligibility$data_processed
-
-
-# Assign the landmark date and max follow-up date -------------------------
-data_processed <- data_processed %>% 
-  mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
-  mutate(max_fup_date = landmark_date + days(730))
 
 
 # Assign treatment/exposure -----------------------------------------------
@@ -324,12 +347,50 @@ write.csv(data_processed_full_desc, file = here::here("output", "data_descriptio
 arrow::write_feather(data_processed_full, here::here("output", "data", "data_processed_full.arrow"))
 
 
-# Restrict the dataset for pipeline onwards -------------------------------
-# (1) Include only those fulfilling the final treatment strategy
+# Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic ----
+# (1) Explore deaths/ltfu
+# died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
-  filter(!is.na(exp_bin_treat))
+  mutate(death_ltfu_landmark = (
+    (!is.na(qa_date_of_death) & qa_date_of_death > elig_date_t2dm & qa_date_of_death < landmark_date) |
+      (!is.na(cens_date_dereg) & cens_date_dereg > elig_date_t2dm & cens_date_dereg < landmark_date)
+  ))
+# died/ltfu between landmark and pandemic start -> create and add to separate dataset for descriptive table ones
+data_processed_death_ltfu <- data_processed %>%
+  filter(!is.na(exp_bin_treat)) %>% # Filter out those with missing exp_bin_treat, but retain those who died/ltfu before landmark for descriptive purposes
+  mutate(death_ltfu_pandemic = (
+    (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date & qa_date_of_death < pandemicstart_date) |
+      (!is.na(cens_date_dereg) & cens_date_dereg > landmark_date & cens_date_dereg < pandemicstart_date)
+  ))
+# overall flag
+data_processed_death_ltfu <- data_processed_death_ltfu %>%
+  mutate(
+    death_ltfu_landmark_pandemic = death_ltfu_landmark | death_ltfu_pandemic,
+    death_ltfu_pandemic_without_landmark = case_when(death_ltfu_pandemic & !death_ltfu_landmark ~ TRUE,
+                                                     !death_ltfu_pandemic & !death_ltfu_landmark ~ FALSE,
+                                                     TRUE ~ NA)
+    )
 
-# (2) Drop unnecessary variables
+# count died/ltfu between elig_date_t2dm and landmark and those fulfilling one of the two final treatment strategies
+count <- data_processed %>%
+  summarise(
+    n_death_ltfu_landmark = sum(death_ltfu_landmark, na.rm = TRUE),
+    n_exp_bin_treat = sum(is.na(exp_bin_treat), na.rm = TRUE))
+    
+# (2) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
+data_processed <- data_processed %>%
+  filter(
+    !is.na(exp_bin_treat),
+    (!death_ltfu_landmark | is.na(death_ltfu_landmark))
+    )
+# tibble out incl. midpoint6 rounding (!)
+n_restricted_midpoint6 <- tibble(
+  n_before_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed_death_ltfu), threshold),
+  n_exp_bin_treat_midpoint6 = fn_roundmid_any(count$n_exp_bin_treat, threshold),
+  n_death_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_death_ltfu_landmark, threshold),
+  n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
+
+# (3) Filter: Only keep necessary variables
 data_processed <- data_processed %>% 
   select(patient_id, 
          elig_date_t2dm, 
@@ -352,5 +413,9 @@ write.csv(n_completeness_excluded_midpoint6, file = here::here("output", "data_d
 # flow chart eligibility criteria
 write.csv(n_elig_excluded_midpoint6, file = here::here("output", "data_description", "n_elig_excluded_midpoint6.csv"))
 write.csv(n_elig_excluded, file = here::here("output", "data_description", "n_elig_excluded.csv"))
+# flow chart eligibility criteria 2 (restrict to eligible treatment strategies and alive/still registered at landmark)
+write.csv(n_restricted_midpoint6, file = here::here("output", "data_description", "n_restricted_midpoint6.csv"))
 # final (restricted) dataset
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
+# for descriptive purpose, to create table ones: Incl. flags for those who died/LTFU during landmark period and between landmark and pandemic start
+arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "data_processed_death_ltfu.arrow"))

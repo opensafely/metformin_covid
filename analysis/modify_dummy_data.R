@@ -17,6 +17,7 @@ source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 mid2018_date <- as.Date(study_dates$mid2018_date, format = "%Y-%m-%d")
+mid2019_date <- as.Date(study_dates$mid2019_date, format = "%Y-%m-%d")
 pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d")
 
 
@@ -105,8 +106,25 @@ data_processed <- data_processed %>%
 # Modify dates ------------------------------------------------------------
 # (1) Ensure all have a diabetes and elig_date_t2dm are in the window (mid2018 to mid2019)
 data_processed <- data_processed %>%
-  mutate(elig_date_t2dm = sample(seq(mid2018_date, pandemicstart_date - days(183), by = "day"), 
+  mutate(elig_date_t2dm = sample(seq(mid2018_date, mid2019_date, by = "day"), 
                                  n(), replace = TRUE))
+# re-create calendar period variable
+seq_dates_start_interval_month <- seq(
+  from = mid2018_date,
+  to = mid2019_date,
+  by = "1 month"
+)
+# Create period_month column
+data_processed <- data_processed %>%
+  mutate(
+    cov_num_period_month = cut(
+      elig_date_t2dm,
+      breaks = seq_dates_start_interval_month,
+      include.lowest = TRUE,
+      right = FALSE,
+      labels = 1:12 
+    )
+  )
 
 # (2) increase the amount of completeness in the main intervention variables first
 data_processed <- data_processed %>%
@@ -158,14 +176,20 @@ data_processed <- data_processed %>%
   ungroup() %>%
   mutate(across(all_of(exp_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
-# (4) Ensure all outcome dates are between landmark date and studyend date
+# (4) Ensure all outcome dates are between pandemic start date (or landmark date) and studyend date 
 ## If the date is NA, leave it as NA.
 ## If the date is before landmark, replace it with a random valid date.
 ## If the date is valid, keep it unchanged.
-out_vars <- c(
+out_vars_covid <- c(
   "out_date_covid_hosp", "out_date_covid_death",
   "out_date_severecovid", "out_date_covid", "out_date_longcovid",
-  "out_date_virfat", "out_date_longcovid_virfat", "qa_date_of_death")
+  "out_date_virfat", "out_date_longcovid_virfat")
+data_processed <- data_processed %>%
+  rowwise() %>%
+  mutate(across(all_of(out_vars_covid), ~ fn_dd_exp_out_dates(.x, pandemicstart_date, studyend_date))) %>%
+  ungroup() %>%
+  mutate(across(all_of(out_vars_covid), ~ as.Date(.x, origin = "1970-01-01")))
+out_vars <- c("qa_date_of_death") # this can also happen between before pandemic start
 data_processed <- data_processed %>%
   rowwise() %>%
   mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm + days(183), studyend_date))) %>%
