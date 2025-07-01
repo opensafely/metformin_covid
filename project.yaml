@@ -90,7 +90,9 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        table1: output/data_description/table1_midpoint6.csv
+        tbl1: output/data_description/table1_main_midpoint6.csv
+        tbl2: output/data_description/table1_death_ltfu1_midpoint6.csv
+        tbl3: output/data_description/table1_death_ltfu2_midpoint6.csv
 
   km_primary:
     run: kaplan-meier-function:v0.0.17 
