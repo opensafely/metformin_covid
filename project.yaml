@@ -144,7 +144,7 @@ actions:
      cox_stop: cox_date_severecovid
      study_start: "2018-08-01"
      study_stop: "2022-04-01"
-     cut_points: 365;730
+     cut_points: 730
      age_spline: TRUE
      save_analysis_ready: FALSE
      df_output: results_cox_primary_ra.csv
