@@ -77,7 +77,7 @@ var_labels_main <- list(
 
 var_labels_death_ltfu1 <- list(
   N  ~ "Total N",
-  death_ltfu_landmark ~ "Died/LTFU until landmark",
+  death_landmark ~ "Died until landmark",
   exp_bin_treat ~ "Metformin treatment",
   
   cov_num_age ~ "Age",
