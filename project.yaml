@@ -90,9 +90,9 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        tbl1: output/data_description/table1_main_midpoint6.csv
-        tbl2: output/data_description/table1_death_ltfu1_midpoint6.csv
-        tbl3: output/data_description/table1_death_ltfu2_midpoint6.csv
+        data_tbl1: output/data_description/table1_main_midpoint6.csv
+        data_tbl2: output/data_description/table1_death_ltfu1_midpoint6.csv
+        data_tbl3: output/data_description/table1_death_ltfu2_midpoint6.csv
 
   km_primary:
     run: kaplan-meier-function:v0.0.17 
@@ -130,43 +130,17 @@ actions:
         plots: output/ps/*.png
 
   cox_primary_RA:
-    run: cox-ipw:v0.0.36
-    config:
-     df_input: data/data_processed.arrow
-     ipw: FALSE
-     exposure: cox_date_metfin_start_within6m
-     outcome: out_date_severecovid_afterlandmark
-     strata: strat_cat_region
-     covariate_sex: cov_cat_sex
-     covariate_age: cov_num_age
-     covariate_other: cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
-     cox_start: landmark_date
-     cox_stop: cox_date_severecovid
-     study_start: "2018-08-01"
-     study_stop: "2022-04-01"
-     cut_points: 730
-     age_spline: TRUE
-     save_analysis_ready: FALSE
-     df_output: results_cox_primary_ra.csv
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        arguments: output/args-results_cox_primary_ra.csv
-        estimates: output/results_cox_primary_ra.csv
-
-  cox_primary_RA_minset:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
-      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_hypertension;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
       --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
       --study_stop="2022-04-01" --cut_points=730
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_primary_ra_minset.csv
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_primary_ra.csv
     needs:
     - data_process
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_primary_ra_minset.csv
+        model_output: output/results_cox_primary_ra.csv
 
   cox_covid_event_RA:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
@@ -181,25 +155,12 @@ actions:
       moderately_sensitive:
         model_output: output/results_cox_covid_event_ra.csv
 
-  cox_covid_event_RA_minset:
-    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
-      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_covid_afterlandmark --strata=strat_cat_region
-      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_hypertension;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
-      --cox_start=landmark_date --cox_stop=cox_date_covid --study_start="2018-08-01"
-      --study_stop="2022-04-01" --cut_points=730
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_covid_event_ra_minset.csv
-    needs:
-    - data_process
-    outputs:
-      moderately_sensitive:
-        model_output: output/results_cox_covid_event_ra_minset.csv
-
   cox_longvirfat_RA:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_longcovid_virfat_afterlandmark --strata=strat_cat_region
       --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
       --cox_start=landmark_date --cox_stop=cox_date_longcovid_virfat --study_start="2018-08-01"
-      --study_stop="2022-04-01" --cut_points=730
+      --study_stop="2022-04-01" --cut_points=730 --total_event_threshold=20
       --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_longvirfat_ra.csv
     needs:
     - data_process
@@ -207,206 +168,12 @@ actions:
       moderately_sensitive:
         model_output: output/results_cox_longvirfat_ra.csv
 
-  cox_longvirfat_RA_minset:
-    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
-      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_longcovid_virfat_afterlandmark --strata=strat_cat_region
-      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_bin_carehome_status;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_hypertension;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
-      --cox_start=landmark_date --cox_stop=cox_date_longcovid_virfat --study_start="2018-08-01"
-      --study_stop="2022-04-01" --cut_points=730
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_longvirfat_ra_minset.csv
+  baseline_tables:
+    run: r:latest analysis/baseline_tables.R
     needs:
-    - data_process
+    - table1
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_longvirfat_ra_minset.csv
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  # km_estimates_metfin_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/metfin
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_metfin_first
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/metfin/*.csv
-  #       plot: output/metfin/*.png
-
-  # km_estimates_metfin_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/metfin_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_metfin_mono_first
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/metfin_mono/*.csv
-  #       plot: output/metfin_mono/*.png
-
-  # km_estimates_dpp4_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/dpp4_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_dpp4_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/dpp4_mono/*.csv
-  #       plot: output/dpp4_mono/*.png
-
-  # km_estimates_tzd_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/tzd_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_tzd_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/tzd_mono/*.csv
-  #       plot: output/tzd_mono/*.png
-
-  # km_estimates_sglt2_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/sglt2_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_sglt2_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/sglt2_mono/*.csv
-  #       plot: output/sglt2_mono/*.png
-
-  # km_estimates_sulfo_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/sulfo_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_sulfo_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/sulfo_mono/*.csv
-  #       plot: output/sulfo_mono/*.png
-
-  # km_estimates_glp1_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/glp1_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_glp1_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/glp1_mono/*.csv
-  #       plot: output/glp1_mono/*.png
-
-  # km_estimates_megli_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/megli_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_megli_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/megli_mono/*.csv
-  #       plot: output/megli_mono/*.png
-
-  # km_estimates_agi_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/agi_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_agi_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/agi_mono/*.csv
-  #       plot: output/agi_mono/*.png
-
-  # km_estimates_insulin_mono_RA:
-  #   run: kaplan-meier-function:v0.0.8
-  #     --df_input=output/data/data_plots.feather
-  #     --dir_output=output/insulin_mono
-  #     --origin_date=elig_date_t2dm
-  #     --event_date=exp_date_insulin_mono_anytime
-  #     --censor_date=qa_date_of_death
-  #     --max_fup=548
-  #     --plot=TRUE
-  #   needs:
-  #   - treat_strat_feasibility
-  #   outputs:
-  #     moderately_sensitive:
-  #       km_estimates: output/insulin_mono/*.csv
-  #       plot: output/insulin_mono/*.png
-
-  # plot_km_estimates:
-  #   run: r:latest analysis/km_plot.R 
-  #   needs:
-  #   - km_estimates_metfin_RA
-  #   - km_estimates_metfin_mono_RA
-  #   - km_estimates_dpp4_mono_RA
-  #   - km_estimates_tzd_mono_RA
-  #   - km_estimates_sglt2_mono_RA
-  #   - km_estimates_sulfo_mono_RA
-  #   - km_estimates_glp1_mono_RA
-  #   - km_estimates_megli_mono_RA
-  #   - km_estimates_agi_mono_RA
-  #   - km_estimates_insulin_mono_RA
-  #   outputs:
-  #     moderately_sensitive:
-  #       plot: output/data_description/*.png
+        tbl1: output/data_description/tbl_csv_main.csv
+        tbl2: output/data_description/tbl_csv_death_ltfu1.csv
+        tbl3: output/data_description/tbl_csv_death_ltfu2.csv
