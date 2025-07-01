@@ -219,17 +219,8 @@ actions:
     outputs:
       moderately_sensitive:
         model_output: output/results_cox_longvirfat_ra_minset.csv
-
-
-
-
-
-
-
-
-
-
-
+        arguments: output/args-results_cox_ra.csv
+        estimates: output/results_cox_ra.csv
 
 
 
@@ -241,6 +232,8 @@ actions:
       moderately_sensitive:
         csv: output/te/pooled_log_reg/*.csv
         plots: output/te/pooled_log_reg/*.png
+
+
 
 
   # km_estimates_metfin_RA:
