@@ -355,17 +355,21 @@ arrow::write_feather(data_processed_full, here::here("output", "data", "data_pro
 # (1) Explore deaths/ltfu
 # died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
-  mutate(death_ltfu_landmark = (
-    (!is.na(qa_date_of_death) & qa_date_of_death > elig_date_t2dm & qa_date_of_death < landmark_date) |
-      (!is.na(cens_date_dereg) & cens_date_dereg > elig_date_t2dm & cens_date_dereg < landmark_date)
-  ))
+  mutate(death_ltfu_landmark = case_when(
+    (!is.na(qa_date_of_death) & (qa_date_of_death > elig_date_t2dm) & (qa_date_of_death <= landmark_date)) |
+      (!is.na(cens_date_dereg) & (cens_date_dereg > elig_date_t2dm) & (cens_date_dereg <= landmark_date)) ~ TRUE, 
+    TRUE ~ FALSE
+    )
+  )
 # died/ltfu between landmark and pandemic start -> create and add to separate dataset for descriptive table ones
 data_processed_death_ltfu <- data_processed %>%
   filter(!is.na(exp_bin_treat)) %>% # Filter out those with missing exp_bin_treat, but retain those who died/ltfu before landmark for descriptive purposes
-  mutate(death_ltfu_pandemic = (
-    (!is.na(out_date_death_afterlandmark) & out_date_death_afterlandmark < pandemicstart_date) |
-      (!is.na(cens_date_ltfu_afterlandmark) & cens_date_ltfu_afterlandmark < pandemicstart_date)
-  ))
+  mutate(death_ltfu_pandemic = case_when(
+    (!is.na(out_date_death_afterlandmark) & (out_date_death_afterlandmark <= pandemicstart_date)) |
+      (!is.na(cens_date_ltfu_afterlandmark) & (cens_date_ltfu_afterlandmark <= pandemicstart_date)) ~ TRUE, 
+    TRUE ~ FALSE
+  )
+)
 # overall flag
 data_processed_death_ltfu <- data_processed_death_ltfu %>%
   mutate(
