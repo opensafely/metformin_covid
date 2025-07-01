@@ -219,8 +219,6 @@ actions:
     outputs:
       moderately_sensitive:
         model_output: output/results_cox_longvirfat_ra_minset.csv
-        arguments: output/args-results_cox_ra.csv
-        estimates: output/results_cox_ra.csv
 
 
 
