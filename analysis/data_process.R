@@ -278,13 +278,13 @@ data_processed <- data_processed %>%
     out_date_longcovid_virfat_afterlandmark = case_when(out_bin_longcovid_virfat_afterlandmark == TRUE ~ out_date_longcovid_virfat, 
                                               TRUE ~ as.Date(NA)),
     # Other events.
-    out_bin_death_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date),
+    out_bin_death_afterlandmark = !is.na(qa_date_of_death) & qa_date_of_death > landmark_date,
     out_date_death_afterlandmark = case_when(out_bin_death_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
     out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death),
     out_date_noncoviddeath_afterlandmark = case_when(out_bin_noncoviddeath_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
-    cens_bin_ltfu_afterlandmark = !is.na(cens_date_dereg) & cens_date_dereg > landmark_date,
+    cens_bin_ltfu_afterlandmark = (!is.na(cens_date_dereg) & cens_date_dereg > landmark_date) & (is.na(qa_date_of_death) | (!is.na(qa_date_of_death) & qa_date_of_death != cens_date_dereg)),
     cens_date_ltfu_afterlandmark = case_when(cens_bin_ltfu_afterlandmark == TRUE ~ cens_date_dereg, 
                                             TRUE ~ as.Date(NA)),
     # In INTERVENTION: Identify all metformin prescription (combo and mono) in 6m prior to pandemic start, may be used to censor those who stopped before pandemic
@@ -311,7 +311,7 @@ data_processed <- data_processed %>%
 data_processed <- data_processed %>% 
   mutate(
     cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
-                                out_date_death_afterlandmark,
+                                out_date_noncoviddeath_afterlandmark,
                                 cens_date_ltfu_afterlandmark,
                                 max_fup_date,
                                 studyend_date,
@@ -320,7 +320,7 @@ data_processed <- data_processed %>%
                                   landmark_date,
                                   units = "days") %>% as.numeric(),
     cox_date_covid = pmin(out_date_covid_afterlandmark, 
-                          out_date_death_afterlandmark,
+                          out_date_noncoviddeath_afterlandmark,
                           cens_date_ltfu_afterlandmark,
                           max_fup_date,
                           studyend_date,
@@ -330,7 +330,6 @@ data_processed <- data_processed %>%
                             units = "days") %>% as.numeric(),
     cox_date_longcovid_virfat = pmin(out_date_longcovid_virfat_afterlandmark, 
                                      out_date_death_afterlandmark,
-                                     out_date_covid_death,
                                      cens_date_ltfu_afterlandmark,
                                      max_fup_date,
                                      studyend_date,
@@ -353,11 +352,12 @@ arrow::write_feather(data_processed_full, here::here("output", "data", "data_pro
 
 # Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic ----
 # (1) Explore deaths/ltfu
-# died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
+# died between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
-  mutate(death_ltfu_landmark = case_when(
-    (!is.na(qa_date_of_death) & (qa_date_of_death > elig_date_t2dm) & (qa_date_of_death <= landmark_date)) |
-      (!is.na(cens_date_dereg) & (cens_date_dereg > elig_date_t2dm) & (cens_date_dereg <= landmark_date)) ~ TRUE, 
+  mutate(death_landmark = case_when(
+    (!is.na(qa_date_of_death) & (qa_date_of_death > elig_date_t2dm) & (qa_date_of_death <= landmark_date)) 
+    # | (!is.na(cens_date_dereg) & (cens_date_dereg > elig_date_t2dm) & (cens_date_dereg <= landmark_date)) 
+    ~ TRUE, 
     TRUE ~ FALSE
     )
   )
@@ -373,29 +373,29 @@ data_processed_death_ltfu <- data_processed %>%
 # overall flag
 data_processed_death_ltfu <- data_processed_death_ltfu %>%
   mutate(
-    death_ltfu_landmark_pandemic = death_ltfu_landmark | death_ltfu_pandemic,
-    death_ltfu_pandemic_without_landmark = case_when(death_ltfu_pandemic & !death_ltfu_landmark ~ TRUE,
-                                                     !death_ltfu_pandemic & !death_ltfu_landmark ~ FALSE,
+    death_ltfu_landmark_pandemic = death_landmark | death_ltfu_pandemic,
+    death_ltfu_pandemic_without_landmark = case_when(death_ltfu_pandemic & !death_landmark ~ TRUE,
+                                                     !death_ltfu_pandemic & !death_landmark ~ FALSE,
                                                      TRUE ~ NA)
     )
 
 # count died/ltfu between elig_date_t2dm and landmark and those fulfilling one of the two final treatment strategies
 count <- data_processed %>%
   summarise(
-    n_death_ltfu_landmark = sum(death_ltfu_landmark, na.rm = TRUE),
+    n_death_landmark = sum(death_landmark, na.rm = TRUE),
     n_exp_bin_treat = sum(is.na(exp_bin_treat), na.rm = TRUE))
     
 # (2) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
 data_processed <- data_processed %>%
   filter(
     !is.na(exp_bin_treat),
-    (!death_ltfu_landmark | is.na(death_ltfu_landmark))
+    !death_landmark
     )
 # tibble out incl. midpoint6 rounding (!)
 n_restricted_midpoint6 <- tibble(
   n_before_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed_death_ltfu), threshold),
   n_exp_bin_treat_midpoint6 = fn_roundmid_any(count$n_exp_bin_treat, threshold),
-  n_death_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_death_ltfu_landmark, threshold),
+  n_death_landmark_midpoint6 = fn_roundmid_any(count$n_death_landmark, threshold),
   n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
 
 # (3) Filter main dataset: Only keep necessary variables

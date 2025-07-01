@@ -230,15 +230,15 @@ table_1_death_ltfu1 <-
   df_death_ltfu %>%
   mutate(
     N=1L,
-    death_ltfu_landmark = factor(death_ltfu_landmark,
-                           labels = c("Alive and in care at landmark", "Died or LTFU until landmark"))
+    death_landmark = factor(death_landmark,
+                           labels = c("Alive at landmark", "Died until landmark"))
   ) %>%
   select(
-    death_ltfu_landmark,
+    death_landmark,
     all_of(names(var_labels_death_ltfu1)),
   ) %>%
   tbl_summary(
-    by = death_ltfu_landmark,
+    by = death_landmark,
     label = unname(var_labels_death_ltfu1[names(.)]),
     statistic = list(
       N ~ "{N}",
