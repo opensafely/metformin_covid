@@ -193,7 +193,7 @@ data_processed <- data_processed %>%
 out_vars <- c("qa_date_of_death") # this can also happen between before pandemic start
 data_processed <- data_processed %>%
   rowwise() %>%
-  mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm + days(183), studyend_date))) %>%
+  mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm, studyend_date))) %>%
   ungroup() %>%
   mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
 
