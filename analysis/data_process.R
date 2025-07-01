@@ -160,8 +160,9 @@ data_processed <- data_processed %>%
       breaks = seq_dates_start_interval_month,
       include.lowest = TRUE,
       right = FALSE,
-      labels = 1:12 
-    )
+      labels = FALSE
+    ),
+    cov_num_period_month = as.numeric(cov_num_period_month)
   )
 
 
@@ -276,9 +277,12 @@ data_processed <- data_processed %>%
     out_bin_longcovid_virfat_afterlandmark = !is.na(out_date_longcovid_virfat) & out_date_longcovid_virfat > landmark_date,
     out_date_longcovid_virfat_afterlandmark = case_when(out_bin_longcovid_virfat_afterlandmark == TRUE ~ out_date_longcovid_virfat, 
                                               TRUE ~ as.Date(NA)),
-    # Other events. These may happen between eligibility and landmark date (but rare).
-    out_bin_death_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death),
+    # Other events.
+    out_bin_death_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date),
     out_date_death_afterlandmark = case_when(out_bin_death_afterlandmark == TRUE ~ qa_date_of_death, 
+                                             TRUE ~ as.Date(NA)),
+    out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death),
+    out_date_noncoviddeath_afterlandmark = case_when(out_bin_noncoviddeath_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
     cens_bin_ltfu_afterlandmark = !is.na(cens_date_dereg) & cens_date_dereg > landmark_date,
     cens_date_ltfu_afterlandmark = case_when(cens_bin_ltfu_afterlandmark == TRUE ~ cens_date_dereg, 
@@ -287,7 +291,7 @@ data_processed <- data_processed %>%
     cens_bin_metfin_pandemicstart = exp_bin_metfin_mono == TRUE & !is.na(exp_date_metfin_mono_last) & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183),
     cens_date_metfin_pandemicstart = case_when(cens_bin_metfin_pandemicstart == TRUE ~ exp_date_metfin_mono_last, 
                                              TRUE ~ as.Date(NA)),
-    # In CONTROL: Identify all who started any metformin after landmark
+    # In CONTROL: Identify all who started metformin mono after landmark
     cens_bin_metfin_start_cont = exp_bin_treat_nothing == TRUE & !is.na(exp_date_metfin_mono_first) & exp_date_metfin_mono_first > landmark_date,
     cens_date_metfin_start_cont = case_when(cens_bin_metfin_start_cont == TRUE ~ exp_date_metfin_mono_first, 
                                                TRUE ~ as.Date(NA))
@@ -359,8 +363,8 @@ data_processed <- data_processed %>%
 data_processed_death_ltfu <- data_processed %>%
   filter(!is.na(exp_bin_treat)) %>% # Filter out those with missing exp_bin_treat, but retain those who died/ltfu before landmark for descriptive purposes
   mutate(death_ltfu_pandemic = (
-    (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date & qa_date_of_death < pandemicstart_date) |
-      (!is.na(cens_date_dereg) & cens_date_dereg > landmark_date & cens_date_dereg < pandemicstart_date)
+    (!is.na(out_date_death_afterlandmark) & out_date_death_afterlandmark < pandemicstart_date) |
+      (!is.na(cens_date_ltfu_afterlandmark) & cens_date_ltfu_afterlandmark < pandemicstart_date)
   ))
 # overall flag
 data_processed_death_ltfu <- data_processed_death_ltfu %>%
@@ -390,7 +394,7 @@ n_restricted_midpoint6 <- tibble(
   n_death_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_death_ltfu_landmark, threshold),
   n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
 
-# (3) Filter: Only keep necessary variables
+# (3) Filter main dataset: Only keep necessary variables
 data_processed <- data_processed %>% 
   select(patient_id, 
          elig_date_t2dm, 

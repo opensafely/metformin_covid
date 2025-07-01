@@ -122,8 +122,9 @@ data_processed <- data_processed %>%
       breaks = seq_dates_start_interval_month,
       include.lowest = TRUE,
       right = FALSE,
-      labels = 1:12 
-    )
+      labels = FALSE
+    ),
+    cov_num_period_month = as.numeric(cov_num_period_month)
   )
 
 # (2) increase the amount of completeness in the main intervention variables first
