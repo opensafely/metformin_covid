@@ -201,7 +201,7 @@ print('Step 7: Hide NAs where not needed')
 hide_NA <- function(df) {
   df %>%
     mutate(variable_levels = recode(variable_levels, "NA" = "")) %>% 
-    mutate(var_label = replace_na(var_label, ""))
+    mutate(var_label = replace_na(as.character(var_label), ""))
 }
 df_main <- hide_NA(df_main)
 df_death_ltfu1 <- hide_NA(df_death_ltfu1)
@@ -212,7 +212,7 @@ print('Step 8: Save the underlying data as csv')
 tbl_csv_main <- df_main %>%
   select(var_label, variable_levels, `Metformin mono`, Nothing)
 tbl_csv_death_ltfu1 <- df_death_ltfu1 %>%
-  select(var_label, variable_levels, `Alive and in care at landmark`, `Died or LTFU until landmark`)
+  select(var_label, variable_levels, `Alive at landmark`, `Died until landmark`)
 tbl_csv_death_ltfu2 <- df_death_ltfu2 %>%
   select(var_label, variable_levels, `Alive and in care at pandemic start`, `Died or LTFU between landmark and pandemic start`)
 
