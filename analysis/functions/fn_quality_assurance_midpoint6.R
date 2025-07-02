@@ -12,11 +12,11 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
       # Rule 1: Year of birth is missing
       yob_missing = is.na(qa_num_birth_year), 
       # Rule 2: Year of birth is after year of death
-      yob_after_yod = !is.na(qa_num_birth_year) & qa_num_birth_year > year(qa_date_of_death),
+      yob_after_yod = !is.na(qa_num_birth_year) & !is.na(qa_date_of_death) & (qa_num_birth_year > year(qa_date_of_death)),
       # Rule 3: Year of birth predates NHS established year or year of birth exceeds study end date
-      yob_beforeNHS_afterstudyend = qa_num_birth_year < 1838 | (qa_num_birth_year > year(studyend_date)),
+      yob_beforeNHS_afterstudyend = !is.na(qa_num_birth_year) & (qa_num_birth_year < 1838 | (qa_num_birth_year > year(studyend_date))),
       # Rule 4: Date of death is on or before 1/1/1900 (and not NULL) or after current date (and not NULL)
-      dod_invalid = (qa_date_of_death <= as.Date("1900-01-01") | qa_date_of_death > Sys.Date()),
+      dod_invalid = !is.na(qa_date_of_death) & (qa_date_of_death <= as.Date("1900-01-01") | qa_date_of_death > Sys.Date()),
       # Rule 5: Pregnancy/birth codes for men
       preg_men = qa_bin_pregnancy == TRUE & cov_cat_sex == "Male",
       # Rule 6: HRT or COCP meds for men
@@ -56,7 +56,7 @@ fn_quality_assurance_midpoint6 <- function(data_processed, study_dates, threshol
     n_before_qa_processing_midpoint6 = "Before applying the quality criteria",
     n_yob_missing_midpoint6 = "Year of birth missing",
     n_yob_after_yod_midpoint6 = "Year of birth after year of death",
-    n_yob_beforeNHS_afterstudyend_midpoint6 = "Year of birth before NHS or after today",
+    n_yob_beforeNHS_afterstudyend_midpoint6 = "Year of birth before NHS or after study end",
     n_dod_invalid_midpoint6 = "Year of death is on or before 01/01/1900 or after today",
     n_preg_men_midpoint6 = "Men with pregnancy codes",
     n_hrt_men_midpoint6 = "Men with HRT/OCP codes",

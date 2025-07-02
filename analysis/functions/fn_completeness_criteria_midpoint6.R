@@ -19,7 +19,7 @@ fn_completeness_criteria_midpoint6 <- function(data_processed, threshold){
   data_filtered_T2DM <- data_filtered_T2DM %>%
     mutate(
       # Rule 1: not alive at elig_date_t2dm
-      not_alive_at_baseline = qa_bin_was_alive == FALSE | is.na(qa_bin_was_alive), 
+      not_alive_at_baseline = qa_bin_was_alive == FALSE | is.na(qa_bin_was_alive) | (!is.na(qa_date_of_death) & qa_date_of_death <= elig_date_t2dm), 
       # Rule 2: not adult at elig_date_t2dm
       not_adult_at_baseline = qa_bin_was_adult == FALSE | is.na(qa_bin_was_adult), 
       # Rule 3: nor female or male

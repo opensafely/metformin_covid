@@ -12,7 +12,7 @@ library(tidyverse)
 
 # Create the DAG ----
 dag <- dagify(covidoutcome ~ metformin + agesexsmoking + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
-              metformin ~ agesexsmoking + ethnicity + cvdcomorb + DMseverity + hsb,
+              metformin ~ agesexsmoking + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
               DMseverity ~ agesexsmoking,
               cvdcomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
               othercomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
