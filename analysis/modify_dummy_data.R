@@ -183,7 +183,7 @@ data_processed <- data_processed %>%
 ## If the date is valid, keep it unchanged.
 out_vars_covid <- c(
   "out_date_covid_hosp", "out_date_covid_death",
-  "out_date_severecovid", "out_date_covid", "out_date_longcovid",
+  "out_date_covid", "out_date_longcovid",
   "out_date_virfat", "out_date_longcovid_virfat")
 data_processed <- data_processed %>%
   rowwise() %>%
@@ -196,6 +196,10 @@ data_processed <- data_processed %>%
   mutate(across(all_of(out_vars), ~ fn_dd_exp_out_dates(.x, elig_date_t2dm, studyend_date))) %>%
   ungroup() %>%
   mutate(across(all_of(out_vars), ~ as.Date(.x, origin = "1970-01-01")))
+data_processed <- data_processed %>%
+  mutate(out_date_severecovid = pmin(out_date_covid_hosp, out_date_covid_death, na.rm = TRUE)) %>% 
+  mutate(qa_date_of_death = case_when(!is.na(out_date_covid_death) ~ out_date_covid_death,
+                                      TRUE ~ qa_date_of_death))
 
 # (5) Ensure all censoring dates are between baseline date (elig_date_t2dm) and studyend date
 ## cens_date_dereg is completely missing in the current dummy data, so replace all
