@@ -278,10 +278,10 @@ data_processed <- data_processed %>%
     out_date_longcovid_virfat_afterlandmark = case_when(out_bin_longcovid_virfat_afterlandmark == TRUE ~ out_date_longcovid_virfat, 
                                               TRUE ~ as.Date(NA)),
     # Other events.
-    out_bin_death_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date),
+    out_bin_death_afterlandmark = out_bin_covid_death_afterlandmark | (!is.na(qa_date_of_death) & (qa_date_of_death > out_date_covid_death_afterlandmark)), # this additional step is needed to ensure order of death dates in dummy data (and no impact on real data)
     out_date_death_afterlandmark = case_when(out_bin_death_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
-    out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death),
+    out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death_afterlandmark),
     out_date_noncoviddeath_afterlandmark = case_when(out_bin_noncoviddeath_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
     cens_bin_ltfu_afterlandmark = !is.na(cens_date_dereg) & cens_date_dereg > landmark_date,

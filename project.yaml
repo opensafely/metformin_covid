@@ -222,14 +222,34 @@ actions:
 
 
 
-  plr:
-    run: r:latest analysis/pooled_log_reg.R
+  01_data_add_intervals:
+    run: r:latest analysis/01_data_add_intervals.R
     needs:
     - data_process
+    outputs:
+      highly_sensitive:
+        dataset: output/data/df_months.arrow
+
+  02_data_add_events:
+    run: r:latest analysis/02_data_add_events.R
+    needs:
+    - 01_data_add_intervals
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/df_months_severecovid.arrow
+        dataset2: output/data/df_months_covid_event.arrow
+        dataset3: output/data/df_months_longcovid.arrow
+
+  03_pooled_log_reg:
+    run: r:latest analysis/03_pooled_log_reg.R
+    needs:
+    - 02_data_add_events
     outputs:
       moderately_sensitive:
         csv: output/te/pooled_log_reg/*.csv
         plots: output/te/pooled_log_reg/*.png
+
+
 
 
 

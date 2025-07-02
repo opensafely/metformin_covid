@@ -1,11 +1,10 @@
 ####
-# Custom-made function to add one-time first-ever events to (monthy/weekly) interval person/month dataframes
-
-# RULES:
-# a) if event date is not NA and happened before min start date intervals, then assign 1 (in corresponding flag variable) to all person-intervals
-# b) if event date is not NA and happened after max end date intervals, then assign 0 (in corresponding flag variable) to all person-intervals
-# c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals
-# d) if event date happened during follow-up (i.e. existing interval date), then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after
+# Custom-made function to add one-time first-ever events to (monthy/weekly) interval person/month data frames
+## RULES:
+# a) if event date is not NA and happened before the minimum start date of all intervals of a person, then assign 1 (in corresponding flag variable) to all person-intervals
+# b) if event date is not NA and happened after the maximum end date of all intervals of a person, then assign 0 (in corresponding flag variable) to all person-intervals
+# c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals (assuming no documentation = no event)
+# d) if event date happened during follow-up, then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after (stable/time-fixed event)
 
 fn_add_firstever_events_to_intervals <- function(df, date_vars, start_var, end_var) {
   
