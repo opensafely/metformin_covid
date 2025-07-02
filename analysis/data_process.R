@@ -365,8 +365,8 @@ data_processed <- data_processed %>%
 data_processed_death_ltfu <- data_processed %>%
   filter(!is.na(exp_bin_treat)) %>% # Filter out those with missing exp_bin_treat, but retain those who died/ltfu before landmark for descriptive purposes
   mutate(death_ltfu_pandemic = case_when(
-    (!is.na(out_date_death_afterlandmark) & (out_date_death_afterlandmark <= pandemicstart_date)) |
-      (!is.na(cens_date_ltfu_afterlandmark) & (cens_date_ltfu_afterlandmark <= pandemicstart_date)) ~ TRUE, 
+    (!is.na(out_date_death_afterlandmark) & (out_date_death_afterlandmark < pandemicstart_date)) | # do not include day of start of pandemic, since these will count (and start of pandemic is a bit arbitrary chosen)
+      (!is.na(cens_date_ltfu_afterlandmark) & (cens_date_ltfu_afterlandmark < pandemicstart_date)) ~ TRUE, 
     TRUE ~ FALSE
   )
 )
