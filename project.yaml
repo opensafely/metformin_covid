@@ -174,7 +174,6 @@ actions:
     - table1
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_longvirfat_ra_minset.csv
         tbl1: output/data_description/tbl_csv_main.csv
         tbl2: output/data_description/tbl_csv_death_ltfu1.csv
         tbl3: output/data_description/tbl_csv_death_ltfu2.csv
