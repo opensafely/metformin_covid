@@ -283,10 +283,10 @@ data_processed <- data_processed %>%
                                              TRUE ~ as.Date(NA)),
     out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death_afterlandmark),
     out_date_noncoviddeath_afterlandmark = case_when(out_bin_noncoviddeath_afterlandmark == TRUE ~ qa_date_of_death, 
-                                             TRUE ~ as.Date(NA)),
-    cens_bin_ltfu_afterlandmark = !is.na(cens_date_dereg) & cens_date_dereg > landmark_date,
+                                                     TRUE ~ as.Date(NA)),
+    cens_bin_ltfu_afterlandmark = (!is.na(cens_date_dereg) & cens_date_dereg > landmark_date) & (is.na(qa_date_of_death) | (!is.na(qa_date_of_death) & qa_date_of_death >= cens_date_dereg)),
     cens_date_ltfu_afterlandmark = case_when(cens_bin_ltfu_afterlandmark == TRUE ~ cens_date_dereg, 
-                                            TRUE ~ as.Date(NA)),
+                                             TRUE ~ as.Date(NA)),
     # In INTERVENTION: Identify all metformin prescription (combo and mono) in 6m prior to pandemic start, may be used to censor those who stopped before pandemic
     cens_bin_metfin_pandemicstart = exp_bin_metfin_mono == TRUE & !is.na(exp_date_metfin_mono_last) & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183),
     cens_date_metfin_pandemicstart = case_when(cens_bin_metfin_pandemicstart == TRUE ~ exp_date_metfin_mono_last, 
