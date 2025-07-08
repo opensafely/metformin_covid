@@ -1,4 +1,5 @@
 code,term
+1003605004,Glaucoma suspect due to diabetes mellitus type 2
 100631000000108,O/E - right eye background diabetic retinopathy
 100641000000104,O/E - left eye background diabetic retinopathy
 100651000000101,O/E - right eye preproliferative diabetic retinopathy
@@ -30,6 +31,23 @@ code,term
 127013003,Disorder of kidney due to diabetes mellitus
 127991000119101,Hypertension concurrent and due to end stage renal disease on dialysis due to type 2 diabetes mellitus
 128001000119105,Hypertension concurrent and due to end stage renal disease on dialysis due to type 1 diabetes mellitus
+1306699009,Stable treated proliferative retinopathy due to diabetes mellitus
+1306700005,Stable treated proliferative retinopathy of bilateral eyes due to diabetes mellitus
+1332436006,Hypertension in chronic kidney disease stage 3B due to type 1 diabetes mellitus
+1332441003,Hypertension in chronic kidney disease stage 3A due to type 1 diabetes mellitus
+1332442005,Hypertension in chronic kidney disease stage 3 due to type 1 diabetes mellitus
+1332464001,Hypertension in chronic kidney disease stage 2 due to type 1 diabetes mellitus
+1332465000,Hypertension in chronic kidney disease stage 3B due to type 2 diabetes mellitus
+1332466004,Hypertension in chronic kidney disease stage 3A due to type 2 diabetes mellitus
+1332467008,Hypertension in chronic kidney disease stage 5 due to type 1 diabetes mellitus
+1332468003,Hypertension in chronic kidney disease stage 4 due to type 1 diabetes mellitus
+1332469006,Chronic kidney disease stage 3B due to type 2 diabetes mellitus
+1332470007,Chronic kidney disease stage 3A due to type 2 diabetes mellitus
+1332471006,Chronic kidney disease stage 3B due to type 1 diabetes mellitus
+1332472004,Chronic kidney disease stage 3A due to type 1 diabetes mellitus
+1354552000,Mild macular edema due to diabetes mellitus
+1354553005,Moderate macular edema due to diabetes mellitus
+1354554004,Severe macular edema due to diabetes mellitus
 138881000119106,Mild nonproliferative retinopathy due to type 1 diabetes mellitus
 138891000119109,Moderate nonproliferative retinopathy due to type 1 diabetes mellitus
 138911000119106,Mild nonproliferative retinopathy due to type 2 diabetes mellitus
@@ -54,6 +72,7 @@ code,term
 1551000119108,Nonproliferative retinopathy due to type 2 diabetes mellitus
 155107006,Diabetic retinopathy
 157141000119108,Proteinuria due to type 2 diabetes mellitus
+15936501000119100,Inflammatory dermatosis due to type 2 diabetes mellitus
 164881000119109,Ulcer of foot due to type 1 diabetes mellitus
 16697421000119103,Moderate nonproliferative retinopathy of left eye due to diabetes mellitus type 1
 16697471000119102,Moderate nonproliferative retinopathy of right eye due to diabetes mellitus type 1
@@ -91,6 +110,7 @@ code,term
 16749781000119101,Proliferative retinopathy of bilateral eyes due to diabetes mellitus type 1
 16890881000119106,History of proliferative retinopathy due to diabetes mellitus
 16890921000119104,History of nonproliferative diabetic retinopathy
+16891191000119108,Coronary artery disease due to type 1 diabetes mellitus
 171851000000104,O/E - right eye stable treated proliferative diabetic retinopathy
 171861000000101,O/E - left eye stable treated proliferative diabetic retinopathy
 171961000000107,O/E - right chronic diabetic foot ulcer
@@ -161,7 +181,10 @@ code,term
 35777006,Mononeuropathy multiplex due to diabetes mellitus
 359611005,Neuropathy with neurologic complication due to diabetes mellitus
 361216007,Femoral mononeuropathy due to diabetes mellitus
+367211000119103,Inflammatory dermatosis due to type 1 diabetes mellitus
+367241000119104,Hyperosmolar coma due to drug induced diabetes mellitus
 368141000119106,Autonomic neuropathy due to drug induced diabetes mellitus
+368151000119108,Cataract due to drug induced diabetes mellitus
 368181000119101,Ulcer of foot due to drug induced diabetes mellitus
 368201000119100,Disorder of kidney due to drug induced diabetes mellitus
 368251000119101,Polyneuropathy due to drug induced diabetes mellitus
@@ -171,7 +194,8 @@ code,term
 368451000119100,Chronic kidney disease stage 4 due to drug induced diabetes mellitus
 368461000119103,Chronic kidney disease stage 5 due to drug induced diabetes mellitus
 368471000119109,End stage renal disease on dialysis due to drug induced diabetes mellitus
-368521000119107,Disorder of nerve co-occurrent and due to type 1 diabetes mellitus
+368521000119107,Disorder of nerve due to type 1 diabetes mellitus
+368541000119101,Cheiroarthropathy due to diabetes mellitus type 1
 368581000119106,Neuropathy due to type 2 diabetes mellitus
 368711000119106,Mild nonproliferative retinopathy due to secondary diabetes mellitus
 368721000119104,Non-proliferative retinopathy due to secondary diabetes mellitus
@@ -251,6 +275,7 @@ code,term
 60971000119101,Proliferative retinopathy due to type 1 diabetes mellitus
 620661000000106,Diabetic retinopathy NOS
 63510008,Nodular glomerulosclerosis of kidney due to diabetes mellitus
+706891008,Neuropathy due to unstable diabetes mellitus type 1
 706894000,Retinopathy due to unstable diabetes mellitus type 1
 707221002,Glomerulosclerosis of kidney due to diabetes mellitus
 711000119100,Chronic kidney disease stage 5 due to type 2 diabetes mellitus
@@ -263,6 +288,7 @@ code,term
 713706002,Polyneuropathy due to type 2 diabetes mellitus
 71421000119105,Hypertension in chronic kidney disease due to type 2 diabetes mellitus
 71441000119104,Nephrotic syndrome due to type 2 diabetes mellitus
+714664001,At increased risk of ulcer of foot due to diabetes mellitus
 71701000119105,Hypertension in chronic kidney disease due to type 1 diabetes mellitus
 71721000119101,Nephrotic syndrome due to type 1 diabetes mellitus
 71771000119100,Neuropathic arthropathy due to type 1 diabetes mellitus
@@ -308,6 +334,8 @@ code,term
 774521000000103,History of diabetic nephropathy
 775841000000109,Diabetic retinopathy detected by national screening programme
 781000119106,Neuropathic arthropathy due to type 2 diabetes mellitus
+782755007,"Primary microcephaly, mild intellectual disability, young-onset diabetes syndrome"
+783722008,Myopathy and diabetes mellitus
 789542009,Neuropathy due to type 1 diabetes mellitus
 789562001,Ulcer of heel due to diabetes mellitus
 789567007,Ulcer of heel due to type 2 diabetes mellitus
@@ -327,12 +355,21 @@ code,term
 82541000119100,Traction detachment of retina due to type 2 diabetes mellitus
 82571000119107,Traction detachment of retina due to type 1 diabetes mellitus
 855051000000102,Proteinuric diabetic nephropathy
+860712005,Disorder of macula of bilateral eyes due to diabetes mellitus present
 860721006,Disorder of macula of bilateral eyes due to diabetes mellitus
 860883001,Generalized autonomic neuropathy due to diabetes mellitus
 860977000,Ulcer of right foot due to diabetes mellitus
 860978005,Ulcer of left foot due to diabetes mellitus
 860979002,Chronic ulcer of right foot due to diabetes mellitus
 860980004,Chronic ulcer of left foot due to diabetes mellitus
+863879002,At low risk of ulcer of right foot due to diabetes mellitus
+863880004,At low risk of ulcer of left foot due to diabetes mellitus
+863881000,At moderate risk of ulcer of left foot due to diabetes mellitus
+863882007,At increased risk of ulcer of left foot due to diabetes mellitus
+863883002,At increased risk of ulcer of right foot due to diabetes mellitus
+863884008,At high risk of ulcer of right foot due to diabetes mellitus
+863885009,At moderate risk of ulcer of right foot due to diabetes mellitus
+863886005,At high risk of ulcer of left foot due to diabetes mellitus
 866003,Diabetic neuropathy
 870420005,Severe nonproliferative retinopathy with venous beading of retina due to diabetes mellitus
 870421009,Cystoid macular edema due to diabetes mellitus
@@ -343,6 +380,7 @@ code,term
 87461000119100,Ulcer of forefoot due to type 2 diabetes mellitus
 87491000119107,Ulcer of forefoot due to type 1 diabetes mellitus
 87921000119104,Cranial nerve palsy due to type 2 diabetes mellitus
+890171006,Ketosis-prone diabetes mellitus
 90721000119101,Chronic kidney disease stage 1 due to type 1 diabetes mellitus
 90731000119103,Chronic kidney disease stage 2 due to type 1 diabetes mellitus
 90741000119107,Chronic kidney disease stage 3 due to type 1 diabetes mellitus
