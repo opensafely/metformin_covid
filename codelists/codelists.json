@@ -192,6 +192,12 @@
       "downloaded_at": "2024-09-25 17:22:25.357118Z",
       "sha": "d6a2a1eb1cb88fb84af69d57146192e20b8f1eb1"
     },
+    "nhsd-primary-care-domain-refsets-palcare_cod.csv": {
+      "id": "nhsd-primary-care-domain-refsets/palcare_cod/7748de1e",
+      "url": "https://www.opencodelists.org/codelist/nhsd-primary-care-domain-refsets/palcare_cod/7748de1e/",
+      "downloaded_at": "2025-07-08 11:46:52.162106Z",
+      "sha": "96f81a349e09755fe87a4bc10de9a49b4af2127a"
+    },
     "opensafely-condition-advanced-decompensated-cirrhosis-of-the-liver.csv": {
       "id": "opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver/071038cf",
       "url": "https://www.opencodelists.org/codelist/opensafely/condition-advanced-decompensated-cirrhosis-of-the-liver/071038cf/",
