@@ -273,3 +273,4 @@ skin_rash_snomed = codelist_from_csv("codelists/opensafely-symptoms-rashes.csv",
 anxiety_snomed = codelist_from_csv("codelists/opensafely-symptoms-anxiety.csv",column="code")
 depression_snomed = codelist_from_csv("codelists/opensafely-symptoms-depression.csv",column="code")
 ptsd_snomed = codelist_from_csv("codelists/opensafely-symptoms-ptsd.csv",column="code")
+

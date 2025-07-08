@@ -82,7 +82,7 @@ dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"])
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
 dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
 dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+dataset.qa_bin_was_registered = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Date of death
 dataset.qa_date_of_death = ons_deaths.date
@@ -204,7 +204,7 @@ dataset.cov_cat_deprivation_5 = case(
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+spanning_regs = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
 registered = spanning_regs.sort_by(
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
@@ -443,57 +443,63 @@ dataset.out_date_virfat = first_matching_event_clinical_snomed_between(post_vira
 dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_virfat)
 
 ## Long COVID signs and symptoms, first code in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
-dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_cough = first_matching_event_clinical_snomed_between(cough_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_chest_pain = first_matching_event_clinical_snomed_between(chest_pain_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_chest_tightness = first_matching_event_clinical_snomed_between(chest_tightness_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_palpitations = first_matching_event_clinical_snomed_between(palpitations_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_fatigue = first_matching_event_clinical_snomed_between(fatigue_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_fever = first_matching_event_clinical_snomed_between(fever_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_pain = first_matching_event_clinical_snomed_between(pain_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_cog_impair = first_matching_event_clinical_snomed_between(cog_impair_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_headache = first_matching_event_clinical_snomed_between(headache_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_sleep = first_matching_event_clinical_snomed_between(sleep_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_pnp = first_matching_event_clinical_snomed_between(pnp_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_dizziness = first_matching_event_clinical_snomed_between(dizziness_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_delirium = first_matching_event_clinical_snomed_between(delirium_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_mob_impair = first_matching_event_clinical_snomed_between(mob_impair_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_visual = first_matching_event_clinical_snomed_between(visual_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_abdo_pain = first_matching_event_clinical_snomed_between(abdo_pain_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_nausea_vomiting = first_matching_event_clinical_snomed_between(nausea_vomiting_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_diarrhoea = first_matching_event_clinical_snomed_between(diarrhoea_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_weight_appetite = first_matching_event_clinical_snomed_between(weight_appetite_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_tinnitus = first_matching_event_clinical_snomed_between(tinnitus_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_earache = first_matching_event_clinical_snomed_between(earache_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_sore_throat = first_matching_event_clinical_snomed_between(sore_throat_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_smell_taste = first_matching_event_clinical_snomed_between(smell_taste_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_nasal = first_matching_event_clinical_snomed_between(nasal_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_hair_loss = first_matching_event_clinical_snomed_between(hair_loss_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_skin_rash = first_matching_event_clinical_snomed_between(skin_rash_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_anxiety = first_matching_event_clinical_snomed_between(anxiety_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_depression = first_matching_event_clinical_snomed_between(depression_snomed, dataset.elig_date_t2dm, studyend_date).date
-dataset.out_date_ptsd = first_matching_event_clinical_snomed_between(ptsd_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_cough = first_matching_event_clinical_snomed_between(cough_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_chest_pain = first_matching_event_clinical_snomed_between(chest_pain_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_chest_tightness = first_matching_event_clinical_snomed_between(chest_tightness_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_palpitations = first_matching_event_clinical_snomed_between(palpitations_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_fatigue = first_matching_event_clinical_snomed_between(fatigue_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_fever = first_matching_event_clinical_snomed_between(fever_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_pain = first_matching_event_clinical_snomed_between(pain_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_cog_impair = first_matching_event_clinical_snomed_between(cog_impair_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_headache = first_matching_event_clinical_snomed_between(headache_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_sleep = first_matching_event_clinical_snomed_between(sleep_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_pnp = first_matching_event_clinical_snomed_between(pnp_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_dizziness = first_matching_event_clinical_snomed_between(dizziness_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_delirium = first_matching_event_clinical_snomed_between(delirium_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_mob_impair = first_matching_event_clinical_snomed_between(mob_impair_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_visual = first_matching_event_clinical_snomed_between(visual_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_abdo_pain = first_matching_event_clinical_snomed_between(abdo_pain_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_nausea_vomiting = first_matching_event_clinical_snomed_between(nausea_vomiting_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_diarrhoea = first_matching_event_clinical_snomed_between(diarrhoea_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_weight_appetite = first_matching_event_clinical_snomed_between(weight_appetite_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_tinnitus = first_matching_event_clinical_snomed_between(tinnitus_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_earache = first_matching_event_clinical_snomed_between(earache_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_sore_throat = first_matching_event_clinical_snomed_between(sore_throat_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_smell_taste = first_matching_event_clinical_snomed_between(smell_taste_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_nasal = first_matching_event_clinical_snomed_between(nasal_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_hair_loss = first_matching_event_clinical_snomed_between(hair_loss_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_skin_rash = first_matching_event_clinical_snomed_between(skin_rash_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_anxiety = first_matching_event_clinical_snomed_between(anxiety_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_depression = first_matching_event_clinical_snomed_between(depression_snomed, dataset.elig_date_t2dm, studyend_date).date
+# dataset.out_date_ptsd = first_matching_event_clinical_snomed_between(ptsd_snomed, dataset.elig_date_t2dm, studyend_date).date
 
 
 ### UPDATED eligibility and intercurrent events for potential censoring
 ## Practice deregistration date: Based on main registration at t2dm diagnosis date
 # However, it does count those who only switch TPP practices
-dataset.cens_date_dereg = registered.end_date
+deregistered = spanning_regs.sort_by(
+    practice_registrations.end_date,
+    practice_registrations.practice_pseudo_id,
+).first_for_patient()
+dataset.cens_date_dereg = deregistered.end_date
 
-## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
-dataset.cens_date_metfin_allergy_first = first_matching_event_clinical_snomed_between(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date
+## Known hypersensitivity / intolerance to metformin, after elig_date_t2dm
+# dataset.cens_date_metfin_allergy_first = first_matching_event_clinical_snomed_between(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date
 
-## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before elig_date_t2dm
-dataset.cens_date_ckd_45_first = minimum_of(
-    first_matching_event_clinical_snomed_between(ckd_snomed_clinical_45, dataset.elig_date_t2dm + days(1), studyend_date).date,
-    first_matching_event_apc_between(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
-)
+## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), after elig_date_t2dm
+# dataset.cens_date_ckd_45_first = minimum_of(
+#     first_matching_event_clinical_snomed_between(ckd_snomed_clinical_45, dataset.elig_date_t2dm + days(1), studyend_date).date,
+#     first_matching_event_apc_between(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+# )
 
-## Advance decompensated liver cirrhosis, on or before elig_date_t2dm
-dataset.cens_date_liver_cirrhosis_first = minimum_of(
-    first_matching_event_clinical_snomed_between(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
-    first_matching_event_apc_between(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
-)
+## Advance decompensated liver cirrhosis, after elig_date_t2dm
+# dataset.cens_date_liver_cirrhosis_first = minimum_of(
+#     first_matching_event_clinical_snomed_between(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
+#     first_matching_event_apc_between(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+# )
 
 ## Use of the following medications (drug-drug interaction with metformin)
-dataset.cens_date_metfin_interaction_first = first_matching_med_dmd_between(metformin_interaction_dmd, dataset.elig_date_t2dm + days(1), studyend_date).date
+# dataset.cens_date_metfin_interaction_first = first_matching_med_dmd_between(metformin_interaction_dmd, dataset.elig_date_t2dm + days(1), studyend_date).date
+
+
