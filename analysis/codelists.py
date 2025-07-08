@@ -94,7 +94,7 @@ long_covid_referral_snomed_clinical = codelist_from_csv("codelists/opensafely-re
 long_covid_assessment_snomed_clinical = codelist_from_csv("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv",column="code")
 
 post_viral_fatigue_snomed_clinical = codelist_from_csv("codelists/user-alex-walker-post-viral-syndrome.csv",column="code")
-
+palliative_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-palcare_cod.csv",column="code")
 
 #######################################################################################
 # Potential CONFOUNDER variables
