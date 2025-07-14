@@ -177,3 +177,11 @@ actions:
         tbl1: output/data_description/tbl_csv_main.csv
         tbl2: output/data_description/tbl_csv_death_ltfu1.csv
         tbl3: output/data_description/tbl_csv_death_ltfu2.csv
+
+  prep_sg:
+    run: r:latest analysis/prep_sg.R
+    needs:
+    - data_process
+    outputs:
+      highly_sensitive:
+        subsets: output/data/sg/*.arrow
