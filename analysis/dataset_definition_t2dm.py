@@ -79,7 +79,7 @@ mid2018_date = study_dates["mid2018_date"]
 dataset.qa_num_birth_year = patients.date_of_birth
 # population variables for dataset definition 
 dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"]) 
-dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
+dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 85) 
 dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
 dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
 dataset.qa_bin_was_registered = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
@@ -121,6 +121,32 @@ dataset.qa_bin_prostate_cancer = case(
 ###
 # diabetes variables defined in previous separate action/dataset definition
 ###
+
+## Hospital admission within 2 days prior to T2DM diagnosis
+dataset.elig_bin_hosp = (
+   apcs.where(apcs.admission_date.is_on_or_between(dataset.elig_date_t2dm - days(2), dataset.elig_date_t2dm))
+   .sort_by(apcs.admission_date)
+   .exists_for_patient()
+)
+
+## Care home resident at elig_date_t2dm, see https://github.com/opensafely/opioids-covid-research/blob/main/analysis/define_dataset_table.py
+# Flag care home based on primis (patients in long-stay nursing and residential care)
+tmp_care_home_code = last_matching_event_clinical_snomed_before(carehome, dataset.elig_date_t2dm).exists_for_patient()
+# Flag care home based on TPP
+tmp_care_home_tpp1 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_is_potential_match
+tmp_care_home_tpp2 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_requires_nursing
+tmp_care_home_tpp3 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_does_not_require_nursing
+# combine
+dataset.elig_bin_carehome_status = case(
+    when(tmp_care_home_code).then(True),
+    when(tmp_care_home_tpp1).then(True),
+    when(tmp_care_home_tpp2).then(True),
+    when(tmp_care_home_tpp3).then(True),
+    otherwise = False
+)
+
+## Palliative care within 6 months prior to T2DM diagnosis
+dataset.elig_date_palliative = last_matching_event_clinical_snomed_between(palliative_snomed, dataset.elig_date_t2dm - days(183), dataset.elig_date_t2dm).date
 
 ## Any metformin prescription BEFORE T2DM diagnosis
 dataset.elig_date_metfin = first_matching_med_dmd_before(metformin_dmd, dataset.elig_date_t2dm).date
@@ -223,22 +249,6 @@ dataset.cov_cat_smoking_status = case(
     when((tmp_most_recent_smoking_cat == "M") & (tmp_ever_smoked == True)).then("E"),
     when(tmp_most_recent_smoking_cat == "M").then("M"),
     otherwise = "M"
-)
-
-## Care home resident at elig_date_t2dm, see https://github.com/opensafely/opioids-covid-research/blob/main/analysis/define_dataset_table.py
-# Flag care home based on primis (patients in long-stay nursing and residential care)
-tmp_care_home_code = last_matching_event_clinical_snomed_before(carehome, dataset.elig_date_t2dm).exists_for_patient()
-# Flag care home based on TPP
-tmp_care_home_tpp1 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_is_potential_match
-tmp_care_home_tpp2 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_requires_nursing
-tmp_care_home_tpp3 = addresses.for_patient_on(dataset.elig_date_t2dm).care_home_does_not_require_nursing
-# combine
-dataset.cov_bin_carehome_status = case(
-    when(tmp_care_home_code).then(True),
-    when(tmp_care_home_tpp1).then(True),
-    when(tmp_care_home_tpp2).then(True),
-    when(tmp_care_home_tpp3).then(True),
-    otherwise = False
 )
 
 ## Healthcare worker at the time they received a COVID-19 vaccination
