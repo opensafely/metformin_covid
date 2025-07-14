@@ -185,3 +185,5 @@ actions:
     outputs:
       highly_sensitive:
         subsets: output/data/sg/*.arrow
+      moderately_sensitive:
+        tbl: output/te/sg_desc/n_events_by_sg_midpoint6.csv

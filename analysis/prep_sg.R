@@ -89,15 +89,29 @@ df_list <- list(
 )
 
 df_list <- lapply(df_list, redefine_cox_stop)
- 
-# Assign back to environment (optional)
-# list2env(df_list, envir = .GlobalEnv)
-
 
 
 # Extract events by subgroup from each subset ------------------------------
 print('Extract events by subgroup from each subset')
+event_tables <- lapply(df_list, function(df) {
+  table(
+    treat = df$exp_bin_treat,
+    severe_covid = df$out_bin_severecovid_afterlandmark
+  )
+})
 
+names(event_tables) <- names(df_list)
+
+event_summary <- do.call(rbind, lapply(names(event_tables), function(name) {
+  tab <- as.data.frame.matrix(event_tables[[name]])
+  tab$treat <- rownames(tab)
+  tab$Subgroup <- name
+  tab
+})) %>% 
+  select(Subgroup, treat, everything())
+
+event_summary_midpoint6 <- event_summary %>%
+  mutate(across(c(`FALSE`, `TRUE`), fn_roundmid_any))
 
 
 # Save subsets and descriptive (events by subgroup) -----------------------
@@ -108,7 +122,5 @@ lapply(names(df_list), function(name) {
     here::here("output", "data", "sg", paste0(name, ".arrow"))
   )
 })
-
-
 # Events by subgroup (midpoint rounded)
-# write.csv(n_events_by_sg_midpoint6, file = here::here("output", "te", "sg_desc", "n_events_by_sg_midpoint6.csv"))
+write.csv(event_summary_midpoint6, file = here::here("output", "te", "sg_desc", "n_events_by_sg_midpoint6.csv"))
