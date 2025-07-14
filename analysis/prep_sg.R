@@ -11,13 +11,11 @@ print('Import libraries and functions')
 library('tidyverse')
 library('here')
 library('arrow')
-source(here::here("analysis", "functions", "utility.R")) # midpoint rounding
 
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
 fs::dir_create(here::here("output", "data", "sg"))
-fs::dir_create(here::here("output", "te", "sg_desc"))
 
 
 # Import the data ---------------------------------------------------------
@@ -91,30 +89,7 @@ df_list <- list(
 df_list <- lapply(df_list, redefine_cox_stop)
 
 
-# Extract events by subgroup from each subset ------------------------------
-print('Extract events by subgroup from each subset')
-event_tables <- lapply(df_list, function(df) {
-  table(
-    treat = df$exp_bin_treat,
-    severe_covid = df$out_bin_severecovid_afterlandmark
-  )
-})
-
-names(event_tables) <- names(df_list)
-
-event_summary <- do.call(rbind, lapply(names(event_tables), function(name) {
-  tab <- as.data.frame.matrix(event_tables[[name]])
-  tab$treat <- rownames(tab)
-  tab$Subgroup <- name
-  tab
-})) %>% 
-  select(Subgroup, treat, everything())
-
-event_summary_midpoint6 <- event_summary %>%
-  mutate(across(c(`FALSE`, `TRUE`), fn_roundmid_any))
-
-
-# Save subsets and descriptive (events by subgroup) -----------------------
+# Save subsets -----------------------------------------------------------
 # Subsets
 lapply(names(df_list), function(name) {
   arrow::write_feather(
@@ -122,5 +97,3 @@ lapply(names(df_list), function(name) {
     here::here("output", "data", "sg", paste0(name, ".arrow"))
   )
 })
-# Events by subgroup (midpoint rounded)
-write.csv(event_summary_midpoint6, file = here::here("output", "te", "sg_desc", "n_events_by_sg_midpoint6.csv"))

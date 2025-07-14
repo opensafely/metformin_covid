@@ -353,7 +353,32 @@ data_processed <- data_processed %>%
                                                      units = "days") %>% as.numeric(),
     # for cox reusable action: exposure start date for those who start, missing for all others 
     cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date, 
-                                               TRUE ~ as.Date(NA))
+                                               TRUE ~ as.Date(NA)),
+    # for cox reusable action: define cox_stop for negative control (fracture) and positive control (diabetes comp)
+    cox_date_fracture_landmark = pmin(out_date_fracture_afterlandmark, 
+                                      out_date_death_afterlandmark,
+                                      cens_date_ltfu_afterlandmark,
+                                      max_fup_date,
+                                      studyend_date,
+                                      na.rm = TRUE),
+    cox_date_fracture_pandemic = pmin(out_date_fracture_afterpandemic, 
+                                      out_date_death_afterlandmark,
+                                      cens_date_ltfu_afterlandmark,
+                                      max_fup_date,
+                                      studyend_date,
+                                      na.rm = TRUE),
+    cox_date_diabetescomp_landmark = pmin(out_date_diabetescomp_afterlandmark, 
+                                      out_date_death_afterlandmark,
+                                      cens_date_ltfu_afterlandmark,
+                                      max_fup_date,
+                                      studyend_date,
+                                      na.rm = TRUE),
+    cox_date_diabetescomp_pandemic = pmin(out_date_diabetescomp_afterpandemic, 
+                                      out_date_death_afterlandmark,
+                                      cens_date_ltfu_afterlandmark,
+                                      max_fup_date,
+                                      studyend_date,
+                                      na.rm = TRUE)
   )
 
 

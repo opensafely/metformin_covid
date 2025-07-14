@@ -129,44 +129,44 @@ actions:
         csv: output/ps/*.csv
         plots: output/ps/*.png
 
-  cox_primary_RA:
+  cox_primary:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
       --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
       --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
       --study_stop="2022-04-01" --cut_points=730
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_primary_ra.csv
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_primary.csv
     needs:
     - data_process
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_primary_ra.csv
+        model_output: output/results_cox_primary.csv
 
-  cox_covid_event_RA:
+  cox_covid_event:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_covid_afterlandmark --strata=strat_cat_region
       --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
       --cox_start=landmark_date --cox_stop=cox_date_covid --study_start="2018-08-01"
       --study_stop="2022-04-01" --cut_points=730
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_covid_event_ra.csv
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_covid_event.csv
     needs:
     - data_process
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_covid_event_ra.csv
+        model_output: output/results_cox_covid_event.csv
 
-  cox_longvirfat_RA:
+  cox_longvirfat:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_longcovid_virfat_afterlandmark --strata=strat_cat_region
       --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
       --cox_start=landmark_date --cox_stop=cox_date_longcovid_virfat --study_start="2018-08-01"
       --study_stop="2022-04-01" --cut_points=730 --total_event_threshold=20
-      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_longvirfat_ra.csv
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_longvirfat.csv
     needs:
     - data_process
     outputs:
       moderately_sensitive:
-        model_output: output/results_cox_longvirfat_ra.csv
+        model_output: output/results_cox_longvirfat.csv
 
   baseline_tables:
     run: r:latest analysis/baseline_tables.R
@@ -178,6 +178,58 @@ actions:
         tbl2: output/data_description/tbl_csv_death_ltfu1.csv
         tbl3: output/data_description/tbl_csv_death_ltfu2.csv
 
+  cox_neg_control_landmark:
+    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_fracture_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_fracture_landmark --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_neg_control_landmark.csv
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_neg_control_landmark.csv
+
+  cox_neg_control_pandemic:
+    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_fracture_afterpandemic --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_fracture_pandemic --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_neg_control_pandemic.csv
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_neg_control_pandemic.csv
+
+  cox_pos_control_landmark:
+    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_diabetescomp_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_diabetescomp_landmark --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_pos_control_landmark.csv
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_pos_control_landmark.csv
+
+  cox_pos_control_pandemic:
+    run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_diabetescomp_afterpandemic --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_diabetescomp_pandemic --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_pos_control_pandemic.csv
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_pos_control_pandemic.csv
+
   prep_sg:
     run: r:latest analysis/prep_sg.R
     needs:
@@ -185,5 +237,159 @@ actions:
     outputs:
       highly_sensitive:
         subsets: output/data/sg/*.arrow
+
+  cox_sg_below60:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_below60.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_below60.csv
+    needs:
+    - prep_sg
+    outputs:
       moderately_sensitive:
-        tbl: output/te/sg_desc/n_events_by_sg_midpoint6.csv
+        model_output: output/results_cox_sg_below60.csv
+
+  cox_sg_60orabove:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_60orabove.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_60orabove.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_60orabove.csv
+
+  cox_sg_female:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_female.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_female.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_female.csv
+
+  cox_sg_male:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_male.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_male.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_male.csv
+
+  cox_sg_white:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_white.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_white.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_white.csv
+
+  cox_sg_nonwhite:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_nonwhite.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_nonwhite.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_nonwhite.csv
+
+  cox_sg_imd1:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_imd1.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_imd1.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_imd1.csv
+
+  cox_sg_nonimd1:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_nonimd1.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_nonimd1.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_nonimd1.csv
+
+  cox_sg_obese:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_obese.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_obese.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_obese.csv
+
+  cox_sg_nonobese:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_nonobese.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_nonobese.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_nonobese.csv
+
+  cox_sg_belowHbA1c59:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_belowHbA1c59.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_belowHbA1c59.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_belowHbA1c59.csv
+
+  cox_sg_HbA1c59orabove:
+    run: cox-ipw:v0.0.37 --df_input=data/sg/df_HbA1c59orabove.arrow
+      --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_bin_obesity;cov_cat_hba1c_mmol_mol;cov_cat_tc_hdl_ratio;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
+      --study_stop="2022-04-01" --cut_points=730
+      --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_sg_HbA1c59orabove.csv
+    needs:
+    - prep_sg
+    outputs:
+      moderately_sensitive:
+        model_output: output/results_cox_sg_HbA1c59orabove.csv
