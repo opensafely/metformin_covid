@@ -274,3 +274,5 @@ anxiety_snomed = codelist_from_csv("codelists/opensafely-symptoms-anxiety.csv",c
 depression_snomed = codelist_from_csv("codelists/opensafely-symptoms-depression.csv",column="code")
 ptsd_snomed = codelist_from_csv("codelists/opensafely-symptoms-ptsd.csv",column="code")
 
+# sensitivity analyses (pos control already above), neg control
+fracture_icd10 = codelist_from_csv("codelists/bristol-fractures.csv", column="code")

@@ -513,3 +513,11 @@ dataset.cens_date_dereg = deregistered.end_date
 # dataset.cens_date_metfin_interaction_first = first_matching_med_dmd_between(metformin_interaction_dmd, dataset.elig_date_t2dm + days(1), studyend_date).date
 
 
+### Sensitivity analyses, neg & pos control
+## Pos control: Diabetes complications (foot, retino, neuro, nephro), after elig_date_t2dm
+dataset.out_date_diabetescomp = minimum_of(
+    first_matching_event_clinical_snomed_between(diabetescomp_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
+    first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+)
+## Neg control: Fracture, after elig_date_t2dm
+dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date

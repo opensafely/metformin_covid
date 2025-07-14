@@ -815,6 +815,12 @@
       "url": "https://www.opencodelists.org/codelist/opensafely/symptoms-ptsd/64f2c537/",
       "downloaded_at": "2024-12-09 11:02:29.673966Z",
       "sha": "2645b0a6b31a4094ceaf8c1c82e3158fb921abbc"
+    },
+    "bristol-fractures.csv": {
+      "id": "bristol/fractures/565037f8",
+      "url": "https://www.opencodelists.org/codelist/bristol/fractures/565037f8/",
+      "downloaded_at": "2025-07-14 06:43:00.837029Z",
+      "sha": "475fc8725db53055020e675de4f18e6fa7f75b6d"
     }
   }
 }
