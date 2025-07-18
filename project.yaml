@@ -6,7 +6,7 @@ expectations:
 
 actions:
   study_dates:
-    run: r:latest analysis/metadates.R
+    run: r:v2 analysis/metadates.R
     outputs:
       highly_sensitive:
         study_dates_json: output/study_dates.json
@@ -62,7 +62,7 @@ actions:
         dataset: output/dataset.arrow
 
   data_process:
-    run: r:latest analysis/data_process.R
+    run: r:v2 analysis/data_process.R
     needs:
     - generate_dataset
     outputs:
@@ -74,7 +74,7 @@ actions:
         flowchart_tbls: output/data_description/*.csv
 
   treat_strat_feasibility:
-    run: r:latest analysis/treat_strat_feasibility.R
+    run: r:v2 analysis/treat_strat_feasibility.R
     needs:
     - data_process
     outputs:
@@ -85,7 +85,7 @@ actions:
         desc_tbl2: output/data_description/n_exp_out.csv
   
   table1:
-    run: r:latest analysis/table1.R
+    run: r:v2 analysis/table1.R
     needs:
     - data_process
     outputs:
@@ -112,7 +112,7 @@ actions:
         png: output/te/km/*.png
 
   cox_primary_scripted:
-    run: r:latest analysis/cox_analysis.R
+    run: r:v2 analysis/cox_analysis.R
     needs:
     - data_process
     outputs:
@@ -121,7 +121,7 @@ actions:
         plot: output/te/cox_scripted/*.png
 
   ps:
-    run: r:latest analysis/ps.R
+    run: r:v2 analysis/ps.R
     needs:
     - data_process
     outputs:
@@ -169,7 +169,7 @@ actions:
         model_output: output/results_cox_longvirfat.csv
 
   baseline_tables:
-    run: r:latest analysis/baseline_tables.R
+    run: r:v2 analysis/baseline_tables.R
     needs:
     - table1
     outputs:
@@ -231,7 +231,7 @@ actions:
         model_output: output/results_cox_pos_control_pandemic.csv
 
   prep_sg:
-    run: r:latest analysis/prep_sg.R
+    run: r:v2 analysis/prep_sg.R
     needs:
     - data_process
     outputs:
