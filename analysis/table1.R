@@ -183,13 +183,11 @@ table_1_main <-
   df %>%
   mutate(
     N=1L,
-    exp_bin_treat = factor(exp_bin_treat, 
-                          levels = c(1,0), 
+    exp_bin_treat = factor(exp_bin_treat,
+                          levels = c(1,0),
                           labels = c("Metformin mono", "Nothing"))
   ) %>%
-  select(
-    exp_bin_treat,
-    all_of(names(var_labels_main)),
+  select(names(var_labels_main)
   ) %>%
   tbl_summary(
     by = exp_bin_treat,
@@ -230,9 +228,7 @@ table_1_death_ltfu1 <-
     death_ltfu_landmark = factor(death_ltfu_landmark,
                            labels = c("Alive and in care at landmark", "Died or LTFU until landmark"))
   ) %>%
-  select(
-    death_ltfu_landmark,
-    all_of(names(var_labels_death_ltfu1)),
+  select(names(var_labels_death_ltfu1)
   ) %>%
   tbl_summary(
     by = death_ltfu_landmark,
@@ -269,9 +265,7 @@ table_1_death_ltfu2 <-
     death_ltfu_pandemic_without_landmark = factor(death_ltfu_pandemic_without_landmark, 
                            labels = c("Alive and in care at pandemic start", "Died or LTFU between landmark and pandemic start"))
   ) %>%
-  select(
-    death_ltfu_pandemic_without_landmark,
-    all_of(names(var_labels_death_ltfu2)),
+  select(names(var_labels_death_ltfu2)
   ) %>%
   tbl_summary(
     by = death_ltfu_pandemic_without_landmark,
