@@ -1,8 +1,9 @@
 ####
 ## This script does the following:
 # 1. Import the processed dataset of all eligible participants
-# 2. Create subsets to run subgroup analyses using the reusable action cox-ipw
-# 3. Save all subsets
+# 2. Define the subgroups
+# 3. Run a function to create the subsets and redefine the cox end date in each subset
+# 3. Save all subsets to be used then for the reusable action cox-ipw
 ####
 
 
