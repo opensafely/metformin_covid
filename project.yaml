@@ -85,7 +85,7 @@ actions:
         desc_tbl2: output/data_description/n_exp_out.csv
   
   table1:
-    run: r:v2 analysis/table1.R
+    run: r:latest analysis/table1.R
     needs:
     - data_process
     outputs:
@@ -121,7 +121,7 @@ actions:
         plot: output/te/cox_scripted/*.png
 
   ps:
-    run: r:v2 analysis/ps.R
+    run: r:latest analysis/ps.R
     needs:
     - data_process
     outputs:
