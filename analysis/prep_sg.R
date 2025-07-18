@@ -11,6 +11,7 @@ print('Import libraries and functions')
 library('tidyverse')
 library('here')
 library('arrow')
+source(here::here("analysis", "functions", "fn_process_and_save_sg.R"))
 
 
 # Create directories for output -------------------------------------------
@@ -30,70 +31,31 @@ study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
 
-# Subset the data ---------------------------------------------------------
-print('Subset the data')
-df_below60 <- df %>%
-  filter(cov_num_age < 60)
-df_60orabove <- df %>%
-  filter(cov_num_age >= 60)
-df_female <- df %>%
-  filter(cov_cat_sex == "Female")
-df_male <- df %>%
-  filter(cov_cat_sex == "Male")
-df_white <- df %>%
-  filter(cov_cat_ethnicity == "White")
-df_nonwhite <- df %>%
-  filter(cov_cat_ethnicity != "White") # includes unknown
-df_imd1 <- df %>%
-  filter(cov_cat_deprivation_5 == "1 (most deprived)")
-df_nonimd1 <- df %>%
-  filter(cov_cat_deprivation_5 != "1 (most deprived)") # no unknown by definition
-df_obese <- df %>%
-  filter(cov_bin_obesity == TRUE)
-df_nonobese <- df %>%
-  filter(cov_bin_obesity == FALSE) # includes unknown
-df_HbA1c59orabove <- df %>%
-  filter(cov_cat_hba1c_mmol_mol == "59-75") # everyone above 75 was part excluded
-df_belowHbA1c59 <- df %>%
-  filter(cov_cat_hba1c_mmol_mol != "59-75") # includes unknown - probably ok, but rediscuss
-
-
-# Re-define cox_stop in each subset ---------------------------------------
-print('Re-define cox_stop in each subset')
-# variable already exists in dataset, will be overwritten with uptodate info
-redefine_cox_stop <- function(df) {
-  df %>% 
-    mutate(cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
-                                       out_date_noncoviddeath_afterlandmark,
-                                       cens_date_ltfu_afterlandmark,
-                                       max_fup_date,
-                                       studyend_date,
-                                       na.rm = TRUE))
-}
-
-df_list <- list(
-  df_below60 = df_below60,
-  df_60orabove = df_60orabove,
-  df_female = df_female,
-  df_male = df_male,
-  df_white = df_white,
-  df_nonwhite = df_nonwhite,
-  df_imd1 = df_imd1,
-  df_nonimd1 = df_nonimd1,
-  df_obese = df_obese,
-  df_nonobese = df_nonobese,
-  df_HbA1c59orabove = df_HbA1c59orabove,
-  df_belowHbA1c59 = df_belowHbA1c59
+# Define the subgroups ----------------------------------------------------
+print('Define the subgroups')
+subgroups <- list(
+  df_below60       = quote(cov_num_age < 60),
+  df_60orabove     = quote(cov_num_age >= 60),
+  df_female        = quote(cov_cat_sex == "Female"),
+  df_male          = quote(cov_cat_sex == "Male"),
+  df_white         = quote(cov_cat_ethnicity == "White"),
+  df_nonwhite      = quote(cov_cat_ethnicity != "White"),
+  df_imd1          = quote(cov_cat_deprivation_5 == "1 (most deprived)"),
+  df_nonimd1       = quote(cov_cat_deprivation_5 != "1 (most deprived)"),
+  df_obese         = quote(cov_bin_obesity == TRUE),
+  df_nonobese      = quote(cov_bin_obesity == FALSE),
+  df_HbA1c59orabove = quote(cov_cat_hba1c_mmol_mol == "59-75"),
+  df_belowHbA1c59  = quote(cov_cat_hba1c_mmol_mol != "59-75")
 )
 
-df_list <- lapply(df_list, redefine_cox_stop)
 
-
-# Save subsets -----------------------------------------------------------
-# Subsets
-lapply(names(df_list), function(name) {
-  arrow::write_feather(
-    df_list[[name]],
-    here::here("output", "data", "sg", paste0(name, ".arrow"))
+# Subset the data and redefine cox end date, all without saving each subset in the environment -----------
+print('Run the loop & function to subset the data and redefine the cox end date in each subset')
+for (name in names(subgroups)) {
+  fn_process_and_save_sg(
+    name = name,
+    subgroup = subgroups[[name]],
+    df = df,
+    studyend_date = studyend_date
   )
-})
+}
