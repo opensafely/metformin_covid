@@ -82,7 +82,7 @@ dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"])
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 85) 
 dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
 dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+dataset.qa_bin_was_registered = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Date of death
 dataset.qa_date_of_death = ons_deaths.date
@@ -227,10 +227,23 @@ dataset.cov_cat_deprivation_5 = case(
     when(imd_rounded < int(32844 * 5 / 5)).then("5 (least deprived)"),
     otherwise="Unknown"
 )
+dataset.cov_cat_deprivation_10 = case(
+    when((imd_rounded >= 0) & (imd_rounded <= int(32844 * 1 / 10))).then("1 (most deprived)"),
+    when(imd_rounded <= int(32844 * 2 / 10)).then("2"),
+    when(imd_rounded <= int(32844 * 3 / 10)).then("3"),
+    when(imd_rounded <= int(32844 * 4 / 10)).then("4"),
+    when(imd_rounded <= int(32844 * 5 / 10)).then("5"),
+    when(imd_rounded <= int(32844 * 6 / 10)).then("6"),
+    when(imd_rounded <= int(32844 * 7 / 10)).then("7"),
+    when(imd_rounded <= int(32844 * 8 / 10)).then("8"),
+    when(imd_rounded <= int(32844 * 9 / 10)).then("9"),
+    when(imd_rounded <= int(32844 * 10 / 10)).then("10 (least deprived)"),
+    otherwise="Unknown"
+)
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-spanning_regs = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
 registered = spanning_regs.sort_by(
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
