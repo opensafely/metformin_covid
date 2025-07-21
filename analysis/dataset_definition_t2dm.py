@@ -122,10 +122,12 @@ dataset.qa_bin_prostate_cancer = case(
 # diabetes variables defined in previous separate action/dataset definition
 ###
 
-## Hospital admission within 2 days prior to T2DM diagnosis
+## Hospitalized at baseline (= T2DM diagnosis date)
 dataset.elig_bin_hosp = (
-   apcs.where(apcs.admission_date.is_on_or_between(dataset.elig_date_t2dm - days(2), dataset.elig_date_t2dm))
-   .sort_by(apcs.admission_date)
+   apcs.where(
+      apcs.admission_date.is_on_or_before(dataset.elig_date_t2dm)
+      & apcs.discharge_date.is_after(dataset.elig_date_t2dm)
+      )
    .exists_for_patient()
 )
 
