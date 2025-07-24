@@ -72,6 +72,7 @@ actions:
         dataset3: output/data/data_processed_death_ltfu.arrow
       moderately_sensitive:
         flowchart_tbls: output/data_description/*.csv
+        plots: output/data_description/*.png
 
   treat_strat_feasibility:
     run: r:v2 analysis/treat_strat_feasibility.R
