@@ -530,9 +530,12 @@ dataset.cens_date_dereg = deregistered.end_date
 
 ### Sensitivity analyses, neg & pos control
 ## Pos control: Diabetes complications (foot, retino, neuro, nephro), after elig_date_t2dm
-dataset.out_date_diabetescomp = minimum_of(
-    first_matching_event_clinical_snomed_between(diabetescomp_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
-    first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
-)
+# dataset.out_date_diabetescomp = minimum_of(
+#     first_matching_event_clinical_snomed_between(diabetescomp_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
+#     first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+# )
+## Pos control: Diabetes-related death, after elig_date_t2dm, stated anywhere on any of the 15 death certificate options
+tmp_out_bin_death_dm = matching_death_between(diabetes_type2_icd10, dataset.elig_date_t2dm, studyend_date)
+dataset.out_date_dm_death = case(when(tmp_out_bin_death_dm).then(ons_deaths.date))
 ## Neg control: Fracture, after elig_date_t2dm
-dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
+dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date

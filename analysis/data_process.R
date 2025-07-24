@@ -310,11 +310,11 @@ data_processed <- data_processed %>%
     out_date_fracture_afterpandemic= case_when(out_bin_fracture_afterpandemic == TRUE ~ out_date_fracture, 
                                                 TRUE ~ as.Date(NA)),
     # Positive control, after landmark and after pandemic
-    out_bin_diabetescomp_afterlandmark = !is.na(out_date_diabetescomp) & out_date_diabetescomp > landmark_date,
-    out_date_diabetescomp_afterlandmark = case_when(out_bin_diabetescomp_afterlandmark == TRUE ~ out_date_diabetescomp, 
+    out_bin_dm_death_afterlandmark = !is.na(out_date_dm_death) & out_date_dm_death > landmark_date,
+    out_date_dm_death_afterlandmark = case_when(out_bin_dm_death_afterlandmark == TRUE ~ out_date_dm_death, 
                                                 TRUE ~ as.Date(NA)),
-    out_bin_diabetescomp_afterpandemic = !is.na(out_date_diabetescomp) & out_date_diabetescomp > pandemicstart_date,
-    out_date_diabetescomp_afterpandemic= case_when(out_bin_diabetescomp_afterpandemic == TRUE ~ out_date_diabetescomp, 
+    out_bin_dm_death_afterpandemic = !is.na(out_date_dm_death) & out_date_dm_death > pandemicstart_date,
+    out_date_dm_death_afterpandemic= case_when(out_bin_dm_death_afterpandemic == TRUE ~ out_date_dm_death, 
                                                TRUE ~ as.Date(NA)),
     # In INTERVENTION: Identify all metformin prescription (combo and mono) in 6m prior to pandemic start, may be used to censor those who stopped before pandemic
     cens_bin_metfin_pandemicstart = exp_bin_metfin_mono == TRUE & !is.na(exp_date_metfin_mono_last) & exp_date_metfin_mono_last >= study_dates$pandemicstart_date - days(183),
@@ -394,7 +394,7 @@ data_processed <- data_processed %>%
     # for cox reusable action: exposure start date for those who start, missing for all others 
     cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date, 
                                                TRUE ~ as.Date(NA)),
-    # for cox reusable action: define cox_stop for negative control (fracture) and positive control (diabetes comp)
+    # for cox reusable action: define cox_stop for negative control (fracture) and positive control (diabetes deaths)
     cox_date_fracture_landmark = pmin(out_date_fracture_afterlandmark, 
                                       out_date_death_afterlandmark,
                                       cens_date_ltfu_afterlandmark,
@@ -407,13 +407,13 @@ data_processed <- data_processed %>%
                                       max_fup_date,
                                       studyend_date,
                                       na.rm = TRUE),
-    cox_date_diabetescomp_landmark = pmin(out_date_diabetescomp_afterlandmark, 
+    cox_date_dm_death_landmark = pmin(out_date_dm_death_afterlandmark, 
                                       out_date_death_afterlandmark,
                                       cens_date_ltfu_afterlandmark,
                                       max_fup_date,
                                       studyend_date,
                                       na.rm = TRUE),
-    cox_date_diabetescomp_pandemic = pmin(out_date_diabetescomp_afterpandemic, 
+    cox_date_dm_death_pandemic = pmin(out_date_dm_death_afterpandemic, 
                                       out_date_death_afterlandmark,
                                       cens_date_ltfu_afterlandmark,
                                       max_fup_date,
