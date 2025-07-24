@@ -283,7 +283,7 @@ tmp_cov_num_consrate = appointments.where(
         "Visit",
         "Waiting",
         "Patient Walked Out",
-        ]) & appointments.start_date.is_on_or_between("2017-06-01", "2018-06-30")
+        ]) & appointments.start_date.is_on_or_between(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
         ).count_for_patient()    
 
 dataset.cov_num_consrate = case(

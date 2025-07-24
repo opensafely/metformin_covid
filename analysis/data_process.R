@@ -14,6 +14,7 @@
 
 
 # Import libraries and user functions -------------------------------------
+print('Import libraries and functions')
 library('arrow')
 library('readr')
 library('here')
@@ -25,6 +26,7 @@ library('forcats')
 library('jsonlite')
 library('skimr')
 library('splines')
+library('ggplot2')
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
@@ -33,11 +35,13 @@ source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
 
 
 # Create directories for output -------------------------------------------
+print('Create directories for output')
 fs::dir_create(here::here("output", "data"))
 fs::dir_create(here::here("output", "data_description"))
 
 
 # Import dates ------------------------------------------------------------
+print('Import dates')
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
@@ -51,11 +55,13 @@ threshold <- 6
 
 
 # Import the dataset and pre-process --------------------------------------
+print('Import the dataset and pre-process')
 input_filename <- "dataset.arrow"
 data_extracted <- fn_extract_data(input_filename)
 
 
 # Process the data --------------------------------------------------------
+print('Process the data')
 data_processed <- data_extracted %>%
   mutate(
     cov_cat_age = cut(
@@ -146,6 +152,7 @@ data_processed <- data_extracted %>%
 
 
 # Assign calendar period of T2DM diagnosis --------------------------------
+print('Assign calendar period of T2DM diagnosis')
 # Sequence of dates, in period of possible eligible T2DM dates, to use as monthly break points
 seq_dates_start_interval_month <- seq(
   from = mid2018_date,
@@ -167,6 +174,7 @@ data_processed <- data_processed %>%
 
 
 # Modify dummy data -------------------------------------------------------
+print('Modify dummy data')
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data")
   source("analysis/modify_dummy_data.R")
@@ -175,24 +183,28 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 
 
 # Assign the landmark date and max follow-up date -------------------------
+print('Assign the landmark date and max follow-up date')
 data_processed <- data_processed %>% 
   mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
   mutate(max_fup_date = landmark_date + days(730))
 
 
 # Apply the quality assurance criteria ------------------------------------
+print('Apply the quality assurance criteria')
 qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
 n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
 data_processed <- qa$data_processed
 
 
 # Apply the completeness criteria -----------------------------------------
+print('Apply the completeness criteria')
 completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
 n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
 data_processed <- completeness$data_processed
 
 
 # Apply the eligibility criteria ------------------------------------------
+print('Apply the eligibility criteria')
 # Our primary eligibility window to define incident T2DM is mid2018-mid2019, but maybe we may want to extend the window until max. mid2013 later on 
 # => use function with loop that can be mapped to other windows, depending on "years_in_days" input
 eligibility <- fn_elig_criteria_midpoint6(data_processed, study_dates, years_in_days = 0)
@@ -202,6 +214,7 @@ data_processed <- eligibility$data_processed
 
 
 # Assign treatment/exposure -----------------------------------------------
+print('Assign treatment/exposure')
 data_processed <- data_processed %>% 
   mutate(
     ## (1) Starting metformin within 6 months after T2DM, among those with a T2DM diagnosis, 
@@ -246,6 +259,7 @@ data_processed <- data_processed %>%
 
 
 # Define final treatment variable -----------------------------------------
+print('Define final treatment variable')
 data_processed <- data_processed %>% 
   mutate(exp_bin_treat = case_when(exp_bin_metfin_mono == TRUE ~ 1,
                                    exp_bin_treat_nothing == TRUE ~ 0,
@@ -253,6 +267,7 @@ data_processed <- data_processed %>%
 
 
 # Assign outcomes ---------------------------------------------------------
+print('Assign outcomes')
 data_processed <- data_processed %>% 
   mutate(
     # COVID events. These should not happen before landmark date by design - but just in case.
@@ -311,7 +326,8 @@ data_processed <- data_processed %>%
                                                TRUE ~ as.Date(NA))
     )
 
-# HbA1c covariate -----------------------------------------------------------
+# HbA1c covariate and HbA1c & lipids plot --------------------------------
+print('HbA1c covariate and HbA1c & lipids plot')
 # Above, I excluded all with HbA1c >75 mmol/mol. Unfortunately, the cox RA still "sees" this level and would exclude the variable if left as is (due to too 0 events in that subgroup)
 data_processed <- data_processed %>% 
   mutate(cov_cat_hba1c_mmol_mol = fn_case_when(
@@ -321,7 +337,31 @@ data_processed <- data_processed %>%
     cov_cat_hba1c_mmol_mol == "Unknown" ~ "Unknown",
     TRUE ~ NA_character_))
 
+# plot the numeric lab values to check distribution (to see if there is any grouping indicating the use of comparators)
+hba1c_plot <- data_processed %>% 
+  drop_na(cov_num_hba1c_mmol_mol) %>% 
+  ggplot(aes(x = cov_num_hba1c_mmol_mol)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(title = "Density Plot of HbA1c",
+       x = "HbA1c",
+       y = "Density")
+totchol_plot <- data_processed %>% 
+  drop_na(tmp_cov_num_cholesterol) %>% 
+  ggplot(aes(x = tmp_cov_num_cholesterol)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(title = "Density Plot of Total Cholesterol",
+       x = "Tot Cholesterol",
+       y = "Density")
+hdlchol_plot <- data_processed %>% 
+  drop_na(tmp_cov_num_hdl_cholesterol) %>% 
+  ggplot(aes(x = tmp_cov_num_hdl_cholesterol)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(title = "Density Plot of HDL Cholesterol",
+       x = "HDL Cholesterol",
+       y = "Density")
+
 # Assign Cox variables ------------------------------------------------------
+print('Assign Cox variables')
 data_processed <- data_processed %>% 
   mutate(
     cox_date_severecovid = pmin(out_date_severecovid_afterlandmark, 
@@ -383,6 +423,7 @@ data_processed <- data_processed %>%
 
 
 # Save and inspect full processed dataset ---------------------------------
+print('Save and inspect full processed dataset')
 data_processed_full <- data_processed
 data_processed_full_desc <- skim(data_processed_full)
 write.csv(data_processed_full_desc, file = here::here("output", "data_description", "data_processed_full_desc.csv")) # for L4 reviewing only, not for release
@@ -390,6 +431,7 @@ arrow::write_feather(data_processed_full, here::here("output", "data", "data_pro
 
 
 # Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic ----
+print('Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic')
 # (1) Explore deaths/ltfu
 # died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
@@ -449,6 +491,7 @@ data_processed <- data_processed %>%
 
 
 # Save aggregate output and restricted processed dataset -------------------
+print('Save aggregate output and restricted processed dataset')
 # flow chart quality assurance
 write.csv(n_qa_excluded_midpoint6, file = here::here("output", "data_description", "n_qa_excluded_midpoint6.csv"))
 # flow chart completeness criteria
@@ -462,3 +505,7 @@ write.csv(n_restricted_midpoint6, file = here::here("output", "data_description"
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # for descriptive purpose, to create table ones: Incl. flags for those who died/LTFU during landmark period and between landmark and pandemic start
 arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "data_processed_death_ltfu.arrow"))
+# Lab value dens plots
+ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "hdlchol_plot.png"), hdlchol_plot, width = 20, height = 20, units = "cm")
