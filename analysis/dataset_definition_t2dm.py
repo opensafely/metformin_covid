@@ -229,19 +229,19 @@ dataset.cov_cat_deprivation_5 = case(
     when(imd_rounded < int(32844 * 5 / 5)).then("5 (least deprived)"),
     otherwise="Unknown"
 )
-dataset.cov_cat_deprivation_10 = case(
-    when((imd_rounded >= 0) & (imd_rounded <= int(32844 * 1 / 10))).then("1 (most deprived)"),
-    when(imd_rounded <= int(32844 * 2 / 10)).then("2"),
-    when(imd_rounded <= int(32844 * 3 / 10)).then("3"),
-    when(imd_rounded <= int(32844 * 4 / 10)).then("4"),
-    when(imd_rounded <= int(32844 * 5 / 10)).then("5"),
-    when(imd_rounded <= int(32844 * 6 / 10)).then("6"),
-    when(imd_rounded <= int(32844 * 7 / 10)).then("7"),
-    when(imd_rounded <= int(32844 * 8 / 10)).then("8"),
-    when(imd_rounded <= int(32844 * 9 / 10)).then("9"),
-    when(imd_rounded <= int(32844 * 10 / 10)).then("10 (least deprived)"),
-    otherwise="Unknown"
-)
+# dataset.cov_cat_deprivation_10 = case(
+#     when((imd_rounded >= 0) & (imd_rounded <= int(32844 * 1 / 10))).then("1 (most deprived)"),
+#     when(imd_rounded <= int(32844 * 2 / 10)).then("2"),
+#     when(imd_rounded <= int(32844 * 3 / 10)).then("3"),
+#     when(imd_rounded <= int(32844 * 4 / 10)).then("4"),
+#     when(imd_rounded <= int(32844 * 5 / 10)).then("5"),
+#     when(imd_rounded <= int(32844 * 6 / 10)).then("6"),
+#     when(imd_rounded <= int(32844 * 7 / 10)).then("7"),
+#     when(imd_rounded <= int(32844 * 8 / 10)).then("8"),
+#     when(imd_rounded <= int(32844 * 9 / 10)).then("9"),
+#     when(imd_rounded <= int(32844 * 10 / 10)).then("10 (least deprived)"),
+#     otherwise="Unknown"
+# )
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
