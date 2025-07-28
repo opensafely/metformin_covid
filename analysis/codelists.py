@@ -276,3 +276,6 @@ ptsd_snomed = codelist_from_csv("codelists/opensafely-symptoms-ptsd.csv",column=
 
 # sensitivity analyses (pos control already above), neg control
 fracture_icd10 = codelist_from_csv("codelists/bristol-fractures.csv", column="code")
+
+# For positive outcome control, any diabetes-related death (ICD10)
+diabetes_icd10 = ["E10", "E11", "E12", "E13", "E14"]
