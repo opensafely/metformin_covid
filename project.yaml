@@ -98,7 +98,7 @@ actions:
   km_primary:
     run: kaplan-meier-function:v0.0.17 
       --df_input=output/data/data_processed.arrow
-      --dir_output=output/te/km
+      --dir_output=output/te/km_primary
       --exposure=exp_bin_treat
       --origin_date=landmark_date
       --event_date=out_date_severecovid_afterlandmark
@@ -109,8 +109,42 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
-        km_treat_estimates: output/te/km/*.csv
-        png: output/te/km/*.png
+        km_treat_estimates: output/te/km_primary/*.csv
+        png: output/te/km_primary/*.png
+
+  km_covid_event:
+    run: kaplan-meier-function:v0.0.17 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/te/km_covid_event
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_covid_afterlandmark
+      --censor_date=cox_date_covid
+      --max_fup=730
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/te/km_covid_event/*.csv
+        png: output/te/km_covid_event/*.png
+
+  km_longvirfat:
+    run: kaplan-meier-function:v0.0.17 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/te/km_longvirfat
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_longcovid_virfat_afterlandmark
+      --censor_date=cox_date_longcovid_virfat
+      --max_fup=730
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/te/km_longvirfat/*.csv
+        png: output/te/km_longvirfat/*.png
 
   cox_primary_scripted:
     run: r:v2 analysis/cox_analysis.R
