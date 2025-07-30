@@ -17,7 +17,8 @@ library(arrow)
 library(here)
 library(tidyverse)
 library(zoo) # for fn_add_firstever_events_to_intervals.R
-source(here::here("analysis", "functions", "fn_add_firstever_events_to_intervals.R"))
+source(here::here("analysis", "functions", "fn_assign_treatment.R"))
+source(here::here("analysis", "functions", "fn_assign_time_fixed_cov.R"))
 source(here::here("analysis", "functions", "fn_add_and_shift_out_comp_cens_events.R"))
 
 
@@ -48,43 +49,68 @@ df_months <- df_months %>%
             )
 
 
-# RULES to assign all events to the correct intervals ---------------------
+# Assign treatment --------------------------------------------------------
+print('Assign treatment')
+## Definition: Assign treatment status in interval k based on the latest treatment initiation recorded within that same interval. 
+## Rationale: Treatment is the focal point of each interval; no lagging or leading is necessary for its definition.
 
-
-
-
-
-
-
-## Always think: covariate info BEFORE treatment assignment BEFORE outcome
-# RULE 1: Assign the time-fixed & time-varying covariate info to the current interval (these are usually the highest number of variables in a dataset)
-# RULE 2: Assign the treatment and eligibility info to the next interval (using lagged info, so k - 1 info to k) 
-## This ensures we are not looking into the future to define eligibility and treatment, 
-## and we do ensure covariate info in same interval as treatment assignment is before treatment assignment and taken into account as such when calculating the treatment weights (model with y = treat == 1 ~ ...) and covariate info from k interval is seen as after treatment start
-# RULE 3: For outcomes and competing events, shift info 1 interval up (i.e. info from k + 1 in interval k)
-## This avoids using covariate/treatment info that might happen after the outcome in same interval. 
-## (side note: This is not possible with outcomes/competing events such as death and we would not have to do this for these, but in many other outcome scenarios this is possible, e.g. long covid, let's adhere to it as a general rule). 
-# RULE 4: For censoring events, we need to distinguish between different censoring events:
-## If the censoring event is something like LTFU/deregistration, then use RULE 3 to be on the safe side (even though technically not necessarily needed)
-## If the censoring event is something like starting metformin in the control group as a censoring event for the per-protocol analyses, then use RULE 2
-
-### Does this shifting up and down interfere with each other?
-# 1. Shifting the outcomes/competing events and LTFU-censoring events up 1 person-interval will eliminate the covariate info from the current person-interval. That's ok and desirable, so that the models with y = censor_ltfu == 0 ~ ... calculate on correct covariate info
-# 2. Shifting the treatment and treatment-censoring events down 1 person-interval ensures that covariate info in same interval as treatment assignment is before treatment assignment and taken into account as such when calculating the treatment/censoring weights (model with y = treat == 1 ~ ... or y = censor_treat == 0 ~ ...) and covariate info from k interval is seen as after treatment start
-
-
-# (1) Assign first-ever, time-fixed events to intervals -------------------
-print('Assign first-ever, time-fixed events to intervals')
-## These are all "first-ever" events, that happen once, and then remain TRUE during the entire follow-up
-## This is true for the majority of events. 
-## RULES:
+### Moreover, we assume someone stays on treatment once is initiated, i.e., first-ever, time-fixed event 
+### Moreover, here, we have defined treatment at baseline already (exp_bin_treat), we only assign treatment in control to flag those who initiate during follow-up (cens_date_metfin_start_cont)
+### I can use my preexisting function, which works perfectly for this, based on these rules:
 # a) if event date is not NA and happened before the minimum start date of all intervals of a person, then assign 1 (in corresponding flag variable) to all person-intervals
 # b) if event date is not NA and happened after the maximum end date of all intervals of a person, then assign 0 (in corresponding flag variable) to all person-intervals
 # c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals (assuming no documentation = no event)
 # d) if event date happened during follow-up, then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after (stable/time-fixed event)
-# Side note: Deal with shifting information for outcome/censoring/competing event in a next step
-# Side note: This function can also be used to add time-fixed eligibility events (e.g. T2DM diagnosis or metformin allergy), but this is only relevant for a sequential trial setup. Here, we defined the eligible population once, at baseline.
-# We defined all our outcomes of interest in previous script, see 01_data_add_intervals
+date_treat_vars <- c("cens_date_metfin_start_cont")
+df_months <- fn_assign_treatment(df_months, date_treat_vars,
+                                 start_var = "start_date_month", 
+                                 end_var = "end_date_month")
+# To double-check
+# df_months %>%
+#   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month, 
+#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
+#                 out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
+#                 cens_date_ltfu_afterlandmark, 
+#                 cov_cat_sex, cov_num_age
+#   ) %>%
+#   View()
+
+# Assign first-ever, time-fixed covariates -------------------------------
+print('Assign first-ever, time-fixed covariates')
+## Definition: Assign covariate status for interval k using covariate information from interval k−1.
+## Rationale: This lag ensures that covariate values reflect the latest available information at the start of each interval - prior to eligibility or treatment assignment in interval k, avoiding looking into the future within an interval.
+
+### First, add all first-ever time-fixed covariates, i.e., those occurring once and remaining stable (these are usually the highest number of variables in a dataset)
+### I can on my preexisting function, based on these rules, but in addition implement the lag:
+# a) if event date is not NA and happened before the minimum start date of all intervals of a person, then assign 1 (in corresponding flag variable) to all person-intervals
+# b) if event date is not NA and happened after the maximum end date of all intervals of a person, then assign 0 (in corresponding flag variable) to all person-intervals
+# c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals (assuming no documentation = no event)
+# d) if event date happened during follow-up, then assign 1 (in flag variable) to next person-interval (lag), and 0 to all person-intervals before, and 1 to all person-intervals after (stable/time-fixed event)
+## CAVE: This will overwrite the preexisting cov_bin_ variables from the main dataset, which is fine, but just to be aware of
+date_tf_cov_vars <- c("cov_date_hypertension", "cov_date_ami", 
+                      "cov_date_all_stroke", "cov_date_other_arterial_embolism",
+                      "cov_date_vte", "cov_date_hf", "cov_date_angina", "cov_date_dementia", 
+                      "cov_date_cancer", "cov_date_depression",
+                      "cov_date_copd", "cov_date_liver_disease", "cov_date_chronic_kidney_disease",
+                      "cov_date_pcos", "cov_date_prediabetes","cov_date_diabetescomp")
+df_months <- fn_assign_time_fixed_cov(df_months, date_tf_cov_vars,
+                                      start_var = "start_date_month", 
+                                      end_var = "end_date_month")
+# # To double-check
+# df_months %>%
+#   dplyr::select(patient_id, landmark_date, month, start_date_month, end_date_month,
+#                 cov_date_ami, cov_bin_ami,
+#                 cov_date_hypertension, cov_bin_hypertension,
+#                 cov_date_all_stroke, cov_bin_all_stroke,
+#                 elig_date, event_here, 
+#                 # event_cum
+#   ) %>%
+#   # dplyr::filter(cov_bin_hypertension == 1) %>%
+#   # dplyr::filter(!is.na(cov_date_hypertension)) %>%
+#   dplyr::filter(!is.na(cov_date_ami)) %>%
+#   View()
+
+
 
 date_vars <- c("out_date_severecovid_afterlandmark",
                "out_date_noncoviddeath_afterlandmark",
@@ -102,30 +128,6 @@ date_vars <- c("out_date_severecovid_afterlandmark",
 
 # take baseline covariate info (binary variables) into account?!!!
 
-df_months <- fn_add_firstever_events_to_intervals(df_months, 
-                                                  date_vars,
-                                                  start_var = "start_date_month", 
-                                                  end_var = "end_date_month")
-## NOTE: The function names the flag variables by simply replacing _date_ with _bin_
-## NOTE: If a variable with the same name already existis (e.g. because defined before for the Cox model), it will overwrite it.
-
-# To double-check
-# df_months %>%
-#   dplyr::select(patient_id, elig_date_t2dm, start_date_month, end_date_month, month, stop_date,
-#                 out_date_severecovid_afterlandmark, out_bin_severecovid_afterlandmark,
-#                 out_date_noncoviddeath_afterlandmark, out_bin_noncoviddeath_afterlandmark,
-#                 cens_date_ltfu_afterlandmark, cens_bin_ltfu_afterlandmark,
-#                 out_date_death_afterlandmark, out_bin_death_afterlandmark,
-#                 out_date_covid_afterlandmark, out_bin_covid_afterlandmark,
-#                 cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
-#                 out_date_longcovid_virfat_afterlandmark, out_bin_longcovid_virfat_afterlandmark,
-#                 cov_cat_sex, cov_num_age) %>%
-#   # dplyr::filter(!is.na(out_date_severecovid_afterlandmark)) %>%
-#   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
-#   # dplyr::filter(!is.na(out_date_covid_afterlandmark)) %>%
-#   # dplyr::filter(!is.na(cens_date_metfin_start_cont)) %>%
-#   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
-#   View()
 
 
 # (2) Assign and shift eligibility, treatment, and censoring due to treatment ------

@@ -1,18 +1,27 @@
 #### 
-## This script modifies dummy data to add HbA1c, Tot Cholesterol, HDL, (and BMI)
-## - Creates realistic numeric values
-## - Introduces a few outliers to test filtering rules for HbA1c, Tot Chol and HDL Chol
-## - Generates BMI data, not only 8 values, but also 8 sequential dates
+## This script modifies dummy data to: 
+## - Add HbA1c, Tot Cholesterol, HDL, and BMI realistic numeric values
+## - Introduce a few outliers to test filtering rules for HbA1c, Tot Chol and HDL Chol
+## - Generate BMI data, not only 8 values, but also 8 sequential dates
+## - Generate a few random cov_date_hypertension dates AFTER baseline to test the pipeline further down the line (currently completely empty)
 ####
 
-# Import libraries
+# Import libraries and functions ------------------------------------------
 library(dplyr)
+source(here::here("analysis", "functions", "fn_dd_cens_dates.R"))
 
-# Set seed for reproducibility
+
+# Import dates ------------------------------------------------------------
+source(here::here("analysis", "metadates.R"))
+study_dates <- lapply(study_dates, function(x) as.Date(x))
+studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
+
+
+# Set seed for reproducibility --------------------------------------------
 set.seed(36)
 
 
-# Function to generate lab values with some outliers
+# Function to generate lab values with some outliers -----------------------
 generate_lab_values <- function(n, mean, sd, min_val, max_val, outlier_prob = 0.05, outlier_range = c(-50, 200)) {
   vals <- rnorm(n, mean = mean, sd = sd)
   
@@ -27,7 +36,7 @@ generate_lab_values <- function(n, mean, sd, min_val, max_val, outlier_prob = 0.
 }
 
 
-# Generate dummy data for HbA1c, Total Cholesterol, HDL Cholesterol -----
+# Generate dummy data for HbA1c, Total Cholesterol, HDL Cholesterol -------
 
 for(i in 1:8) {
   df[[paste0("cov_num_hba1c_", i)]] <- generate_lab_values(
@@ -47,7 +56,7 @@ for(i in 1:8) {
 }
 
 
-## BMI without outliers (8 sequential measurements) -----
+## BMI without outliers (8 sequential measurements) -----------------------
 
 # Function to generate sequential dates over 2 years
 generate_dates <- function(start_date) {
@@ -77,3 +86,17 @@ for (i in 1:8) {
 for (i in 1:8) {
   df[[paste0("cov_num_bmi_", i)]] <- bmi_values[[i]]
 }
+
+
+# Add some covariate dates between baseline date (landmark_date) and studyend date -----
+## cov_date_hypertension and cov_date_ami are completely missing in the current dummy data, so replace all
+## but impute only 5%
+df$cov_date_hypertension <- sapply(df$landmark_date, function(baseline_date) {
+  fn_dd_cens_dates(baseline_date, studyend_date)
+})
+df$cov_date_hypertension <- as.Date(df$cov_date_hypertension, origin = "1970-01-01")
+
+df$cov_date_ami <- sapply(df$landmark_date, function(baseline_date) {
+  fn_dd_cens_dates(baseline_date, studyend_date)
+})
+df$cov_date_ami <- as.Date(df$cov_date_ami, origin = "1970-01-01")
