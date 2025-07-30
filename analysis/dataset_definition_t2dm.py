@@ -535,7 +535,7 @@ dataset.cens_date_dereg = deregistered.end_date
 #     first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
 # )
 ## Pos control: Diabetes-related death, after elig_date_t2dm, stated anywhere on any of the 15 death certificate options
-dataset.tmp_out_bin_dm_death = matching_death_between(diabetes_icd10, dataset.elig_date_t2dm, studyend_date)
+dataset.tmp_out_bin_dm_death = matching_death_between(t2dm_icd10, dataset.elig_date_t2dm, studyend_date)
 dataset.out_date_dm_death = case(when(dataset.tmp_out_bin_dm_death).then(ons_deaths.date))
 ## Neg control: Fracture, after elig_date_t2dm
 dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
