@@ -415,3 +415,20 @@ def most_recent_bmi(*, minimum_age_at_measurement, where=True):
         .sort_by(clinical_events.date)
         .last_for_patient()
     )
+
+def first_bmi(*, minimum_age_at_measurement, where=True):
+    age_threshold = patients.date_of_birth + days(
+        # This is obviously inexact but, given that the dates of birth are rounded to
+        # the first of the month anyway, there's no point trying to be more accurate
+        int(365.25 * minimum_age_at_measurement)
+    )
+    return (
+        # This captures just explicitly recorded BMI observations rather than attempting
+        # to calculate it from height and weight measurements. Investigation has shown
+        # this to have no real benefit it terms of coverage or accuracy.
+        clinical_events.where(where)
+        .where(clinical_events.ctv3_code == CTV3Code("22K.."))
+        .where(clinical_events.date >= age_threshold)
+        .sort_by(clinical_events.date)
+        .first_for_patient()
+    )

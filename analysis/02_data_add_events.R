@@ -23,16 +23,26 @@ print('Create directories for output')
 fs::dir_create(here::here("output", "data"))
 
 
-# Import the data ---------------------------------------------------------
-print('Import the data')
-df_months <- read_feather(here("output", "data", "df_months.arrow"))
-
-
 # Import dates ------------------------------------------------------------
 print('Import dates')
 source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
+
+
+# Import the data ---------------------------------------------------------
+print('Import the data')
+df_months <- read_feather(here("output", "data", "df_months.arrow"))
+df_ppa <- read_feather(here("output", "data", "data_processed_ppa.arrow")) 
+
+
+# Merge (some) data from the PPA dataset ----------------------------------
+# merge all the cov_date* but not hba1c/lipids/bmi (dates + numeric), these will be added as ELD later
+df_months <- df_months %>%
+  left_join(df_ppa %>% 
+              select(patient_id, starts_with("cov_date") & !matches("cov_date_bmi|cov_date_hba1c|cov_date_hdl_chol|cov_date_chol")),
+            by = "patient_id"
+            )
 
 
 # RULES to assign all events to the correct intervals ---------------------
@@ -64,15 +74,24 @@ print('Assign first-ever, time-fixed events to intervals')
 # d) if event date happened during follow-up, then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after (stable/time-fixed event)
 # Side note: Deal with shifting information for outcome/censoring/competing event in a next step
 # Side note: This function can also be used to add time-fixed eligibility events (e.g. T2DM diagnosis or metformin allergy), but this is only relevant for a sequential trial setup. Here, we defined the eligible population once, at baseline.
-# Side note: I will also add time-fixed covariates for the per-protocol analysis to this step, but at a later stage (need to extract them first) -> make sure to take baseline covariate info (binary variables) into account when adding.
 # We defined all our outcomes of interest in previous script, see 01_data_add_intervals
+
 date_vars <- c("out_date_severecovid_afterlandmark",
                "out_date_noncoviddeath_afterlandmark",
                "cens_date_ltfu_afterlandmark",
                "cens_date_metfin_start_cont", 
                "out_date_covid_afterlandmark",
                "out_date_longcovid_virfat_afterlandmark",
-               "out_date_death_afterlandmark")
+               "out_date_death_afterlandmark",
+               
+               "cov_date_ami", "cov_date_all_stroke", "cov_date_other_arterial_embolism",
+               "cov_date_vte", "cov_date_hf", "cov_date_angina", "cov_date_dementia", 
+               "cov_date_cancer", "cov_date_hypertension", "cov_date_depression",
+               "cov_date_copd", "cov_date_liver_disease", "cov_date_chronic_kidney_disease",
+               "cov_date_pcos", "cov_date_prediabetes","cov_date_diabetescomp")
+
+# take baseline covariate info (binary variables) into account?!!!
+
 df_months <- fn_add_firstever_events_to_intervals(df_months, 
                                                   date_vars,
                                                   start_var = "start_date_month", 

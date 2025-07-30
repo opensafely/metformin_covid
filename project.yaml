@@ -73,6 +73,25 @@ actions:
       moderately_sensitive:
         flowchart_tbls: output/data_description/*.csv
 
+  generate_dataset_ppa:
+    run: ehrql:v1 generate-dataset analysis/dataset_definition_ppa.py --output output/dataset_ppa.arrow
+    needs: 
+    - study_dates
+    - data_process
+    outputs:
+      highly_sensitive:
+        dataset: output/dataset_ppa.arrow
+
+  data_process_ppa:
+    run: r:v2 analysis/data_process_ppa.R
+    needs:
+    - generate_dataset_ppa
+    outputs:
+      highly_sensitive:
+        dataset: output/data/data_processed_ppa.arrow
+      moderately_sensitive:
+        skim: output/data_description/data_processed_ppa_desc.csv
+
   treat_strat_feasibility:
     run: r:latest analysis/treat_strat_feasibility.R
     needs:
@@ -192,6 +211,7 @@ actions:
     run: r:latest analysis/02_data_add_events.R
     needs:
     - 01_data_add_intervals
+    - data_process_ppa
     outputs:
       highly_sensitive:
         dataset1: output/data/df_months_severecovid.arrow
