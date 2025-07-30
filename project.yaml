@@ -83,7 +83,7 @@ actions:
         dataset: output/dataset_ppa.arrow
 
   data_process_ppa:
-    run: r:v2 analysis/data_process_ppa.R
+    run: r:latest analysis/data_process_ppa.R
     needs:
     - generate_dataset_ppa
     outputs:
