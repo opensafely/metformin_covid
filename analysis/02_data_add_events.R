@@ -3,10 +3,10 @@
 # 1. Import multiple-event-per-person long format dataset, with time intervals as per study protocol
 # 2. Import the additional time-updated covariate dataset (data_processed_ppa.arrow)
 # 3. Assign treatment
-# 4. Assign first-ever, time-fixed covariates (lagged)
-# 5. Assign time-updated covariates (lagged)
-# 6. Assign first-ever, time-fixed outcomes/competing/censoring events (leaded)
-# 7. Define eligibility and censoring due to treatment and censoring due to LTFU
+# 4. Assign first-ever, time-fixed covariates (shift from k to k+1)
+# 5. Assign time-updated covariates (shift from k to k+1)
+# 6. Assign first-ever, time-fixed outcomes/competing/censoring events (shift from k to k-1)
+# 7. Define eligibility (and censoring?)
 # 8. Save datasets
 ####
 
@@ -109,8 +109,6 @@ df_months <- fn_assign_time_fixed_cov(df_months, date_tf_cov_vars,
 #   # dplyr::filter(!is.na(cov_date_hypertension)) %>%
 #   dplyr::filter(!is.na(cov_date_ami)) %>%
 #   View()
-
-
 
 date_vars <- c("out_date_severecovid_afterlandmark",
                "out_date_noncoviddeath_afterlandmark",
