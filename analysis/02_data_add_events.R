@@ -1,10 +1,13 @@
 ####
 ## This script does the following:
 # 1. Import multiple-event-per-person long format dataset, with time intervals as per study protocol
-# 2. Assign first-ever, time-fixed events to intervals (outcomes, competing events, censoring events, eligibility events, time-fixed covariates), that occur once and then remain stable
-# 3. Assign and shift eligibility, treatment, and censoring due to treatment
-# 4. Assign and shift outcome, censoring due to LTFU and competing events and create outcome-specific datasets
-# 5. Save datasets
+# 2. Import the additional time-updated covariate dataset (data_processed_ppa.arrow)
+# 3. Assign treatment
+# 4. Assign first-ever, time-fixed covariates (lagged)
+# 5. Assign time-updated covariates (lagged)
+# 6. Assign first-ever, time-fixed outcomes/competing/censoring events (leaded)
+# 7. Define eligibility and censoring due to treatment and censoring due to LTFU
+# 8. Save datasets
 ####
 
 
@@ -37,7 +40,7 @@ df_ppa <- read_feather(here("output", "data", "data_processed_ppa.arrow"))
 
 
 # Merge (some) data from the PPA dataset ----------------------------------
-# merge all the cov_date* but not hba1c/lipids/bmi (dates + numeric), these will be added as ELD later
+# merge all the cov_date* that occur once and then remain stable, i.e., all exceot hba1c/lipids/bmi, these will be added later
 df_months <- df_months %>%
   left_join(df_ppa %>% 
               select(patient_id, starts_with("cov_date") & !matches("cov_date_bmi|cov_date_hba1c|cov_date_hdl_chol|cov_date_chol")),
@@ -46,6 +49,13 @@ df_months <- df_months %>%
 
 
 # RULES to assign all events to the correct intervals ---------------------
+
+
+
+
+
+
+
 ## Always think: covariate info BEFORE treatment assignment BEFORE outcome
 # RULE 1: Assign the time-fixed & time-varying covariate info to the current interval (these are usually the highest number of variables in a dataset)
 # RULE 2: Assign the treatment and eligibility info to the next interval (using lagged info, so k - 1 info to k) 

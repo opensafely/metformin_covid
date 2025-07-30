@@ -14,6 +14,7 @@ library('readr')
 library('here')
 library('dplyr')
 library('tidyr')
+library('purrr')
 library('skimr')
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 

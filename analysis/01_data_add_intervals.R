@@ -13,9 +13,7 @@ library(here)
 library(tidyverse)
 library(lubridate) # for fn_expand_intervals.R
 library(rlang) # for fn_expand_intervals.R
-
 source(here::here("analysis", "functions", "fn_expand_intervals.R"))
-source(here::here("analysis", "functions", "fn_add_firstever_events_to_intervals.R"))
 
 
 # Create directories for output -------------------------------------------
@@ -58,19 +56,19 @@ print('Expand the dataset')
 # (3) Our outcomes of interest: 
 ## a. out_date_severecovid_afterlandmark (includes covid deaths): Primary outcome
 ## b. out_date_noncoviddeath_afterlandmark: Competing event. In primary analysis, we simply treat it as censoring event ("controlled direct effect")
-#### Side note re competing event: We may consider targeting a "total effect" (by assigning outcome == 0 for everyone who had a non-covid death and including their follow-up time after non-covid deaths, i.e. not censoring them)
+#### Side note re competing event: We may - at a later stage - consider targeting a "total effect" (by assigning outcome == 0 for everyone who had a non-covid death and including their follow-up time after non-covid deaths, i.e. not censoring them)
 ## c. cens_date_ltfu_afterlandmark: Censoring event. We may want to upweigh those who were not censored using a hypothetical treatment strategy for this intercurrent event ("assume no-one is LTFU") 
 ## d. cens_date_metfin_start_cont: Censoring event for the per-protocol analysis ONLY. We will upweigh those who did not start metformin in control group, using a hypothetical treatment strategy for this intercurrent event ("assume no-one started metformin in control")
 ## e. out_date_covid_afterlandmark: Secondary outcome (includes covid tests, diagnoses, hosp & deaths). All other competing/censoring events same as above.
 ## f. out_date_longcovid_virfat_afterlandmark: Secondary outcome (includes viral fatigue and long covid codes). All other competing/censoring events same as above, except we use all-cause death as competing event: 
-## g. out_date_death_afterlandmark: All-cause mortality, only for analysis of secondary endpoint Long covid.
+## g. out_date_death_afterlandmark: All-cause mortality, the competing event variable only for analysis of the secondary endpoint Long covid.
 
 # Apply the interval expansion function
 ## CAVE: All stop_date_columns dates must be AFTER start_date_variable
-## CAVE: only choose stopping events that are distinct (e.g. out_date_noncovid_death is NOT part of out_date_covid_death)
+## CAVE: only choose stopping events that are distinct and overarching (e.g. all-cause death instead of cause-specific deaths or overlapping outcomes)
 df_months <- fn_expand_intervals(df, 
                                  start_date_variable = "landmark_date", # start expanding from landmark date, not elig_date_t2dm (due to landmark design)
-                                 stop_date_columns = c("out_date_death_afterlandmark", "cens_date_ltfu_afterlandmark"), # "out_date_noncoviddeath_afterlandmark", "out_date_covid_death_afterlandmark" ?
+                                 stop_date_columns = c("out_date_death_afterlandmark", "cens_date_ltfu_afterlandmark"),
                                  studyend_date,
                                  interval_type = "month") # currently, function takes "month" or "week"
 ## NOTE: the function will add the final interval, even if the final interval is just 1 day (check stop_date == 2022-04-01)
@@ -81,7 +79,7 @@ df_months <- fn_expand_intervals(df,
 #                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, end_date_month, month,
 #                 cov_cat_sex, cov_num_age
 #   ) %>%
-#   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
+#   dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
 #   # dplyr::filter(stop_date == "2022-04-01") %>%
 #   View()
