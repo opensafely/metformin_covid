@@ -14,6 +14,7 @@ library(arrow)
 library(here)
 library(skimr)
 library(tidyverse)
+library(lubridate)
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 
 
