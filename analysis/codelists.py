@@ -52,9 +52,9 @@ diabetes_other_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-other-
 diabetes_gestational_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-gestational-diabetes.csv",column="code")
 diabetes_gestational_icd10 = codelist_from_csv("codelists/user-alainamstutz-gestational-diabetes-icd10-bristol.csv",column="code")
 # Type 1 diabetes secondary care
-diabetes_type1_icd10 = codelist_from_csv("codelists/opensafely-type-1-diabetes-secondary-care.csv",column="icd10_code")
+diabetes_type1_icd10 = codelist_from_csv("codelists/user-alainamstutz-type-1-diabetes-secondary-care.csv",column="code")
 # Type 2 diabetes secondary care
-diabetes_type2_icd10 = codelist_from_csv("codelists/user-r_denholm-type-2-diabetes-secondary-care-bristol.csv",column="code")
+diabetes_type2_icd10 = codelist_from_csv("codelists/user-alainamstutz-type-2-diabetes-secondary-care.csv",column="code")
 # Non-diagnostic diabetes codes
 diabetes_diagnostic_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-nondiagnostic-diabetes-codes.csv",column="code")
 # HbA1c
@@ -276,6 +276,3 @@ ptsd_snomed = codelist_from_csv("codelists/opensafely-symptoms-ptsd.csv",column=
 
 # sensitivity analyses (pos control already above), neg control
 fracture_icd10 = codelist_from_csv("codelists/bristol-fractures.csv", column="code")
-
-# For positive outcome control, any diabetes-related death (ICD10)
-t2dm_icd10 = ["E110", "E111", "E112", "E113", "E114", "E115", "E116", "E117", "E118", "E119"]

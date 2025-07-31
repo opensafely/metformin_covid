@@ -82,7 +82,7 @@ dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"])
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 85) 
 dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
 dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+dataset.qa_bin_was_registered = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Date of death
 dataset.qa_date_of_death = ons_deaths.date
@@ -245,12 +245,13 @@ dataset.cov_cat_deprivation_5 = case(
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+spanning_regs = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
 registered = spanning_regs.sort_by(
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
 ).last_for_patient()
 dataset.strat_cat_region = registered.practice_nuts1_region_name ## Region
+dataset.practice_date_systmone = registered.practice_systmone_go_live_date ## Date on which the practice started using the SystmOne EHR platform.
 dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification ## Rurality
 
 ## Smoking status at elig_date_t2dm
@@ -535,7 +536,7 @@ dataset.cens_date_dereg = deregistered.end_date
 #     first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
 # )
 ## Pos control: Diabetes-related death, after elig_date_t2dm, stated anywhere on any of the 15 death certificate options
-dataset.tmp_out_bin_dm_death = matching_death_between(t2dm_icd10, dataset.elig_date_t2dm, studyend_date)
+dataset.tmp_out_bin_dm_death = matching_death_between(diabetes_type2_icd10, dataset.elig_date_t2dm, studyend_date)
 dataset.out_date_dm_death = case(when(dataset.tmp_out_bin_dm_death).then(ons_deaths.date))
 ## Neg control: Fracture, after elig_date_t2dm
 dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
