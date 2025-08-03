@@ -123,7 +123,7 @@ agi_dmd = codelist_from_csv("codelists/user-alainamstutz-alpha-glucosidase-inhib
 
 # obesity
 bmi_obesity_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_snomed.csv",column="code")
-bmi_obesity_icd10 = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_icd10.csv",column="code")
+bmi_obesity_icd10 = codelist_from_csv("codelists/user-alainamstutz-obesity-secondary-care.csv",column="code")
 
 # acute myocardial infarction
 ami_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-ami_snomed.csv",column="code")
@@ -138,7 +138,7 @@ stroke_sah_hs_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-st
 
 # other arterial embolism
 other_arterial_embolism_snomed_clinical = codelist_from_csv("codelists/user-tomsrenin-other_art_embol.csv",column="code")
-other_arterial_embolism_icd10 = codelist_from_csv("codelists/user-elsie_horne-other_arterial_embolism_icd10.csv",column="code")
+other_arterial_embolism_icd10 = codelist_from_csv("codelists/user-alainamstutz-other-arterial-embolism-secondary-care.csv",column="code")
 
 # All VTEs in SNOMED
 # Portal vein thrombosis
