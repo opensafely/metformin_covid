@@ -428,3 +428,30 @@ actions:
     outputs:
       moderately_sensitive:
         model_output: output/results_cox_sg_HbA1c59orabove.csv
+
+  make_model_output:
+    run: r:v2 analysis/make_output/make_model_output.R
+    needs:
+    - cox_primary
+    - cox_covid_event
+    - cox_longvirfat
+    - cox_neg_control_landmark
+    - cox_neg_control_pandemic
+    - cox_pos_control_landmark
+    - cox_pos_control_pandemic
+    - cox_sg_below60
+    - cox_sg_60orabove
+    - cox_sg_female
+    - cox_sg_male
+    - cox_sg_white
+    - cox_sg_nonwhite
+    - cox_sg_imd1
+    - cox_sg_nonimd1
+    - cox_sg_obese
+    - cox_sg_nonobese
+    - cox_sg_belowHbA1c59
+    - cox_sg_HbA1c59orabove
+    outputs:
+      moderately_sensitive:
+        model_output: output/make_output/results_cox.csv
+        model_output_midpoint6: output/make_output/results_cox_midpoint6.csv
