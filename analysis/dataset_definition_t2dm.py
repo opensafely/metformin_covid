@@ -82,7 +82,7 @@ dataset.qa_bin_is_female_or_male = patients.sex.is_in(["female", "male"])
 dataset.qa_bin_was_adult = (patients.age_on(dataset.elig_date_t2dm) >= 18) & (patients.age_on(dataset.elig_date_t2dm) <= 110) 
 dataset.qa_bin_was_alive = patients.is_alive_on(dataset.elig_date_t2dm)
 dataset.qa_bin_known_imd = addresses.for_patient_on(dataset.elig_date_t2dm).exists_for_patient() # known deprivation
-dataset.qa_bin_was_registered = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
+dataset.qa_bin_was_registered = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm).exists_for_patient() # see https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.spanning. Calculated from 1 year = 365.25 days, taking into account leap year.
 
 ## Date of death
 dataset.qa_date_of_death = ons_deaths.date
@@ -204,7 +204,7 @@ dataset.cov_cat_deprivation_5 = case(
 
 ## Practice registration info at elig_date_t2dm
 # but use a mix between spanning (as per eligibility criteria) and for_patient_on() to sort the multiple rows: https://docs.opensafely.org/ehrql/reference/schemas/tpp/#practice_registrations.for_patient_on
-spanning_regs = practice_registrations.spanning_with_systmone(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
+spanning_regs = practice_registrations.spanning(dataset.elig_date_t2dm - days(366), dataset.elig_date_t2dm)
 registered = spanning_regs.sort_by(
     practice_registrations.end_date,
     practice_registrations.practice_pseudo_id,
@@ -478,22 +478,18 @@ dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, datas
 ### UPDATED eligibility and intercurrent events for potential censoring
 ## Practice deregistration date: Based on main registration at t2dm diagnosis date
 # However, it does count those who only switch TPP practices
-deregistered = spanning_regs.sort_by(
-    practice_registrations.end_date,
-    practice_registrations.practice_pseudo_id,
-).first_for_patient()
-dataset.cens_date_dereg = deregistered.end_date
+dataset.cens_date_dereg = registered.end_date
 
-## Known hypersensitivity / intolerance to metformin, after elig_date_t2dm
+## Known hypersensitivity / intolerance to metformin, on or before elig_date_t2dm
 # dataset.cens_date_metfin_allergy_first = first_matching_event_clinical_snomed_between(metformin_allergy_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date
 
-## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), after elig_date_t2dm
+## Moderate to severe renal impairment (eGFR of <30ml/min/1.73 m2; stage 4/5), on or before elig_date_t2dm
 # dataset.cens_date_ckd_45_first = minimum_of(
 #     first_matching_event_clinical_snomed_between(ckd_snomed_clinical_45, dataset.elig_date_t2dm + days(1), studyend_date).date,
 #     first_matching_event_apc_between(ckd_stage4_icd10 + ckd_stage5_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
 # )
 
-## Advance decompensated liver cirrhosis, after elig_date_t2dm
+## Advance decompensated liver cirrhosis, on or before elig_date_t2dm
 # dataset.cens_date_liver_cirrhosis_first = minimum_of(
 #     first_matching_event_clinical_snomed_between(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
 #     first_matching_event_apc_between(advanced_decompensated_cirrhosis_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
@@ -501,16 +497,3 @@ dataset.cens_date_dereg = deregistered.end_date
 
 ## Use of the following medications (drug-drug interaction with metformin)
 # dataset.cens_date_metfin_interaction_first = first_matching_med_dmd_between(metformin_interaction_dmd, dataset.elig_date_t2dm + days(1), studyend_date).date
-
-
-### Sensitivity analyses, neg & pos control
-## Pos control: Diabetes complications (foot, retino, neuro, nephro), after elig_date_t2dm
-# dataset.out_date_diabetescomp = minimum_of(
-#     first_matching_event_clinical_snomed_between(diabetescomp_snomed_clinical, dataset.elig_date_t2dm + days(1), studyend_date).date,
-#     first_matching_event_apc_between(diabetescomp_icd10, dataset.elig_date_t2dm + days(1), studyend_date).admission_date
-# )
-## Pos control: Diabetes-related death, after elig_date_t2dm, stated anywhere on any of the 15 death certificate options
-dataset.tmp_out_bin_dm_death = matching_death_between(diabetes_type2_icd10, dataset.elig_date_t2dm, studyend_date)
-dataset.out_date_dm_death = case(when(dataset.tmp_out_bin_dm_death).then(ons_deaths.date))
-## Neg control: Fracture, after elig_date_t2dm
-dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
