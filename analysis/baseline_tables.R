@@ -84,7 +84,7 @@ df_death_ltfu2 <- reshape_to_wide(df_death_ltfu2)
 # Step 4: Order the variables and levels within variables
 print('Step 4: Order the variables and levels within variables')
 custom_order_main <- c("Total N", "Age", "Age groups", "Sex", "Ethnicity", "Deprivation", "Region", "Rural/urban", "Smoking status",
-                  "Care/nursing home resident", "Healthcare worker", "Consultation rate in previous year", 
+                  "Healthcare worker", "Consultation rate in previous year", 
                   "Body Mass Index > 30 kg/m^2", "HbA1c in mmol/mol", "TC/Chol ratio", "HbA1c categories in mmol/mol", "TC/HDL ratio categories", 
                   
                   "History of acute myocardial infarct", "History of stroke", "History of other arterial embolism", "History of venous thromboembolism",
@@ -108,7 +108,7 @@ custom_order_main <- c("Total N", "Age", "Age groups", "Sex", "Ethnicity", "Depr
 custom_order_death_ltfu <- c("Total N", 
                               "Metformin treatment",
                               "Age", "Age groups", "Sex", "Ethnicity", "Deprivation", "Region", "Rural/urban", "Smoking status",
-                       "Care/nursing home resident", "Healthcare worker", "Consultation rate in previous year", 
+                       "Healthcare worker", "Consultation rate in previous year", 
                        "Body Mass Index > 30 kg/m^2", "HbA1c in mmol/mol", "TC/Chol ratio", "HbA1c categories in mmol/mol", "TC/HDL ratio categories", 
                        
                        "History of acute myocardial infarct", "History of stroke", "History of other arterial embolism", "History of venous thromboembolism",
@@ -172,7 +172,6 @@ drop_unknown <- function(df) {
     filter(!(var_label == "Diabetes complication" & variable_levels == "Unknown")) %>% 
     filter(!(var_label == "Calendar period of T2DM diagnosis" & variable_levels == "Unknown"))
   # filter(!(var_label == "Deprivation" & variable_levels == "Unknown")) %>%
-  # filter(!(var_label == "Care/nursing home resident" & variable_levels == "Unknown")) %>% 
   # filter(!(var_label == "Healthcare worker" & variable_levels == "Unknown")) %>% 
   # filter(!(var_label == "Body Mass Index > 30 kg/m^2" & variable_levels == "Unknown"))
 }
@@ -212,7 +211,7 @@ print('Step 8: Save the underlying data as csv')
 tbl_csv_main <- df_main %>%
   select(var_label, variable_levels, `Metformin mono`, Nothing)
 tbl_csv_death_ltfu1 <- df_death_ltfu1 %>%
-  select(var_label, variable_levels, `Alive at landmark`, `Died until landmark`)
+  select(var_label, variable_levels, `Alive and in care at landmark`, `Died or LTFU until landmark`)
 tbl_csv_death_ltfu2 <- df_death_ltfu2 %>%
   select(var_label, variable_levels, `Alive and in care at pandemic start`, `Died or LTFU between landmark and pandemic start`)
 
@@ -232,14 +231,14 @@ tbl_gt_main <- df_main %>%
     table.font.size = px(12)
   )
 tbl_gt_death_ltfu1 <- df_death_ltfu1 %>%
-  select(var_label, variable_levels, `Alive at landmark`, `Died until landmark`) %>%
+  select(var_label, variable_levels, `Alive and in care at landmark`, `Died or LTFU until landmark`) %>%
   gt() %>%
   tab_header(title = "Baseline Characteristics") %>%
   cols_label(
     var_label = "Characteristic",
     variable_levels = "",  # Empty label
-    `Alive at landmark` = "Alive at landmark",
-    `Died until landmark` = "Died until landmark"
+    `Alive and in care at landmark` = "Alive and in care at landmark",
+    `Died or LTFU until landmark` = "Died or LTFU until landmark"
   ) %>%
   tab_options(
     table.font.size = px(12)

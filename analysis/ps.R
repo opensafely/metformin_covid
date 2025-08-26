@@ -262,7 +262,6 @@ var_labels <- list(
   cov_cat_deprivation_5 ~ "Deprivation",
   cov_cat_rural_urban ~ "Rural/urban",
   cov_cat_smoking_status ~ "Smoking status",
-  cov_bin_carehome_status ~ "Care/nursing home resident",
   cov_bin_healthcare_worker ~ "Healthcare worker",
   cov_num_consrate ~ "Consultation rate in previous year",
   cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",

@@ -52,9 +52,9 @@ diabetes_other_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-other-
 diabetes_gestational_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-gestational-diabetes.csv",column="code")
 diabetes_gestational_icd10 = codelist_from_csv("codelists/user-alainamstutz-gestational-diabetes-icd10-bristol.csv",column="code")
 # Type 1 diabetes secondary care
-diabetes_type1_icd10 = codelist_from_csv("codelists/opensafely-type-1-diabetes-secondary-care.csv",column="icd10_code")
+diabetes_type1_icd10 = codelist_from_csv("codelists/user-alainamstutz-type-1-diabetes-secondary-care.csv",column="code")
 # Type 2 diabetes secondary care
-diabetes_type2_icd10 = codelist_from_csv("codelists/user-r_denholm-type-2-diabetes-secondary-care-bristol.csv",column="code")
+diabetes_type2_icd10 = codelist_from_csv("codelists/user-alainamstutz-type-2-diabetes-secondary-care.csv",column="code")
 # Non-diagnostic diabetes codes
 diabetes_diagnostic_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-nondiagnostic-diabetes-codes.csv",column="code")
 # HbA1c
@@ -94,7 +94,7 @@ long_covid_referral_snomed_clinical = codelist_from_csv("codelists/opensafely-re
 long_covid_assessment_snomed_clinical = codelist_from_csv("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv",column="code")
 
 post_viral_fatigue_snomed_clinical = codelist_from_csv("codelists/user-alex-walker-post-viral-syndrome.csv",column="code")
-
+palliative_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-palcare_cod.csv",column="code")
 
 #######################################################################################
 # Potential CONFOUNDER variables
@@ -123,7 +123,7 @@ agi_dmd = codelist_from_csv("codelists/user-alainamstutz-alpha-glucosidase-inhib
 
 # obesity
 bmi_obesity_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_snomed.csv",column="code")
-bmi_obesity_icd10 = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_icd10.csv",column="code")
+bmi_obesity_icd10 = codelist_from_csv("codelists/user-alainamstutz-obesity-secondary-care.csv",column="code")
 
 # acute myocardial infarction
 ami_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-ami_snomed.csv",column="code")
@@ -138,7 +138,7 @@ stroke_sah_hs_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-st
 
 # other arterial embolism
 other_arterial_embolism_snomed_clinical = codelist_from_csv("codelists/user-tomsrenin-other_art_embol.csv",column="code")
-other_arterial_embolism_icd10 = codelist_from_csv("codelists/user-elsie_horne-other_arterial_embolism_icd10.csv",column="code")
+other_arterial_embolism_icd10 = codelist_from_csv("codelists/user-alainamstutz-other-arterial-embolism-secondary-care.csv",column="code")
 
 # All VTEs in SNOMED
 # Portal vein thrombosis
@@ -273,3 +273,6 @@ skin_rash_snomed = codelist_from_csv("codelists/opensafely-symptoms-rashes.csv",
 anxiety_snomed = codelist_from_csv("codelists/opensafely-symptoms-anxiety.csv",column="code")
 depression_snomed = codelist_from_csv("codelists/opensafely-symptoms-depression.csv",column="code")
 ptsd_snomed = codelist_from_csv("codelists/opensafely-symptoms-ptsd.csv",column="code")
+
+# sensitivity analyses (pos control already above), neg control
+fracture_icd10 = codelist_from_csv("codelists/bristol-fractures.csv", column="code")
