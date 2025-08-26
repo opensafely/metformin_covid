@@ -1,9 +1,9 @@
 ####
 # Custom-made function to add outcome, competing and censoring events to an expanded person-interval dataset
-# CAVE: use it only after the dataset has been interval-expanded (fn_expand_intervals.R) and after all one-time events have been added (fn_add_firstever_events_to_intervals.R)
+# CAVE: use it only after the dataset has been interval-expanded (fn_expand_intervals.R) and after all events have been added (fn_assign* functions)
 
 # Define columns called "outcome", censor_LTFU", "comp_event"
-# Shift them up as discussed above and assign info to CURRENT (k + 1) and PREVIOUS (k) interval as follows:
+# Shift them as follows:
 
 ## a) outcome is happening in CURRENT (k + 1) interval:
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
@@ -22,7 +22,7 @@
 ### e) if outcome and competing event (i.e. non-covid death) event have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order in function.
 ### f) if censoring and competing event event have the EXACT same date, then pick the competing event as the defining event. Ensured by case_when() order in function.
 
-## Now, delete all rows/person-intervals with NAs in all three variables (outcome & censor_LTFU & comp_event), i.e., the person-interval the event happened (and with this also drop the covariate/eligibility/treatment info from that interval)
+## Then, delete all rows/person-intervals with NAs in all three variables (outcome & censor_LTFU & comp_event), i.e., the person-interval the event happened (and by doing this, this also drops the covariate/eligibility/treatment info from that interval)
 ## This is the reason, why it needs a dataset per outcome, because the datasets will have different lengths. Alternatively tell the model to ignore info happening after outcome of interest (even if there is data afterwards), but I think this is cleaner, easier and safer.
 
 # Currently, only calendar month and calendar week are implemented

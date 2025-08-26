@@ -1,6 +1,6 @@
 ####
 ## This script does the following:
-# 1. Import pre-processed data of a one-person-per-row dataset of eligible participants
+# 1. Import pre-processed data of a one-person-per-row dataset of eligible participants (data_processed.arrow)
 # 2. Restructure the one-person-per-row data into a multiple-event-per-person long format dataset, with time intervals as per study protocol
 # 3. Save dataset(s)
 ####

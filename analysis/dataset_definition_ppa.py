@@ -36,6 +36,7 @@ elig_participants = "output/data/data_processed.arrow"
 @table_from_file(elig_participants)
 class elig_patients(PatientFrame):
     landmark_date = Series(date)
+    elig_date_t2dm = Series(date)
 
 # random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
@@ -58,6 +59,7 @@ dataset.define_population(
     elig_patients.exists_for_patient()
 )
 dataset.landmark_date = elig_patients.landmark_date
+dataset.elig_date_t2dm = elig_patients.elig_date_t2dm
 
 #######################################################################################
 # ELIGIBILITY variables
@@ -85,7 +87,7 @@ dataset.landmark_date = elig_patients.landmark_date
 ## Care home
 ## Consultation rate
 
-### CATEGORY (2): "first ever & then stable" covariates 
+### CATEGORY (2): stable time-updated covariates 
 
 ## First (if any) acute myocardial infarction, on or before study end date
 dataset.cov_date_ami = minimum_of(
@@ -181,7 +183,7 @@ dataset.cov_date_diabetescomp = minimum_of(
     first_matching_event_apc_before(diabetescomp_icd10, studyend_date).admission_date
 )
 
-### CATEGORY (3): "time-varying" covariates between baseline and study end
+### CATEGORY (3): dynamic time-updated covariates, between baseline and study end
 ## Obesity/BMI, HbA1c, lipids (TotChol & HDL)
 
 ## BMI: Up to 8 measurements per person should cover 2 years
@@ -303,6 +305,14 @@ dataset.cov_date_hdl_chol_7 = first_matching_event_clinical_snomed_between(hdl_c
 dataset.cov_num_hdl_chol_7 = first_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.cov_date_hdl_chol_6, studyend_date).numeric_value
 dataset.cov_date_hdl_chol_8 = first_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.cov_date_hdl_chol_7, studyend_date).date
 dataset.cov_num_hdl_chol_8 = first_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.cov_date_hdl_chol_7, studyend_date).numeric_value
+
+
+### OTHER (just for our specific case): baseline values of the dynamic time-updated covariates
+## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_cholesterol_b = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
+## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_hdl_cholesterol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
+
 
 #######################################################################################
 # Outcomes, and censoring events

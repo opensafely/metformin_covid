@@ -32,6 +32,11 @@ df <- fn_extract_data(input_filename)
 
 # Modify dummy data -------------------------------------------------------
 print('Modify dummy data')
+## This script modifies dummy data to: 
+## - Add realistic numeric values to our dynamic time-updated covariates: HbA1c, Tot Cholesterol, HDL, and BMI (currently, nearly all empty in dummy data)
+## - Introduce a few outliers to test filtering rules for HbA1c, Tot Chol and HDL Chol
+## - Generate sequential values with sequential dates for these dynamic time-updated covariates (e.g. 12 measurement dates over the course of 2 years)
+## - Add some covariate dates between baseline date (landmark_date) and studyend date for fixed time-updated covariates
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data")
   source("analysis/modify_dummy_data_ppa.R")
@@ -62,7 +67,15 @@ df <- df %>%
       ~ ifelse(.x < chol_min | .x > chol_max, NA_real_, .x)
     ),
     across(
+      matches("^cov_num_cholesterol_\\d+$"),
+      ~ ifelse(.x < chol_min | .x > chol_max, NA_real_, .x)
+    ),
+    across(
       matches("^cov_num_hdl_chol_\\d+$"),
+      ~ ifelse(.x < hdl_min | .x > hdl_max, NA_real_, .x)
+    ),
+    across(
+      matches("^cov_num_hdl_cholesterol_\\d+$"),
       ~ ifelse(.x < hdl_min | .x > hdl_max, NA_real_, .x)
     )
   )
@@ -71,7 +84,7 @@ df <- df %>%
 # Filter main dataset: Only keep necessary variables ----------------------
 print('Filter main dataset: Only keep necessary variables')
 df <- df %>% 
-  select(!landmark_date)
+  select(!landmark_date & !elig_date_t2dm)
 
 
 # Save and inspect full processed dataset ---------------------------------

@@ -1,10 +1,11 @@
 #### 
 ## This script modifies dummy data to: 
-## - Add HbA1c, Tot Cholesterol, HDL, and BMI realistic numeric values
+## - Add realistic numeric values to our dynamic time-updated covariates: HbA1c, Tot Cholesterol, HDL, and BMI (currently, nearly all empty in dummy data)
 ## - Introduce a few outliers to test filtering rules for HbA1c, Tot Chol and HDL Chol
-## - Generate BMI data, not only 8 values, but also 8 sequential dates
-## - Generate a few random cov_date_hypertension dates AFTER baseline to test the pipeline further down the line (currently completely empty)
+## - Generate sequential values with sequential dates for these dynamic time-updated covariates (e.g. 12 measurement dates over the course of 2 years)
+## - Add some covariate dates between baseline date (landmark_date) and studyend date for fixed time-updated covariates
 ####
+
 
 # Import libraries and functions ------------------------------------------
 library(dplyr)
@@ -36,9 +37,82 @@ generate_lab_values <- function(n, mean, sd, min_val, max_val, outlier_prob = 0.
 }
 
 
-# Generate dummy data for HbA1c, Total Cholesterol, HDL Cholesterol -------
+# Function to generate sequential dates over 2 years -------
+# 12 measurements over ~2 years (20–120 days apart)
+generate_dates <- function(start_date, n = 12) {
+  as.Date(
+    cumsum(c(0, sample(20:120, n - 1, replace = TRUE))) + as.numeric(start_date),
+    origin = "1970-01-01"
+  )
+}
 
-for(i in 1:8) {
+# Function to generate measurement dates and values for multiple variables (and overwrite old one) ------
+generate_measurements <- function(df, vars, n = 12) {
+  for (v in vars) {
+    var_name <- v$name
+    
+    # ---- Generate dates ----
+    var_dates <- t(sapply(df$landmark_date, v$date_fun, n = n))
+    var_dates <- as.data.frame(var_dates)
+    names(var_dates) <- paste0("cov_date_", var_name, "_", 1:n)
+    var_dates[] <- lapply(var_dates, as.Date, origin = "1970-01-01")  # ensure Date
+    
+    # ---- Generate values ----
+    var_values <- t(sapply(1:nrow(df), function(i) v$value_fun(n)))
+    var_values <- as.data.frame(var_values)
+    names(var_values) <- paste0("cov_num_", var_name, "_", 1:n)
+    
+    # ---- Overwrite existing columns or create new ----
+    for (i in 1:n) {
+      df[[paste0("cov_date_", var_name, "_", i)]] <- var_dates[[i]]
+      df[[paste0("cov_num_", var_name, "_", i)]]  <- var_values[[i]]
+    }
+  }
+  
+  return(df)
+}
+
+
+vars <- list(
+  list(
+    name = "bmi",
+    date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
+    value_fun = function(n) pmin(pmax(rnorm(n, mean = 27, sd = 4), 16), 50),
+    type = "numeric"
+  ),
+  list(
+    name = "hba1c",
+    date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
+    value_fun = function(n) pmin(pmax(rnorm(n, mean = 50, sd = 15), 0), 120),
+    type = "numeric"
+  ),
+  list(
+    name = "chol",
+    date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
+    value_fun = function(n) pmin(pmax(rnorm(n, mean = 5, sd = 1.2), 1.75), 20),
+    type = "numeric"
+  ),
+  list(
+    name = "hdl_chol",
+    date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
+    value_fun = function(n) pmin(pmax(rnorm(n, mean = 1.3, sd = 0.3), 0.4), 5),
+    type = "numeric"
+  )
+)
+
+# list(
+#   name = "smoking",
+#   date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
+#   value_fun = function(n) sample(c("never", "former", "current"), n, replace = TRUE),
+#   type = "categorical"
+# )
+
+# Apply to df
+df <- generate_measurements(df, vars, n = 12)
+
+
+# Now, modify dummy data for HbA1c, Total Cholesterol, HDL Cholesterol to create outliers -------
+for(i in 1:12) {
   df[[paste0("cov_num_hba1c_", i)]] <- generate_lab_values(
     n = nrow(df), mean = 50, sd = 15, min_val = 0, max_val = 120,
     outlier_prob = 0.1, outlier_range = c(-20, 200)
@@ -56,39 +130,7 @@ for(i in 1:8) {
 }
 
 
-## BMI without outliers (8 sequential measurements) -----------------------
-
-# Function to generate sequential dates over 2 years
-generate_dates <- function(start_date) {
-  # 8 measurements over ~2 years (20–120 days apart)
-  as.Date(cumsum(c(0, sample(20:120, 7, replace = TRUE))) + as.numeric(start_date),
-          origin = "1970-01-01")
-}
-
-# Generate 8 BMI measurement dates per patient - after landmark_date
-bmi_dates <- t(sapply(df$landmark_date, generate_dates))
-bmi_dates <- as.data.frame(bmi_dates)
-names(bmi_dates) <- paste0("cov_date_bmi_", 1:8)
-bmi_dates[] <- lapply(bmi_dates, as.Date, origin = "1970-01-01")
-
-# Generate 8 BMI numeric values per patient (no outliers)
-bmi_values <- t(sapply(1:nrow(df), function(i) {
-  # BMI ~ Normal(27, 4), truncated 16–50
-  pmin(pmax(rnorm(8, mean = 27, sd = 4), 16), 50)
-}))
-bmi_values <- as.data.frame(bmi_values)
-names(bmi_values) <- paste0("cov_num_bmi_", 1:8)
-
-# Add BMI dates and values back to df by overwriting the original values
-for (i in 1:8) {
-  df[[paste0("cov_date_bmi_", i)]] <- bmi_dates[[i]]
-}
-for (i in 1:8) {
-  df[[paste0("cov_num_bmi_", i)]] <- bmi_values[[i]]
-}
-
-
-# Add some covariate dates between baseline date (landmark_date) and studyend date -----
+# Add some covariate dates between baseline date (landmark_date) and studyend date for fixed time-updated covariates -----
 ## cov_date_hypertension and cov_date_ami are completely missing in the current dummy data, so replace all
 ## but impute only 5%
 df$cov_date_hypertension <- sapply(df$landmark_date, function(baseline_date) {
@@ -100,3 +142,13 @@ df$cov_date_ami <- sapply(df$landmark_date, function(baseline_date) {
   fn_dd_cens_dates(baseline_date, studyend_date)
 })
 df$cov_date_ami <- as.Date(df$cov_date_ami, origin = "1970-01-01")
+
+df$cov_date_all_stroke <- sapply(df$landmark_date, function(baseline_date) {
+  fn_dd_cens_dates(baseline_date, studyend_date)
+})
+df$cov_date_all_stroke <- as.Date(df$cov_date_all_stroke, origin = "1970-01-01")
+
+df$cov_date_dementia <- sapply(df$landmark_date, function(baseline_date) {
+  fn_dd_cens_dates(baseline_date, studyend_date)
+})
+df$cov_date_dementia <- as.Date(df$cov_date_dementia, origin = "1970-01-01")
