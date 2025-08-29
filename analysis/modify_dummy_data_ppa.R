@@ -130,25 +130,53 @@ for(i in 1:12) {
 }
 
 
-# Add some covariate dates between baseline date (landmark_date) and studyend date for fixed time-updated covariates -----
-## cov_date_hypertension and cov_date_ami are completely missing in the current dummy data, so replace all
-## but impute only 5%
-df$cov_date_hypertension <- sapply(df$landmark_date, function(baseline_date) {
-  fn_dd_cens_dates(baseline_date, studyend_date)
-})
-df$cov_date_hypertension <- as.Date(df$cov_date_hypertension, origin = "1970-01-01")
+# Add some covariate dates between baseline date (a date in the past to ensure also baseline history) and studyend date for stable time-updated covariates -----
+df$historic_baseline_date <- as.Date("2000-01-01")
 
-df$cov_date_ami <- sapply(df$landmark_date, function(baseline_date) {
-  fn_dd_cens_dates(baseline_date, studyend_date)
-})
-df$cov_date_ami <- as.Date(df$cov_date_ami, origin = "1970-01-01")
+# define probabilities of imputation
+covariates <- list(
+  hypertension = 0.55,
+  ami = 0.45,
+  all_stroke = 0.40,
+  dementia = 0.40,
+  other_arterial_embolism = 0.77,
+  vte = 0.65,
+  hf = 0.80,
+  angina = 0.86,
+  copd = 0.77,
+  liver_disease = 0.50,
+  chronic_kidney_disease = 0.65,
+  pcos = 0.70,
+  prediabetes = 0.83,
+  diabetescomp = 0.60
+)
 
-df$cov_date_all_stroke <- sapply(df$landmark_date, function(baseline_date) {
-  fn_dd_cens_dates(baseline_date, studyend_date)
-})
-df$cov_date_all_stroke <- as.Date(df$cov_date_all_stroke, origin = "1970-01-01")
-
-df$cov_date_dementia <- sapply(df$landmark_date, function(baseline_date) {
-  fn_dd_cens_dates(baseline_date, studyend_date)
-})
-df$cov_date_dementia <- as.Date(df$cov_date_dementia, origin = "1970-01-01")
+for (cov in names(covariates)) {
+  prob <- covariates[[cov]]
+  colname <- paste0("cov_date_", cov)
+  
+  # initialize with existing column or NA if not present
+  if (!colname %in% names(df)) {
+    df[[colname]] <- as.Date(NA)
+  }
+  
+  # only consider rows where current value is NA
+  na_idx <- which(is.na(df[[colname]]))
+  
+  # decide which of those NA rows get new dates
+  assign_idx <- na_idx[runif(length(na_idx)) <= prob]
+  
+  if (length(assign_idx) > 0) {
+    df[[colname]][assign_idx] <- as.Date(mapply(
+      function(baseline_date, studyend_date) {
+        if (as.Date(baseline_date) + 1 <= as.Date(studyend_date)) {
+          sample(seq(as.Date(baseline_date) + 1, as.Date(studyend_date), by = "day"), 1)
+        } else {
+          NA
+        }
+      },
+      df$historic_baseline_date[assign_idx],
+      studyend_date
+    ), origin = "1970-01-01")
+  }
+}
