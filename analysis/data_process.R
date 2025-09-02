@@ -99,7 +99,7 @@ data_processed <- data_extracted %>%
       strat_cat_region == "South East" ~ "South East",
       strat_cat_region == "South West" ~ "South West",
       TRUE ~ NA_character_), # will have no missing, by definition (excluded)
-    
+
     cov_cat_rural_urban = fn_case_when(
       cov_cat_rural_urban %in% c(1,2) ~ "Urban conurbation",
       cov_cat_rural_urban %in% c(3,4) ~ "Urban city or town",
@@ -389,8 +389,8 @@ data_processed <- data_processed %>%
                                      studyend_date,
                                      na.rm = TRUE),
     cox_tt_longcovid_virfat = difftime(cox_date_longcovid_virfat,
-                                                     landmark_date,
-                                                     units = "days") %>% as.numeric(),
+                                       landmark_date,
+                                       units = "days") %>% as.numeric(),
     # for cox reusable action: exposure start date for those who start, missing for all others 
     cox_date_metfin_start_within6m = case_when(exp_bin_metfin_mono == TRUE ~ landmark_date, 
                                                TRUE ~ as.Date(NA)),
