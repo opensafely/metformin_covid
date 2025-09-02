@@ -99,7 +99,7 @@ print('Define interval data set and number of bootstraps')
 ## If weeks, then K = 169 weeks
 K <- 39 # Total follow-up in months; if we use 39, we allow for the final 1-day fup (01.04.2022-01.04.2022); should not make much difference
 df_months_severecovid$monthsqr <- df_months_severecovid$month^2 # add months square to model time in PLR
-R <- 100 # Total bootstraps (ideally >500)
+R <- 10 # Total bootstraps (ideally >500)
 
 
 # IPTW: Fit treatment model and truncate the weights ----------------------
