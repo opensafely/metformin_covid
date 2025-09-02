@@ -307,11 +307,11 @@ dataset.cov_date_hdl_chol_8 = first_matching_event_clinical_snomed_between(hdl_c
 dataset.cov_num_hdl_chol_8 = first_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.cov_date_hdl_chol_7, studyend_date).numeric_value
 
 
-### OTHER (just for our specific case): baseline values of the dynamic time-updated covariates
-## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.cov_num_cholesterol_b = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
-## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.cov_num_hdl_cholesterol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
+# ### OTHER (just for our specific case): baseline values of the dynamic time-updated covariates
+# ## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+# dataset.cov_num_cholesterol_b = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
+# ## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
+# dataset.cov_num_hdl_cholesterol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value 
 
 
 #######################################################################################

@@ -1,7 +1,7 @@
 #### 
 ## This script modifies dummy data of df_months to: 
 ## - randomly select 50% of cov_date_ami 
-## - change them to be very close to cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
+## - change them to be very close to the treatment information change, i.e., cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
 ## - this will test edge cases for fn_assign_time_fixed_cov
 ####
 

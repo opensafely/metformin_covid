@@ -407,23 +407,23 @@ bmi_measurement = most_recent_bmi(
     where=clinical_events.date.is_on_or_between(dataset.elig_date_t2dm - days(2 * 366), dataset.elig_date_t2dm),
     minimum_age_at_measurement=16,
 )
-dataset.cov_num_bmi = bmi_measurement.numeric_value
+dataset.cov_num_bmi_b = bmi_measurement.numeric_value
 dataset.cov_cat_bmi_groups = case(
-    when((dataset.cov_num_bmi < 18.5) & (dataset.cov_num_bmi >= 12.0)).then("Underweight"), # Set minimum to avoid any impossibly extreme values being classified as underweight
-    when((dataset.cov_num_bmi >= 18.5) & (dataset.cov_num_bmi < 25.0)).then("Healthy weight (18.5-24.9)"),
-    when((dataset.cov_num_bmi >= 25.0) & (dataset.cov_num_bmi < 30.0)).then("Overweight (25-29.9)"),
-    when((dataset.cov_num_bmi >= 30.0) & (dataset.cov_num_bmi <= 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
+    when((dataset.cov_num_bmi_b < 18.5) & (dataset.cov_num_bmi_b >= 12.0)).then("Underweight"), # Set minimum to avoid any impossibly extreme values being classified as underweight
+    when((dataset.cov_num_bmi_b >= 18.5) & (dataset.cov_num_bmi_b < 25.0)).then("Healthy weight (18.5-24.9)"),
+    when((dataset.cov_num_bmi_b >= 25.0) & (dataset.cov_num_bmi_b < 30.0)).then("Overweight (25-29.9)"),
+    when((dataset.cov_num_bmi_b >= 30.0) & (dataset.cov_num_bmi_b <= 70.0)).then("Obese (>30)"), # Set maximum to avoid any impossibly extreme values being classified as obese
     otherwise = "missing", 
 )
 
 ## HbA1c, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.cov_num_hba1c_mmol_mol = last_matching_event_clinical_snomed_between(hba1c_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+dataset.cov_num_hba1c_b = last_matching_event_clinical_snomed_between(hba1c_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
 
 ## Total Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.tmp_cov_num_cholesterol = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
+dataset.cov_num_chol_b = last_matching_event_clinical_snomed_between(cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years. 
 
 ## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
-dataset.tmp_cov_num_hdl_cholesterol = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
+dataset.cov_num_hdl_chol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
 
 
 #######################################################################################

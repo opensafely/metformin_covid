@@ -2,8 +2,8 @@
 ## This script does the following:
 # 1. Import/extract feather dataset from OpenSAFELY
 # 2. Basic type formatting of variables -> fn_extract_data.R()
-# 3. Process covariates
-# 4. Modify dummy data if run locally
+# 3. Modify dummy data if run locally
+# 4. Process covariates
 # 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
 # 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
 # 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
@@ -60,6 +60,15 @@ input_filename <- "dataset.arrow"
 data_extracted <- fn_extract_data(input_filename)
 
 
+# Modify dummy data -------------------------------------------------------
+print('Modify dummy data')
+if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
+  message("Running locally, adapt dummy data")
+  source("analysis/modify_dummy_data.R")
+  message("Dummy data successfully modified")
+}
+
+
 # Process the data --------------------------------------------------------
 print('Process the data')
 data_processed <- data_extracted %>%
@@ -114,38 +123,61 @@ data_processed <- data_extracted %>%
     
     cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     
-    # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
-    ## remove TC < 1.75 or > 20; remove HDL < 0.4 or > 5; remove ratios < 1 or > 50
-    tmp_cov_num_cholesterol = replace(tmp_cov_num_cholesterol, tmp_cov_num_cholesterol < 1.75 | tmp_cov_num_cholesterol > 20, NA_real_),
-    tmp_cov_num_hdl_cholesterol = replace(tmp_cov_num_hdl_cholesterol, tmp_cov_num_hdl_cholesterol < 0.4 | tmp_cov_num_hdl_cholesterol > 5, NA_real_),
-    cov_num_tc_hdl_ratio = tmp_cov_num_cholesterol / tmp_cov_num_hdl_cholesterol,
-    cov_num_tc_hdl_ratio = replace(cov_num_tc_hdl_ratio, cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1, NA_real_),
+    # BMI values: remove biologically implausible values
+    cov_num_bmi_b = if_else(
+      cov_num_bmi_b < 12.00 | cov_num_bmi_b > 70.00,
+      NA_real_,
+      cov_num_bmi_b),
     
+    # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
-    cov_cat_tc_hdl_ratio = cut(
-      cov_num_tc_hdl_ratio,
-      breaks = c(1, 3.5, 5.11, 50), # 50 is upper limit, see above -> NA
+    ## remove TC < 1.75 or > 20; remove HDL < 0.4 or > 5; remove ratios < 1 or > 50
+    cov_num_chol_b = if_else(
+      cov_num_chol_b > 20 | cov_num_chol_b < 1.75,
+      NA_real_,
+      cov_num_chol_b),
+    cov_num_hdl_chol_b = if_else(
+      cov_num_hdl_chol_b > 5 | cov_num_hdl_chol_b < 0.4,
+      NA_real_,
+      cov_num_hdl_chol_b),
+    cov_num_tc_hdl_ratio_b = cov_num_chol_b / cov_num_hdl_chol_b,
+    cov_num_tc_hdl_ratio_b = if_else(
+      cov_num_tc_hdl_ratio_b > 50 | cov_num_tc_hdl_ratio_b < 1,
+      NA_real_,
+      cov_num_tc_hdl_ratio_b),
+    cov_cat_tc_hdl_ratio_b = cut(
+      cov_num_tc_hdl_ratio_b,
+      breaks = c(1, 3.5, 5.11, 50),  # 50 is upper limit, above set to NA already
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
-      right = FALSE),
-    cov_cat_tc_hdl_ratio = case_when(is.na(cov_num_tc_hdl_ratio) ~ factor("Unknown", 
-                                                                          levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio),
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
+    cov_cat_tc_hdl_ratio_b = case_when(is.na(cov_cat_tc_hdl_ratio_b) ~ factor("Unknown", 
+                                                                          levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio_b),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
     ## remove HbA1c > 120; remove HbA1c below 0
-    cov_num_hba1c_mmol_mol = replace(cov_num_hba1c_mmol_mol, cov_num_hba1c_mmol_mol < 0.00 | cov_num_hba1c_mmol_mol > 120.00, NA_real_),
-    cov_cat_hba1c_mmol_mol = cut(
-      cov_num_hba1c_mmol_mol,
+    cov_num_hba1c_b = if_else( 
+      cov_num_hba1c_b < 0.00 | cov_num_hba1c_b > 120.00,
+      NA_real_,
+      cov_num_hba1c_b),
+    cov_cat_hba1c_b = cut(
+      cov_num_hba1c_b,
       breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
-      right = FALSE),
-    cov_cat_hba1c_mmol_mol = case_when(is.na(cov_cat_hba1c_mmol_mol) ~ factor("Unknown", 
-                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_mmol_mol),
-    elig_num_hba1c_landmark_mmol_mol = replace(elig_num_hba1c_landmark_mmol_mol, elig_num_hba1c_landmark_mmol_mol < 0.00 | elig_num_hba1c_landmark_mmol_mol > 120.00, NA_real_),
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
+    cov_cat_hba1c_b = case_when(is.na(cov_cat_hba1c_b) ~ factor("Unknown", 
+                                                                levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_b),
+    elig_num_hba1c_landmark_mmol_mol = if_else( 
+      elig_num_hba1c_landmark_mmol_mol < 0.00 | elig_num_hba1c_landmark_mmol_mol > 120.00,
+      NA_real_,
+      elig_num_hba1c_landmark_mmol_mol),
     elig_cat_hba1c_landmark_mmol_mol = cut(
       elig_num_hba1c_landmark_mmol_mol,
       breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
-      right = FALSE),
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
     elig_cat_hba1c_landmark_mmol_mol = case_when(is.na(elig_cat_hba1c_landmark_mmol_mol) ~ factor("Unknown", 
                                                                               levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ elig_cat_hba1c_landmark_mmol_mol)
     )
@@ -171,15 +203,6 @@ data_processed <- data_processed %>%
     ),
     cov_num_period_month = as.numeric(cov_num_period_month)
   )
-
-
-# Modify dummy data -------------------------------------------------------
-print('Modify dummy data')
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, adapt dummy data")
-  source("analysis/modify_dummy_data.R")
-  message("Dummy data successfully modified")
-}
 
 
 # Assign the landmark date and max follow-up date -------------------------
@@ -330,34 +353,48 @@ data_processed <- data_processed %>%
 print('HbA1c covariate and HbA1c & lipids plot')
 # Above, I excluded all with HbA1c >75 mmol/mol. Unfortunately, the cox RA still "sees" this level and would exclude the variable if left as is (due to too 0 events in that subgroup)
 data_processed <- data_processed %>% 
-  mutate(cov_cat_hba1c_mmol_mol = fn_case_when(
-    cov_cat_hba1c_mmol_mol == "below 42" ~ "below 42",
-    cov_cat_hba1c_mmol_mol == "42-58" ~ "42-58",
-    cov_cat_hba1c_mmol_mol == "59-75" ~ "59-75",
-    cov_cat_hba1c_mmol_mol == "Unknown" ~ "Unknown",
+  mutate(cov_cat_hba1c_b = fn_case_when(
+    cov_cat_hba1c_b == "below 42" ~ "below 42",
+    cov_cat_hba1c_b == "42-58" ~ "42-58",
+    cov_cat_hba1c_b == "59-75" ~ "59-75",
+    cov_cat_hba1c_b == "Unknown" ~ "Unknown",
     TRUE ~ NA_character_))
 
 # plot the numeric lab values to check distribution (to see if there is any grouping indicating the use of comparators)
 hba1c_plot <- data_processed %>% 
-  drop_na(cov_num_hba1c_mmol_mol) %>% 
-  ggplot(aes(x = cov_num_hba1c_mmol_mol)) +
+  drop_na(cov_num_hba1c_b) %>% 
+  ggplot(aes(x = cov_num_hba1c_b)) +
   geom_density(fill = "blue", color = "black") +
   labs(title = "Density Plot of HbA1c",
        x = "HbA1c",
        y = "Density")
 totchol_plot <- data_processed %>% 
-  drop_na(tmp_cov_num_cholesterol) %>% 
-  ggplot(aes(x = tmp_cov_num_cholesterol)) +
+  drop_na(cov_num_chol_b) %>% 
+  ggplot(aes(x = cov_num_chol_b)) +
   geom_density(fill = "blue", color = "black") +
   labs(title = "Density Plot of Total Cholesterol",
        x = "Tot Cholesterol",
        y = "Density")
 hdlchol_plot <- data_processed %>% 
-  drop_na(tmp_cov_num_hdl_cholesterol) %>% 
-  ggplot(aes(x = tmp_cov_num_hdl_cholesterol)) +
+  drop_na(cov_num_hdl_chol_b) %>% 
+  ggplot(aes(x = cov_num_hdl_chol_b)) +
   geom_density(fill = "blue", color = "black") +
   labs(title = "Density Plot of HDL Cholesterol",
        x = "HDL Cholesterol",
+       y = "Density")
+lipidratio_plot <- data_processed %>% 
+  drop_na(cov_num_tc_hdl_ratio_b) %>% 
+  ggplot(aes(x = cov_num_tc_hdl_ratio_b)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(title = "Density Plot of Chol ratio",
+       x = "Chol ratio",
+       y = "Density")
+bmi_plot <- data_processed %>% 
+  drop_na(cov_num_bmi_b) %>% 
+  ggplot(aes(x = cov_num_bmi_b)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(title = "Density Plot of BMI",
+       x = "BMI",
        y = "Density")
 
 # Assign Cox variables ------------------------------------------------------
@@ -509,3 +546,5 @@ arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "da
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "hdlchol_plot.png"), hdlchol_plot, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "lipidratio_plot.png"), lipidratio_plot, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "bmi_plot.png"), bmi_plot, width = 20, height = 20, units = "cm")

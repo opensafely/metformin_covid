@@ -1,18 +1,17 @@
 ####
-# Custom-made function to add stable time-udpated covariates and adhere to specific rules:
+# Custom-made function to add stable time-udpated covariates to person-interval data and adhere to specific rules:
 #### 
 # Rule a–c:
-# If covariate date is NA -> all intervals = 0
-# If covariate date < min follow-up start -> all intervals = 1
-# If covariate date > max follow-up end -> all intervals = 0
+## If covariate date is NA -> all intervals = 0
+## If covariate date < min follow-up start -> all intervals = 1
+## If covariate date > max follow-up end -> all intervals = 0
 
-# Rule d (during follow-up)
-# Marks 0 up to and including the interval of the event,
-# Then assigns 1 from the next interval onward (via lag(cummax())).
+# Rule d (during follow-up; covariate event not in same interval as treatment information change):
+## Mark 0 up to and including the interval of the event,
+## Then assign 1 from the next interval onwards (via lag(cummax())).
 
-# Rule e (same interval as censoring/treatment start)
-# If cov_date and cens_date fall in the same interval, then: If cov_date <= cens_date -> mark *current* interval as 1
-# Else -> keep as-is.
+# Rule e (during follow-up; covariate event in same interval as treatment information change):
+## If cov_date <= treat_date, then mark *current* interval as 1. Otherwise, keep as-is.
 
 fn_assign_stable_tu_cov <- function(df, date_vars, start_var, end_var, cens_date_var) {
   

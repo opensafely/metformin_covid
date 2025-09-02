@@ -36,7 +36,7 @@ print('Modify dummy data')
 ## - Add realistic numeric values to our dynamic time-updated covariates: HbA1c, Tot Cholesterol, HDL, and BMI (currently, nearly all empty in dummy data)
 ## - Introduce a few outliers to test filtering rules for HbA1c, Tot Chol and HDL Chol
 ## - Generate sequential values with sequential dates for these dynamic time-updated covariates (e.g. 12 measurement dates over the course of 2 years)
-## - Add some covariate dates between baseline date (landmark_date) and studyend date for fixed time-updated covariates
+## - Add some covariate dates between historic baseline date and studyend date for fixed/stable time-updated covariates
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Running locally, adapt dummy data")
   source("analysis/modify_dummy_data_ppa.R")

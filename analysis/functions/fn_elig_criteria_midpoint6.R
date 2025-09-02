@@ -61,8 +61,8 @@ fn_elig_criteria_midpoint6 <- function(data_processed, study_dates, years_in_day
         prior_interaction = (!is.na(elig_date_metfin_interaction_last) 
                              & (elig_date_metfin_interaction_last <= elig_date_t2dm) & (elig_date_metfin_interaction_last >= elig_date_t2dm - days(14))),
         # Exclusion 7: Very high HbA1c (>75), prior or on T2DM diagnosis (max 2 years back)
-        prior_high_hba1c = (!is.na(cov_cat_hba1c_mmol_mol)
-                            & cov_cat_hba1c_mmol_mol == "above 75")
+        prior_high_hba1c = (!is.na(cov_cat_hba1c_b)
+                            & cov_cat_hba1c_b == "above 75")
       )
     
     # Re-apply the time-updated eligibility criteria again at landmark -> NO! Those who will be dead & LTFU by landmark, they will be out by design, that's ok to kick them out at this stage ("effect is conditional on being alive/in care at landmark"), but the other criteria should not be re-applied to respect alignment of eligibility and treatment assignment as best as possible (not re-apply elig criteria after treatment assignment which may happen anytime until landmark)

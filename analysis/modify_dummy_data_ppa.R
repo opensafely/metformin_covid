@@ -100,13 +100,6 @@ vars <- list(
   )
 )
 
-# list(
-#   name = "smoking",
-#   date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
-#   value_fun = function(n) sample(c("never", "former", "current"), n, replace = TRUE),
-#   type = "categorical"
-# )
-
 # Apply to df
 df <- generate_measurements(df, vars, n = 12)
 
@@ -138,6 +131,7 @@ covariates <- list(
   hypertension = 0.55,
   ami = 0.45,
   all_stroke = 0.40,
+  depression = 0.50,
   dementia = 0.40,
   other_arterial_embolism = 0.77,
   vte = 0.65,

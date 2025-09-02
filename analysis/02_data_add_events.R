@@ -90,23 +90,19 @@ df_months <- fn_assign_treatment(df_months,
 
 # 4. Merge the stable time-updated (first-ever, constant) covariates from df_ppa to df_months --------
 print('Merge the stable time-updated (first-ever, constant) covariates from df_ppa to df_months')
-# all, except hba1c/lipids/bmi
+# all covariates from df_ppa, except hba1c/lipids/bmi
+# it will result in a dataset with "cov_bin_* (comorbidities)" as baseline indicators and "cov_date_* (comorbidities)" for the stable one-time time-updated (first-ever, constant) covariate
+# Ignore the "cov_bin_* (comorbidities)" from df_months since "cov_date_* (comorbidities)" from df_ppa was constructed as minimmum of first ever (see dataset_definition_ppa.py). It would have been cleaner to do this directly in df_months - if we would have know about the PPA from the start.
 df_months <- df_months %>%
   left_join(df_ppa %>% 
               select(patient_id, starts_with("cov_date") & !matches("cov_date_bmi|cov_date_hba1c|cov_date_hdl_chol|cov_date_chol")),
             by = "patient_id"
             )
-# this results in a dataset with "cov_bin_* (comorbidities)" as baseline indicators and "cov_date_* (comorbidities)" for the time-updated one-time information change
-# but I can ignore the "cov_bin_* (comorbidities)" since "cov_date_* (comorbidities)" was constructed as minmimum of first ever (see dataset_definition_ppa.py)
-
-# also add cov_num_cholesterol_b and cov_num_hdl_cholesterol_b (just for this specific scenario)
-df_months <- df_months %>%
-  left_join(df_ppa %>% select(patient_id, cov_num_cholesterol_b, cov_num_hdl_cholesterol_b), by = "patient_id")
 
 # Modify dummy data
 ## This script modifies dummy data of df_months to: 
 ## - randomly select 50% of cov_date_ami 
-## - change them to be very close to cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
+## - change them to be very close to the treatment information change, i.e., cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
 ## - this will test edge cases for fn_assign_time_fixed_cov
 print('Modify dummy data')
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
@@ -154,7 +150,7 @@ df_months <- fn_assign_stable_tu_cov(df_months,
 #                 cov_date_ami, cov_bin_ami,
 #                 cov_date_hypertension, cov_bin_hypertension,
 #                 cov_date_all_stroke, cov_bin_all_stroke,
-#                 cov_date, min_start, max_end, event_here, cov_flag_temp
+#                 # cov_date, min_start, max_end, event_here, cov_flag_temp
 #   ) %>%
 #   dplyr::filter(!is.na(cov_date_ami)) %>%
 #   dplyr::filter(!is.na(cens_date_metfin_start_cont)) %>%
@@ -164,7 +160,7 @@ df_months <- fn_assign_stable_tu_cov(df_months,
 # 6. Reformatting of the dynamic time-updated covariates in a long-format df_ppa ---------
 print('Reformatting of the dynamic time-updated covariates in a long-format df_ppa')
 # The aim is to get a one-person-per-row dataset that we can merge to the main dataset
-# We work with df_ppa separately, merging to df_months only at the end; this avoids unnecessary creating/working with the main df_months as a long-format dataset (computational issues)
+# So first, we work with df_ppa separately, merging to df_months only at the end; this avoids unnecessary creating/working with the main df_months as a long-format dataset (computational issues)
 
 # Filter all dynamic time-updated covariates: hba1c/lipids/bmi
 df_ppa <- df_ppa %>%
@@ -173,7 +169,7 @@ df_treat <- df_months %>%
   filter(month == 0) %>% 
   select(patient_id, cens_date_metfin_start_cont)
 # merge the cens_date_metfin_start_cont from df_months to adjust the dummy dates
-# if there are patient_id that are in df_ppa but not in df_month (df_treat), then ignore these
+# if there are patient_id that are in df_ppa but not in df_month (df_treat), then ignore these. Should not be the case in the real data, but is the case in the dummy data due to how the @table_from_file function works
 df_ppa <- right_join(df_ppa, df_treat[, c("cens_date_metfin_start_cont", "patient_id")], by = "patient_id")
 
 # Reshape to long format, easier to work with
@@ -205,9 +201,8 @@ df_ppa_long <- df_ppa_long %>%
 df_ppa_long <- df_ppa_long %>%
   # left_join to keep all rows=months from df_months => allow for many-to-many relationship
   left_join(df_months, by = "patient_id") %>%
-  # filter for rows where the measurement date falls within the monthly interval
   filter(
-    date >= start_date_month, # left open, right open is correct the way my interval data is set up
+    date >= start_date_month, # left open, right open is correct the way the interval data is set up coming from fn_expand_intervals.R
     date <= end_date_month
   ) %>%
   select(
@@ -220,6 +215,7 @@ df_ppa_long <- df_ppa_long %>%
     num,
     cens_date_metfin_start_cont
   )
+df_ppa_long <- df_ppa_long %>% arrange(patient_id, variable, date)
 
 # Now, if there are several of the same dynamic time-updated covariate events happening in the same interval/month (e.g. HbA1c several times recorded/measured in same month):
 ## => carefully choose the relevant one, according to the following rules, taking our treatment information change/update variable (cens_date_metfin_start_cont) into account: 
@@ -237,8 +233,6 @@ df_ppa_long <- df_ppa_long %>%
 #### => Solution: Regard these covariate info as measured BEFORE treatment info change (see rule b above). Alternatively (sensitivity analyses), simply adapt rule a and b to regard them as measured AFTER treatment info change
 
 ##### At the end, this results in only 1 covariate info update per person-interval for each measurement (BMI, lipids, HbA1c)
-df_ppa_long <- df_ppa_long %>% arrange(patient_id, variable, date)
-
 df_ppa_long <- fn_assign_dynamic_tu_cov(data = df_ppa_long,
                                          patient_id_col = patient_id,
                                          variable_col = variable,
@@ -254,9 +248,9 @@ dupl_same_id_variable_month <- df_ppa_long %>%
   add_count(name = "count") %>%
   filter(count > 1) %>%
   arrange(patient_id, variable, new_month)
-print(dupl_same_id_variable_month)
+print(dupl_same_id_variable_month) # should be empty
 
-# Now, pivot it to wide format to have the individual measurements as separate columns
+# Now, pivot it to wide format to have the individual measurements as separate columns to be able to merge with df_months
 df_ppa_wide <- df_ppa_long %>%
   group_by(patient_id, new_month, variable) %>%
   mutate(instance = row_number()) %>%
@@ -277,36 +271,20 @@ duplicates_in_final <- df_ppa_wide %>%
   add_count(name = "count") %>%
   filter(count > 1) %>%
   ungroup()
-print(duplicates_in_final)
+print(duplicates_in_final) # should be empty
 
 
-# 7. Merge and assign the dynamic time-updated covariates covariates from df_ppa to df_months --------
+# 7. Merge and assign the dynamic time-updated covariates from df_ppa to df_months --------
 print('Merge and assign the dynamic time-updated covariates covariates from df_ppa to df_months')
 df_ppa_wide <- df_ppa_wide %>%
   rename(month = new_month)
-
-# merge df_ppa_wide to df_months by month across patients. df_ppa_wide has been prepared in such a way that we can now simply merge to month. 
-df_months <- df_months %>%
-  rename(cov_num_bmi_b = cov_num_bmi) # rename the baseline BMI (otherwise, duplicate variables)
 df_ppa_wide <- df_ppa_wide %>%
   select(!cens_date_metfin_start_cont) # take out the cens_date (otherwise, duplicate variables)
-# CAVE: due to new_month, it could be that we reach maximum! => ignore such row for merging
+
+# CAVE: due to new_month, it could be that we reach beyond max follow-up => ignore such rows for merging
 df_months <- df_months %>%
   # Keep all df_months months; if there is a month in df_ppa_wide that is not in df_months do not include it. 
-  # That's what we need since some months in df_ppa_wide might be over the max due to the moving
   left_join(df_ppa_wide, by = c("patient_id", "month"))
-
-# Modify dummy data
-## This script modifies dummy data of df_months to: 
-## - randomly select 80% of baseline lab values
-## - add some random values (all of them are currently empty in the dummy data)
-## - this will test the fill-up below
-print('Modify dummy data')
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, adapt dummy data")
-  source("analysis/modify_dummy_data_df_months_2.R")
-  message("Dummy data successfully modified")
-}
 
 
 # 8. Fill up the Swiss cheese and reassign the lipid ratio --------
@@ -314,9 +292,9 @@ print('Fill up the Swiss cheese and reassign the lipid ratio')
 tv_cov_num_cols <- c("cov_num_bmi", "cov_num_hba1c", "cov_num_chol", "cov_num_hdl_chol")
 baseline_lookup <- c(
   cov_num_bmi = "cov_num_bmi_b",
-  cov_num_hba1c = "cov_num_hba1c_mmol_mol",
-  cov_num_chol = "cov_num_cholesterol_b",
-  cov_num_hdl_chol = "cov_num_hdl_cholesterol_b"
+  cov_num_hba1c = "cov_num_hba1c_b",
+  cov_num_chol = "cov_num_chol_b",
+  cov_num_hdl_chol = "cov_num_hdl_chol_b"
 )
 
 df_months <- df_months %>%
@@ -353,10 +331,18 @@ df_months <- df_months %>%
                 })) %>%
   ungroup()
 
-# recreate the lipid ratio, based on the monthly filled up values
+# recreate the lipid ratio, HbA1c cat, and BMI cat (based on the monthly filled up values)
 df_months <- df_months %>%
   mutate(
     # See data_process.R
+    cov_num_chol = if_else(
+      cov_num_chol > 20 | cov_num_chol < 1.75,
+      NA_real_,
+      cov_num_chol),
+    cov_num_hdl_chol = if_else(
+      cov_num_hdl_chol > 5 | cov_num_hdl_chol < 0.4,
+      NA_real_,
+      cov_num_hdl_chol),
     cov_num_tc_hdl_ratio = cov_num_chol / cov_num_hdl_chol, # also overwrites the baseline value
     cov_num_tc_hdl_ratio = if_else(
       cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1,
@@ -366,23 +352,25 @@ df_months <- df_months %>%
       cov_num_tc_hdl_ratio,
       breaks = c(1, 3.5, 5.11, 50),  # 50 is upper limit, above set to NA already
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
-      right = FALSE),
-    cov_cat_tc_hdl_ratio = case_when(is.na(cov_num_tc_hdl_ratio) ~ factor("Unknown", 
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
+    cov_cat_tc_hdl_ratio = case_when(is.na(cov_cat_tc_hdl_ratio) ~ factor("Unknown", 
                                                                           levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio)
   ) %>% 
   mutate(
     # See data_process.R
-    cov_num_hba1c_mmol_mol = if_else( 
+    cov_num_hba1c = if_else( 
       cov_num_hba1c < 0.00 | cov_num_hba1c > 120.00,
       NA_real_,
       cov_num_hba1c), # also overwrites the baseline value
-    cov_cat_hba1c_mmol_mol = cut(
-      cov_num_hba1c_mmol_mol,
+    cov_cat_hba1c = cut(
+      cov_num_hba1c,
       breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
-      right = FALSE),
-    cov_cat_hba1c_mmol_mol = case_when(is.na(cov_cat_hba1c_mmol_mol) ~ factor("Unknown", 
-                                                                              levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_mmol_mol)
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
+    cov_cat_hba1c = case_when(is.na(cov_cat_hba1c) ~ factor("Unknown", 
+                                                            levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c)
   ) %>% 
   mutate(
     cov_num_bmi = if_else(
@@ -393,7 +381,8 @@ df_months <- df_months %>%
       cov_num_bmi,
       breaks = c(12, 30, 70),
       labels = c("Not obese", "Obese"),
-      right = FALSE),
+      right = FALSE) %>% 
+      forcats::fct_expand("Unknown"),
     cov_cat_bmi = case_when(is.na(cov_cat_bmi) ~ factor("Unknown", 
                                                         levels = c("Not obese", "Obese", "Unknown")), TRUE ~ cov_cat_bmi)
   )
@@ -401,12 +390,14 @@ df_months <- df_months %>%
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
-#                 # exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
+#                 cov_date_chol, cov_num_chol, cov_date_hdl_chol, cov_num_hdl_chol, cov_num_chol_b, cov_num_hdl_chol_b,
+#                 cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
 #                 cov_num_tc_hdl_ratio, cov_cat_tc_hdl_ratio,
-#                 cov_date_chol, cov_num_chol, cov_date_hdl_chol, cov_num_hdl_chol,
-#                 cov_num_cholesterol_b, cov_num_hdl_cholesterol_b,
-#                 cov_date_hba1c, cov_num_hba1c, cov_num_hba1c_mmol_mol, cov_cat_hba1c_mmol_mol,
-#                 cov_date_bmi, cov_num_bmi, cov_cat_bmi_groups, cov_bin_obesity, cov_num_bmi_b,
+#                 cov_date_hba1c, cov_num_hba1c, 
+#                 cov_cat_hba1c,
+#                 cov_num_hba1c_b, cov_cat_hba1c_b,
+#                 cov_date_bmi, cov_num_bmi, 
+#                 cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity, 
 #                 cov_cat_bmi,
 #                 cov_bin_ami, cov_bin_hypertension, cov_bin_all_stroke,
 #                 out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
@@ -418,8 +409,9 @@ df_months <- df_months %>%
 
 # drop the baseline values that are not needed anymore
 df_months <- df_months %>%
-  select(!c(cov_num_hdl_cholesterol_b,
-            cov_num_cholesterol_b,
+  select(!c(cov_num_hdl_chol_b,cov_num_chol_b,
+            cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
+            cov_num_hba1c_b, cov_cat_hba1c_b,
             cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity))
 
 

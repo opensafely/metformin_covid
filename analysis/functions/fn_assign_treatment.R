@@ -1,5 +1,5 @@
 ####
-# Custom-made function to add treatment, treated as a one-time first-ever event, to (monthy/weekly) interval person/month data frames
+# Custom-made function to add treatment to person-interval data
 ## RULES:
 # a) if event date is not NA and happened before the minimum start date of all intervals of a person, then assign 1 (in corresponding flag variable) to all person-intervals
 # b) if event date is not NA and happened after the maximum end date of all intervals of a person, then assign 0 (in corresponding flag variable) to all person-intervals

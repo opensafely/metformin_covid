@@ -45,8 +45,8 @@ subgroups <- list(
   df_nonimd1       = quote(cov_cat_deprivation_5 != "1 (most deprived)"),
   df_obese         = quote(cov_bin_obesity == TRUE),
   df_nonobese      = quote(cov_bin_obesity == FALSE),
-  df_HbA1c59orabove = quote(cov_cat_hba1c_mmol_mol == "59-75"),
-  df_belowHbA1c59  = quote(cov_cat_hba1c_mmol_mol != "59-75")
+  df_HbA1c59orabove = quote(cov_cat_hba1c_b == "59-75"),
+  df_belowHbA1c59  = quote(cov_cat_hba1c_b != "59-75")
 )
 
 

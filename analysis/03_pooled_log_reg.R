@@ -55,16 +55,15 @@ covariate_names <- names(df_months_severecovid) %>%
   grep("^(cov_num|cov_cat|cov_bin|strat_)", ., value = TRUE) %>% 
   # exclude those not needed in the model: 
   ## cov_cat_bmi covers cov_num_bmi,
-  ## cov_cat_hba1c_mmol_mol covers cov_num_hba1c & cov_num_hba1c_mmol_mol
+  ## cov_cat_hba1c covers cov_num_hba1c
   ## cov_cat_tc_hdl_ratio covers cov_num_tc_hdl_ratio & cov_num_chol & cov_num_hdl_chol
   ## cov_num_age_spline covers cov_cat_age and cov_num_age
   setdiff(c("cov_num_bmi",
-            "cov_num_hba1c", "cov_num_hba1c_mmol_mol", 
+            "cov_num_hba1c",
             "cov_num_tc_hdl_ratio", "cov_num_chol", "cov_num_hdl_chol",
             "cov_cat_age", "cov_num_age"
             )) 
 print(covariate_names)
-
 
 # Background -----------------------------------------------------
 ### a) Pooled logistic regression
@@ -99,7 +98,7 @@ print('Define interval data set and number of bootstraps')
 ## If weeks, then K = 169 weeks
 K <- 39 # Total follow-up in months; if we use 39, we allow for the final 1-day fup (01.04.2022-01.04.2022); should not make much difference
 df_months_severecovid$monthsqr <- df_months_severecovid$month^2 # add months square to model time in PLR
-R <- 10 # Total bootstraps (ideally >500)
+R <- 4 # Total bootstraps (ideally >500)
 
 
 # IPTW: Fit treatment model and truncate the weights ----------------------

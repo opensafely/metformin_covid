@@ -42,13 +42,13 @@ df$exp_bin_treat <- ordered(df$exp_bin_treat,
 covariate_names <- names(df) %>%
   grep("^cov_", ., value = TRUE) %>% 
   # exclude those not needed in the model:
-  ## cov_bin_obesity is covering for cov_num_bmi & cov_cat_bmi_groups,
-  ## cov_cat_hba1c_mmol_mol is covering for cov_num_hba1c_mmol_mol
-  ## cov_cat_tc_hdl_ratio is covering for cov_num_tc_hdl_ratio
+  ## cov_bin_obesity is covering for cov_num_bmi_b & cov_cat_bmi_groups,
+  ## cov_cat_hba1c_b is covering for cov_num_hba1c_b
+  ## cov_cat_tc_hdl_ratio_b is covering for cov_num_tc_hdl_ratio_b
   ## spline(cov_num_age) is covering for cov_cat_age
-  setdiff(c("cov_num_bmi", "cov_cat_bmi_groups", "cov_num_hba1c_mmol_mol", "cov_cat_age", "cov_num_tc_hdl_ratio"
+  setdiff(c("cov_num_bmi_b", "cov_cat_bmi_groups", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
             )) 
-# print(covariate_names)
+print(covariate_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
@@ -281,8 +281,8 @@ var_labels <- list(
   cov_bin_pcos ~ "History of PCOS",
   cov_bin_prediabetes ~ "History of prediabetes",
   cov_bin_diabetescomp ~ "Diabetes complication",
-  cov_cat_hba1c_mmol_mol ~ "HbA1c in mmol/mol",
-  cov_cat_tc_hdl_ratio ~ "TC/Chol ratio"
+  cov_cat_hba1c_b ~ "HbA1c in mmol/mol",
+  cov_cat_tc_hdl_ratio_b ~ "TC/Chol ratio"
 ) %>%
   set_names(., map_chr(., all.vars))
 

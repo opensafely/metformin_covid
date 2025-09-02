@@ -1,6 +1,5 @@
 ####
 # Custom-made function to add outcome, competing and censoring events to an expanded person-interval dataset
-# CAVE: use it only after the dataset has been interval-expanded (fn_expand_intervals.R) and after all events have been added (fn_assign* functions)
 
 # Define columns called "outcome", censor_LTFU", "comp_event"
 # Shift them as follows:
@@ -17,7 +16,7 @@
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
 ### ii) assign to the PREVIOUS (k) row/person-interval : outcome=NA, censor_LTFU=0, comp_event=1 # same comment re NA as above
 
-## Edge case RULES
+## Edge case rules
 ### d) if outcome and censor_LTFU have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order in function.
 ### e) if outcome and competing event (i.e. non-covid death) event have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order in function.
 ### f) if censoring and competing event event have the EXACT same date, then pick the competing event as the defining event. Ensured by case_when() order in function.
