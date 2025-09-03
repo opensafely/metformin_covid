@@ -6,7 +6,7 @@
 # 4. Merge the stable time-updated (first-ever, constant) covariates from df_ppa to df_months. To test edge cases, further adapt dummy data.
 # 5. Assign the stable time-updated (first-ever, constant) in df_months. 
 # 6. Reformatting of the dynamic time-updated covariates in a long-format df_ppa, before merging to df_months. To test edge cases, further adapt dummy data.
-# 7. Merge and assign the dynamic time-updated covariates covariates from df_ppa to df_months. To test edge cases, further adapt dummy data.
+# 7. Merge and assign the dynamic time-updated covariates from df_ppa to df_months.
 # 8. Fill up the Swiss cheese and reassign the lipid ratio.
 # 9. Assign and shift outcomes, competing, and censoring events
 # 10. Define eligibility
