@@ -474,31 +474,3 @@ actions:
       moderately_sensitive:
         model_output: output/make_output/results_cox.csv
         model_output_midpoint6: output/make_output/results_cox_midpoint6.csv
-
-  01_data_add_intervals:
-    run: r:latest analysis/01_data_add_intervals.R
-    needs:
-    - data_process
-    outputs:
-      highly_sensitive:
-        dataset: output/data/df_months.arrow
-
-  02_data_add_events:
-    run: r:latest analysis/02_data_add_events.R
-    needs:
-    - 01_data_add_intervals
-    - data_process_ppa
-    outputs:
-      highly_sensitive:
-        dataset1: output/data/df_months_severecovid.arrow
-        dataset2: output/data/df_months_covid_event.arrow
-        dataset3: output/data/df_months_longcovid.arrow
-
-  03_pooled_log_reg:
-    run: r:latest analysis/03_pooled_log_reg.R
-    needs:
-    - 02_data_add_events
-    outputs:
-      moderately_sensitive:
-        csv: output/te/pooled_log_reg/*.csv
-        plots: output/te/pooled_log_reg/*.png
