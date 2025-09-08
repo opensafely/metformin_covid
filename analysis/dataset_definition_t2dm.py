@@ -59,7 +59,7 @@ random.seed(19283) # random seed
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=8000)
+dataset.configure_dummy_data(population_size=7000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################
