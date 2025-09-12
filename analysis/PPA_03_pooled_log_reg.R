@@ -17,9 +17,13 @@ library(parglm) # to be computationally more efficient
 library(splines)
 library(lubridate)
 library(boot)
+library(rlang) # for fn_standardize_risks.R
 library(Hmisc) # for Love/SMD plot
 source(here::here("analysis", "functions", "fn_smd_before.R"))
 source(here::here("analysis", "functions", "fn_smd_after.R"))
+source(here::here("analysis", "functions", "fn_truncate_by_percentile.R"))
+source(here::here("analysis", "functions", "fn_standardize_risks.R"))
+source(here::here("analysis", "functions", "fn_extract_ci_boot.R"))
 
 
 # Create directories for output -------------------------------------------
@@ -49,7 +53,7 @@ df_months_severecovid <- df_months_severecovid %>%
   mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
 
 
-# Define covariates ----------------------------------------------------------
+# Define covariates -------------------------------------------------------
 print('Define covariates')
 covariate_names <- names(df_months_severecovid) %>%
   grep("^(cov_num|cov_cat|cov_bin|strat_)", ., value = TRUE) %>% 
@@ -66,19 +70,23 @@ covariate_names <- names(df_months_severecovid) %>%
 print(covariate_names)
 
 
-# Define interval and number of bootstraps -----------------------
-print('Define interval data set and number of bootstraps')
-## We currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
-## If weeks, then K = 169 weeks
+# Define bootstraps, total follow-up, and time^2 ------------------------
+print('Define bootstraps, total follow-up, and time^2')
+
+R <- 5 # Total bootstraps (ideally >500)
+
+# We currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
+# If weeks, then K = 169 weeks
 K <- 39 # Total follow-up in months; if we use 39, we allow for the final 1-day fup (01.04.2022-01.04.2022); should not make much difference
+
 df_months_severecovid$monthsqr <- df_months_severecovid$month^2 # add months square to model time in PLR
-R <- 50 # Total bootstraps (ideally >500)
 
 
-# Add treatment history variable ---------------------------------
+# Add the treatment history variable --------------------------------------
+print('Add the treatment history variable')
 ## treat is my time-varying treatment variable, see PPA_02_add_events
 ## exp_bin_treat is my group indicator (at baseline, constant throughout all months)
-## Now, let's build treat_lag to capture treatment history for everyone
+## let's build treat_lag to capture treatment history for everyone
 ## And by default at month 0 treat_lag shall be 0, since everyone is by design untreated before baseline -> "initiating metformin"
 df_months_severecovid <- df_months_severecovid %>%
   group_by(patient_id)  %>%
@@ -91,12 +99,11 @@ df_months_severecovid <- df_months_severecovid %>%
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Build the weights')
 # I(treat == 1) variable is the time-varying treatment indicator.
 
-# Denominator model: probability of treatment given past treatment and time-varying covariates
+## Denominator model: probability of treatment given past treatment and time-varying covariates
 treat_denom_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr +", paste(c(covariate_names), collapse = " + ")))
 treat.denom <- parglm(treat_denom_formula,
                        family = binomial(link = 'logit'),
                        data = df_months_severecovid)
-# summary(treat.denom)
 coef_summary <- summary(treat.denom)$coefficients
 # Check if any estimates are NA
 if (anyNA(coef_summary[, "Estimate"])) {
@@ -104,7 +111,7 @@ if (anyNA(coef_summary[, "Estimate"])) {
 }
 df_months_severecovid$treat_denom <- predict(treat.denom, df_months_severecovid, type = "response")
 
-# Numerator model: probability of treatment given past treatment history only (and time modelling element)
+## Numerator model: probability of treatment given past treatment history only (and time modelling element)
 treat_num_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr"))
 treat.num <- parglm(treat_num_formula,
                      family = binomial(link = 'logit'),
@@ -116,7 +123,7 @@ if (anyNA(coef_summary[, "Estimate"])) {
 }
 df_months_severecovid$treat_num <- predict(treat.num, df_months_severecovid, type = "response")
 
-# Calculate the cumulative time-varying stabilized weight, but first be careful:
+## Calculate the cumulative time-varying stabilized weight, but first be careful:
 # The treat_denom model predicts the probability of a person being in the treatment group (I(treat == 1)) at any given time, conditioned on their covariates.
 # => the weight calculation cumprod(treat_num / treat_denom) is only correct for the treatment group. For the control group, the probability of their observed treatment status (treat == 0) is 1 - treat_denom.
 df_months_severecovid <- df_months_severecovid %>%
@@ -133,87 +140,44 @@ df_months_severecovid <- df_months_severecovid %>%
   ) %>%
   ungroup()
 
-### Truncate final stabilized weight at the 1st and 99th percentile ###
-lower_threshold <- quantile(df_months_severecovid$w_treat_stab, 0.01, na.rm = TRUE)
-upper_threshold <- quantile(df_months_severecovid$w_treat_stab, 0.99, na.rm = TRUE)
-df_months_severecovid$w_treat_stab_trunc <- df_months_severecovid$w_treat_stab
-df_months_severecovid$w_treat_stab_trunc[df_months_severecovid$w_treat_stab_trunc < lower_threshold] <- lower_threshold
-df_months_severecovid$w_treat_stab_trunc[df_months_severecovid$w_treat_stab_trunc > upper_threshold] <- upper_threshold
+## Truncate final stabilized weight at the 1st and 99th percentile
+df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_stab")
 
-###  Min, 25th percentile, median, mean, SD, 75th percentile, and max: truncated weights ###
+# Min, 25th percentile, median, mean, SD, 75th percentile, and max
+summary(df_months_severecovid$w_treat_stab)
+sd(df_months_severecovid$w_treat_stab)
 summary(df_months_severecovid$w_treat_stab_trunc)
 sd(df_months_severecovid$w_treat_stab_trunc)
 
 
 # Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Fit the outcome model --------
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Fit the outcome model')
-plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+treat.severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_stab_trunc)
-# summary(plr_model_severecovid)
-coef_summary <- summary(plr_model_severecovid)$coefficients
+coef_summary <- summary(treat.severecovid)$coefficients
 # Check if any estimates are NA
 if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some coefficient estimates from the plr_model_severecovid with w_treat_stab_trunc are NA!")
+  warning("Some coefficient estimates from the treat.severecovid with w_treat_stab_trunc are NA!")
 }
 
 
 # Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Standardization --------
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Standardization')
 # Transform estimates to risks at each time point in each group
+cum_risk_treat_severecovid <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = treat.severecovid,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id"
+)
 
-# Create dataset with all time points for each individual under each treatment level
-df_pred <- df_months_severecovid %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-df_pred$monthsqr <- df_pred$month^2
-
-# Control group (everyone untreated) with predicted discrete-time hazards
-df_pred0 <- df_pred
-df_pred0$exp_bin_treat <- 0
-df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
-
-# Treatment group (everyone treated) with predicted discrete-time hazards
-df_pred1 <- df_pred
-df_pred1$exp_bin_treat <- 1
-df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
-
-# Obtain predicted survival probabilities from discrete-time hazards
-df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-
-# Estimate risks from survival probabilities; compute risk at month K-1
-# Risk = 1 - S(t)
-df_pred0$risk0 <- 1 - df_pred0$surv0
-df_pred1$risk1 <- 1 - df_pred1$surv1
-
-# Get the mean in each treatment group at each month time point
-risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-
-# Put all in 1 data frame
-graph.pred <- merge(risk0, risk1, by=c("month"))
-
-# Edit data frame to reflect that risks are estimated at the END of each interval
-graph.pred$time_0 <- graph.pred$month + 1
-zero <- data.frame(cbind(0,0,0,1,0,0))
-zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
-
-# Add RD and RR
-graph$rd <- graph$risk1-graph$risk0
-graph$rr <- graph$risk1/graph$risk0
-
-# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
-risk0 <- graph$risk0[which(graph$month==K-1)] 
-risk1 <- graph$risk1[which(graph$month==K-1)]
-rd <- graph$rd[which(graph$month==K-1)]
-rr <- graph$rr[which(graph$month==K-1)]
-
-### Construct marginal parametric cumulative incidence (risk) curves (without CIs)
-
-# Create plot (without CIs)
-plot_cum_risk_treat_severecovid <- ggplot(graph,
-                                               aes(x=time_0, y=risk)) + 
+# Construct marginal parametric cumulative incidence (risk) curves (without CIs)
+plot_cum_risk_treat_severecovid <- ggplot(cum_risk_treat_severecovid$graph_data,
+                                          aes(x=time_0, y=risk)) + 
   geom_line(aes(y = risk1, 
                 color = "Metformin"), linewidth = 1.5) +
   geom_line(aes(y = risk0,
@@ -264,7 +228,7 @@ if (anyNA(coef_summary[, "Estimate"])) {
 # Obtain predicted probabilities of being uncensored for numerator
 df_months_severecovid$ltfu_num <- predict(ltfu.num, df_months_severecovid, type="response")
 
-### Estimate stabilized inverse probability weights for censoring ###
+## Estimate stabilized inverse probability weights for censoring
 # Take cumulative products starting at baseline
 df_months_severecovid <- df_months_severecovid %>%
   group_by(patient_id) %>%
@@ -278,18 +242,16 @@ df_months_severecovid <- df_months_severecovid %>%
 # Take product of weight for censoring and treatment for each individual (take the untruncated from above)
 df_months_severecovid$w_treat_ltfu_stab <- df_months_severecovid$w_treat_stab * df_months_severecovid$w_ltfu_stab
 
-### Truncate final stabilized weight at the 1st and 99th percentile ###
-lower_threshold <- quantile(df_months_severecovid$w_treat_ltfu_stab, 0.01, na.rm = TRUE)
-upper_threshold <- quantile(df_months_severecovid$w_treat_ltfu_stab, 0.99, na.rm = TRUE)
-df_months_severecovid$w_treat_ltfu_stab_trunc <- df_months_severecovid$w_treat_ltfu_stab
-df_months_severecovid$w_treat_ltfu_stab_trunc[df_months_severecovid$w_treat_ltfu_stab_trunc < lower_threshold] <- lower_threshold
-df_months_severecovid$w_treat_ltfu_stab_trunc[df_months_severecovid$w_treat_ltfu_stab_trunc > upper_threshold] <- upper_threshold
+## Truncate final stabilized weight at the 1st and 99th percentile
+df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_ltfu_stab")
 
-###  Min, 25th percentile, median, mean, SD, 75th percentile, and max: truncated weights ###
+# Min, 25th percentile, median, mean, SD, 75th percentile, and max
+summary(df_months_severecovid$w_treat_ltfu_stab)
+sd(df_months_severecovid$w_treat_ltfu_stab)
 summary(df_months_severecovid$w_treat_ltfu_stab_trunc)
 sd(df_months_severecovid$w_treat_ltfu_stab_trunc)
 
-### investigate a bit more
+## investigate more
 censoring_rates <- df_months_severecovid %>%
   group_by(month) %>%
   summarise(censor_rate = mean(censor_LTFU, na.rm = TRUE), .groups="drop") %>%
@@ -315,72 +277,32 @@ print('LTFU: Fit the outcome model')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW (both for PPA and LTFU)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+severecovid.treat.ltfu <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_stab_trunc)
-# summary(plr_model_severecovid)
-coef_summary <- summary(plr_model_severecovid)$coefficients
+# summary(severecovid.treat.ltfu)
+coef_summary <- summary(severecovid.treat.ltfu)$coefficients
 # Check if any estimates are NA
 if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some plr_model_severecovid incl. PPA and LTFU censoring coefficient estimates are NA!")
+  warning("Some severecovid.treat.ltfu incl. PPA and LTFU censoring coefficient estimates are NA!")
 }
 
 
 # LTFU: Standardization --------
 print('LTFU: Standardization')
-### Transform estimates to risks at each time point in each group ###
+# Transform estimates to risks at each time point in each group
+cum_risk_treat_ltfu_severecovid <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = severecovid.treat.ltfu,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id"
+)
 
-# Create dataset with all time points for each individual under each treatment level
-df_pred <- df_months_severecovid %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-df_pred$monthsqr <- df_pred$month^2
-
-# Control group (everyone untreated) with predicted discrete-time hazards
-df_pred0 <- df_pred
-df_pred0$exp_bin_treat <- 0
-df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
-
-# Treatment group (everyone treated) with predicted discrete-time hazards
-df_pred1 <- df_pred
-df_pred1$exp_bin_treat <- 1
-df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
-
-# Obtain predicted survival probabilities from discrete-time hazards
-df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-
-# Estimate risks from survival probabilities; compute risk at month K-1
-# Risk = 1 - S(t)
-df_pred0$risk0 <- 1 - df_pred0$surv0
-df_pred1$risk1 <- 1 - df_pred1$surv1
-
-# Get the mean in each treatment group at each month time point
-risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-
-# Put all in 1 data frame
-graph.pred <- merge(risk0, risk1, by=c("month"))
-
-# Edit data frame to reflect that risks are estimated at the END of each interval
-graph.pred$time_0 <- graph.pred$month + 1
-zero <- data.frame(cbind(0,0,0,1,0,0))
-zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
-
-# Add RD and RR
-graph$rd <- graph$risk1-graph$risk0
-graph$rr <- graph$risk1/graph$risk0
-
-# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
-risk0 <- graph$risk0[which(graph$month==K-1)] 
-risk1 <- graph$risk1[which(graph$month==K-1)]
-rd <- graph$rd[which(graph$month==K-1)]
-rr <- graph$rr[which(graph$month==K-1)]
-
-### Construct marginal parametric cumulative incidence (risk) curves (without CIs) ###
-
-# Create plot (without CIs)
-plot_cum_risk_treat_ltfu_severecovid <- ggplot(graph,
+# Construct marginal parametric cumulative incidence (risk) curves (without CIs)
+plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_severecovid$graph_data,
                                                    aes(x=time_0, y=risk)) + 
   geom_line(aes(y = risk1, 
                 color = "Metformin"), linewidth = 1.5) +
@@ -403,7 +325,7 @@ plot_cum_risk_treat_ltfu_severecovid <- ggplot(graph,
 # All steps together incl. 95% CI using bootstrapping -------------------------
 print('All steps together incl. 95% CI using bootstrapping')
 
-te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariate_names) {
+te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariate_names, K) {
   
   # capture and count unsuccessful bootstraps
   tryCatch({
@@ -500,76 +422,50 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariate_names)
     
     
     ### (4) Truncate final stabilized weight at the 1st and 99th percentile
-    lower_threshold <- quantile(d$w_treat_ltfu_stab, 0.01)
-    upper_threshold <- quantile(d$w_treat_ltfu_stab, 0.99)
-    d$w_treat_ltfu_stab_trunc <- d$w_treat_ltfu_stab
-    d$w_treat_ltfu_stab_trunc[d$w_treat_ltfu_stab_trunc < lower_threshold] <- lower_threshold
-    d$w_treat_ltfu_stab_trunc[d$w_treat_ltfu_stab_trunc > upper_threshold] <- upper_threshold
+    d <- fn_truncate_by_percentile(
+      df = d,
+      col_name = "w_treat_ltfu_stab"
+    )
     
     
     ### (5) Fit the outcome model
     # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time
     # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
     # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it would mirror the cox model
-    plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr),
+    severecovid.treat.ltfu <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr),
                                     family = binomial(link = 'logit'),
                                     data = d[d$censor_LTFU==0 & d$comp_event == 0,],
                                     weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_stab_trunc)
-    coef_summary <- summary(plr_model_severecovid)$coefficients
+    coef_summary <- summary(severecovid.treat.ltfu)$coefficients
     if (anyNA(coef_summary[, "Estimate"])) {
-      warning("Some plr_model_severecovid coefficient estimates are NA!")
+      warning("Some severecovid.treat.ltfu coefficient estimates are NA!")
     }
     
     
     ### (6) Standardization/Marginalization
-    # Create dataset with all time points for each individual under each treatment level
-    treat0 <- d %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-    treat0$monthsqr <- treat0$month^2
+    results_std <- fn_standardize_risks(
+      df = d,
+      K = K,
+      model = severecovid.treat.ltfu,
+      group_col = "exp_bin_treat",
+      time_col = "month",
+      patient_id_col = "boot_patient_id"
+    )
     
-    # In the no metformin arm ("force" everyone to be untreated)
-    treat0$exp_bin_treat <- 0
-    # In the metformin arm ("force" everyone to be treated)
-    treat1 <- treat0
-    treat1$exp_bin_treat <- 1
-    
-    # Extract predicted values from pooled logistic regression model for each person-time row
-    # Predicted values correspond to discrete-time hazards
-    treat0$p.event0 <- predict(plr_model_severecovid, treat0, type="response")
-    treat1$p.event1 <- predict(plr_model_severecovid, treat1, type="response")
-    # The above creates a person-time dataset where we have predicted discrete-time hazards
-    # For each person-time row in the dataset
-    
-    # Obtain predicted survival probabilities from discrete-time hazards
-    treat0.surv <- treat0 %>% group_by(boot_patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-    treat1.surv <- treat1 %>% group_by(boot_patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-    
-    # Estimate risks from survival probabilities
-    # Risk = 1 - S(t)
-    treat0.surv$risk0 <- 1 - treat0.surv$surv0
-    treat1.surv$risk1 <- 1 - treat1.surv$surv1
-    
-    # Get the mean in each treatment group at each month time point
-    risk0 <- aggregate(treat0.surv[c("exp_bin_treat", "month", "risk0")], by=list(treat0.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-    risk1 <- aggregate(treat1.surv[c("exp_bin_treat", "month", "risk1")], by=list(treat1.surv$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-    
-    # Prepare data
-    graph.pred <- merge(risk0, risk1, by=c("month"))
-    # Edit data frame to reflect that risks are estimated at the END of each interval
-    graph.pred$time_0 <- graph.pred$month + 1
-    zero <- data.frame(cbind(0,0,0,1,0,0))
-    zero <- setNames(zero,names(graph.pred))
-    graph <- rbind(zero, graph.pred)
-    graph$rd <- graph$risk1-graph$risk0
-    graph$rr <- graph$risk1/graph$risk0
-    return(c(graph$risk0, graph$risk1, graph$rd, graph$rr))
-    
+    return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))
+
   }, error = function(e) {
     # If any error occurs, count as a failed bootstrap
     cat("Bootstrap sample failed due to:", conditionMessage(e), "\n")
     boot_failures <<- boot_failures + 1
-    return(rep(NA, length(c(graph$risk0, graph$risk1, graph$rd, graph$rr)))) # Return NA values to avoid breaking the boot()
+    # Check if results_std$graph_data is available before attempting to get its length
+    if(exists("results_std") && !is.null(results_std$graph_data)) {
+      return(rep(NA, length(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))))
+    } else {
+      # If not, return NA values of a default length
+      return(rep(NA, 4 * K)) # 4 metrics (risk0, risk1, rd, rr) for K time points
+    }
   })
-  
 }
 
 ### RUN it, for each outcome/dataset (we run the per protocol estimate only on the primary outcome, but would also work for the other outcomes)
@@ -580,22 +476,11 @@ study_ids <- data.frame(patient_id = unique(df_months_severecovid$patient_id))
 te_iptw_ipcw_rd_rr_withCI_severecovid_boot <- boot(
   data = study_ids,
   statistic = function(data, indices) {
-    te_iptw_ipcw_rd_rr_withCI(data, indices, data_full = df_months_severecovid, covariate_names = covariate_names)
+    te_iptw_ipcw_rd_rr_withCI(data, indices, data_full = df_months_severecovid, covariate_names = covariate_names, K = K)
   },
   R = R
 )
 cat("Number of failed bootstrap samples:", boot_failures, "\n")
-
-### Extract the estimates from the bootstrap
-# Function to extract bootstrapped confidence intervals for a time point - and keep a column with the original point estimates (without CI)
-extract_ci_boot <- function(boot_obj, index) {
-  ci <- boot.ci(boot_obj, conf = 0.95, type = "perc", index = index)
-  if (!is.null(ci$percent)) {
-    return(c(ci$percent[4], ci$percent[5])) # Lower and Upper CI for the bootstrapped values
-  } else {
-    return(c(NA, NA)) # for the original value
-  }
-}
 
 # Identify target months (indices) for when to extract risk estimates.
 # The final time point is index K, since R indexes from 1 (even though we shifted month to K - 1 above to start at month == 0)
@@ -609,19 +494,18 @@ te_plr_iptw_ipcw_severecovid_39_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
   Estimate_original = te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t0[indices_39],
   Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, indices_39], na.rm = TRUE),
-  Lower_CI = sapply(indices_39, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
-  Upper_CI = sapply(indices_39, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
+  Lower_CI = sapply(indices_39, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
+  Upper_CI = sapply(indices_39, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
 )
 te_plr_iptw_ipcw_severecovid_24_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
   Estimate_original = te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t0[indices_24],
   Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, indices_24], na.rm = TRUE),
-  Lower_CI = sapply(indices_24, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
-  Upper_CI = sapply(indices_24, function(i) extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
+  Lower_CI = sapply(indices_24, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
+  Upper_CI = sapply(indices_24, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
 )
 
-### Build the risk plot
-# Create an empty data frame to store the structured output for the plot
+### Build the risk table for the cum risk graph
 risk_graph <- data.frame(
   time = 0:K,
   mean.0 = numeric(K+1),
@@ -642,7 +526,6 @@ ul_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, fu
 ll_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025))
 ul_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975))
 
-# Populate the risk.boot.graph data frame
 risk_graph$mean.0 <- mean_risk0
 risk_graph$ll.0 <- ll_risk0
 risk_graph$ul.0 <- ul_risk0
@@ -679,7 +562,10 @@ plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(risk_graph,
                              'Metformin'))
 
 
-# FROM HERE ONWARDS, DELETE, OLD APPROACH ! ----
+
+
+
+# FROM HERE ONWARDS, DELETE, OLD APPROACH - but should give the same?! ----
 
 # Baseline confounding ONLY: Fit baseline treatment model and calculate stabilized weights, constant over time ----------------------
 print('Baseline confounding: Fit baseline treatment model and calculate stabilized weights, constant over time')
@@ -725,12 +611,8 @@ df_months_severecovid <- df_months_severecovid %>%
   mutate(w_t_stab = ifelse(exp_bin_treat == 1,
                                p_treat / iptw_denom,
                                (1 - p_treat) / (1 - iptw_denom)))
-# truncate the weights
-lower_threshold <- quantile(df_months_severecovid$w_t_stab, 0.01, na.rm = TRUE)
-upper_threshold <- quantile(df_months_severecovid$w_t_stab, 0.99, na.rm = TRUE)
-df_months_severecovid$w_t_stab_trunc <- df_months_severecovid$w_t_stab
-df_months_severecovid$w_t_stab_trunc[df_months_severecovid$w_t_stab_trunc < lower_threshold] <- lower_threshold
-df_months_severecovid$w_t_stab_trunc[df_months_severecovid$w_t_stab_trunc > upper_threshold] <- upper_threshold
+# Truncate stabilized weight at the 1st and 99th percentile
+df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_t_stab")
 
 ## Min, 25th percentile, median, mean, SD, 75th percentile, and max
 summary(df_months_severecovid$w_t_stab)
@@ -798,15 +680,15 @@ print('Baseline confounding: Fit the outcome model')
 # Fit pooled logistic regression, with stabilized weights (currently only IPW for treatment, i.e. baseline confounding => same weights across time)
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+severecovid.t <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_t_stab_trunc)
-# summary(plr_model_severecovid)
-coef_summary <- summary(plr_model_severecovid)$coefficients
+# summary(severecovid.t)
+coef_summary <- summary(severecovid.t)$coefficients
 # Check if any estimates are NA
 if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some plr_model_severecovid coefficient estimates are NA!")
+  warning("Some severecovid.t coefficient estimates are NA!")
 }
 
 ### STANDARDIZATION: Transform estimates to risks at each time point in each group ###
@@ -815,57 +697,17 @@ if (anyNA(coef_summary[, "Estimate"])) {
 ## These models can be specified such that the effect of the treatment can vary over time, without relying on a proportional hazards assumption.
 ## We're modeling expected/predicted (counterfactual) risks over time under the assumption that individuals could have been followed until max fup time (K-1). Hence everyone has predicted risk data until K-1.
 ## The aggregation at the end ensures that the true censoring distribution is respected when computing risks.
+cum_risk_iptw_severecovid <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = severecovid.t,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id"
+)
 
-# Create dataset with all time points for each individual under each treatment level
-df_pred <- df_months_severecovid %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-df_pred$monthsqr <- df_pred$month^2
-
-# Control group (everyone untreated) with predicted discrete-time hazards
-df_pred0 <- df_pred
-df_pred0$exp_bin_treat <- 0
-df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
-
-# Treatment group (everyone treated) with predicted discrete-time hazards
-df_pred1 <- df_pred
-df_pred1$exp_bin_treat <- 1
-df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
-
-# Obtain predicted survival probabilities from discrete-time hazards
-df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-
-# Estimate risks from survival probabilities; compute risk at month K-1
-# Risk = 1 - S(t)
-df_pred0$risk0 <- 1 - df_pred0$surv0
-df_pred1$risk1 <- 1 - df_pred1$surv1
-
-# Get the mean in each treatment group at each month time point
-risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-
-# Put all in 1 data frame
-graph.pred <- merge(risk0, risk1, by=c("month"))
-
-# Edit data frame to reflect that risks are estimated at the END of each interval
-graph.pred$time_0 <- graph.pred$month + 1
-zero <- data.frame(cbind(0,0,0,1,0,0))
-zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
-
-# Add RD and RR
-graph$rd <- graph$risk1-graph$risk0
-graph$rr <- graph$risk1/graph$risk0
-
-# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
-risk0 <- graph$risk0[which(graph$month==K-1)] 
-risk1 <- graph$risk1[which(graph$month==K-1)]
-rd <- graph$rd[which(graph$month==K-1)]
-rr <- graph$rr[which(graph$month==K-1)]
-
-### Construct marginal parametric cumulative incidence (risk) curves (without CIs) ###
-
-# Create plot (without CIs)
-plot_cum_risk_iptw_severecovid <- ggplot(graph,
+# Construct marginal parametric cumulative incidence (risk) curves (without CIs)
+plot_cum_risk_iptw_severecovid <- ggplot(cum_risk_iptw_severecovid$graph_data,
                                          aes(x=time_0, y=risk)) + 
   geom_line(aes(y = risk1, 
                 color = "Metformin"), linewidth = 1.5) +
@@ -883,7 +725,6 @@ plot_cum_risk_iptw_severecovid <- ggplot(graph,
         panel.grid.major.y = element_blank())+
   scale_color_manual(values=c("#E7B800","#2E9FDF"),
                      breaks=c('No Metformin', 'Metformin'))
-
 
 # PPA: Add censoring event weights to adjust for time-varying per-protocol deviations ----------------------------------
 print('PPA: Add censoring event weights to adjust for time-varying per-protocol deviations')
@@ -939,12 +780,8 @@ df_months_severecovid <- df_months_severecovid %>%
 # Take product of weight for censoring and treatment for each individual (take the untruncated w_treat_stab from above, and only then truncate both combined)
 df_months_severecovid$w_t_cens_stab <- df_months_severecovid$w_t_stab * df_months_severecovid$w_cens_stab
 
-### Truncate final stabilized weight at the 1st and 99th percentile ###
-lower_threshold <- quantile(df_months_severecovid$w_t_cens_stab, 0.01, na.rm = TRUE)
-upper_threshold <- quantile(df_months_severecovid$w_t_cens_stab, 0.99, na.rm = TRUE)
-df_months_severecovid$w_t_cens_stab_trunc <- df_months_severecovid$w_t_cens_stab
-df_months_severecovid$w_t_cens_stab_trunc[df_months_severecovid$w_t_cens_stab_trunc < lower_threshold] <- lower_threshold
-df_months_severecovid$w_t_cens_stab_trunc[df_months_severecovid$w_t_cens_stab_trunc > upper_threshold] <- upper_threshold
+# Truncate stabilized weight at the 1st and 99th percentile
+df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_t_cens_stab")
 
 ###  Min, 25th percentile, median, mean, SD, 75th percentile, and max: truncated weights ###
 summary(df_months_severecovid$w_t_cens_stab_trunc)
@@ -976,77 +813,36 @@ print('PPA: Fit the outcome model')
 # Fit pooled logistic regression, with stabilized weights for stable baseline confounding and time-varying protocol deviation
 # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-plr_model_severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+severecovid.t.cens <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
                                 family = binomial(link = 'logit'),
                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_t_cens_stab_trunc)
-# summary(plr_model_severecovid)
-coef_summary <- summary(plr_model_severecovid)$coefficients
+# summary(severecovid.t.cens)
+coef_summary <- summary(severecovid.t.cens)$coefficients
 # Check if any estimates are NA
 if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some plr_model_severecovid with PPA censoring coefficient estimates are NA!")
+  warning("Some severecovid.t.cens with PPA censoring coefficient estimates are NA!")
 }
 
-### Transform estimates to risks at each time point in each group ###
+cum_risk_iptw_ipcw_severecovid <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = severecovid.t.cens,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id"
+)
 
-# Create dataset with all time points for each individual under each treatment level
-df_pred <- df_months_severecovid %>% filter(month == 0) %>% dplyr::select(-month) %>% crossing(month = 0:(K-1))
-df_pred$monthsqr <- df_pred$month^2
-
-# Control group (everyone untreated) with predicted discrete-time hazards
-df_pred0 <- df_pred
-df_pred0$exp_bin_treat <- 0
-df_pred0$p.event0 <- predict(plr_model_severecovid, df_pred0, type="response")
-
-# Treatment group (everyone treated) with predicted discrete-time hazards
-df_pred1 <- df_pred
-df_pred1$exp_bin_treat <- 1
-df_pred1$p.event1 <- predict(plr_model_severecovid, df_pred1, type="response")
-
-# Obtain predicted survival probabilities from discrete-time hazards
-df_pred0 <- df_pred0 %>% group_by(patient_id) %>% mutate(surv0 = cumprod(1 - p.event0)) %>% ungroup()
-df_pred1 <- df_pred1 %>% group_by(patient_id) %>% mutate(surv1 = cumprod(1 - p.event1)) %>% ungroup()
-
-# Estimate risks from survival probabilities; compute risk at month K-1
-# Risk = 1 - S(t)
-df_pred0$risk0 <- 1 - df_pred0$surv0
-df_pred1$risk1 <- 1 - df_pred1$surv1
-
-# Get the mean in each treatment group at each month time point
-risk0 <- aggregate(df_pred0[c("exp_bin_treat", "month", "risk0")], by=list(df_pred0$month), FUN=mean)[c("exp_bin_treat", "month", "risk0")]
-risk1 <- aggregate(df_pred1[c("exp_bin_treat", "month", "risk1")], by=list(df_pred1$month), FUN=mean)[c("exp_bin_treat", "month", "risk1")]
-
-# Put all in 1 data frame
-graph.pred <- merge(risk0, risk1, by=c("month"))
-
-# Edit data frame to reflect that risks are estimated at the END of each interval
-graph.pred$time_0 <- graph.pred$month + 1
-zero <- data.frame(cbind(0,0,0,1,0,0))
-zero <- setNames(zero,names(graph.pred))
-graph <- rbind(zero, graph.pred) ## can be used for the cumulative incidence plot, but without 95% CI (for that, see below)
-
-# Add RD and RR
-graph$rd <- graph$risk1-graph$risk0
-graph$rr <- graph$risk1/graph$risk0
-
-# Extract overall risk estimate (end of follow-up K-1), but without 95% CI (for that, see below)
-risk0 <- graph$risk0[which(graph$month==K-1)] 
-risk1 <- graph$risk1[which(graph$month==K-1)]
-rd <- graph$rd[which(graph$month==K-1)]
-rr <- graph$rr[which(graph$month==K-1)]
-
-### Construct marginal parametric cumulative incidence (risk) curves (without CIs) ###
-
-# Create plot (without CIs)
-plot_cum_risk_iptw_ipcw_severecovid <- ggplot(graph,
-                                              aes(x=time_0, y=risk)) + 
+# Construct marginal parametric cumulative incidence (risk) curves (without CIs)
+plot_cum_risk_iptw_ipcw_severecovid <- ggplot(cum_risk_iptw_ipcw_severecovid$graph_data,
+                                         aes(x=time_0, y=risk)) + 
   geom_line(aes(y = risk1, 
                 color = "Metformin"), linewidth = 1.5) +
   geom_line(aes(y = risk0,
                 color = "No Metformin"), linewidth = 1.5) +
   xlab("Months") +
   ylab("Cumulative Incidence (%)") + 
-  theme_minimal()+ # set plot theme elements
+  theme_minimal()+
   theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
         axis.line = element_line(colour = "black"),
         legend.title = element_blank(),

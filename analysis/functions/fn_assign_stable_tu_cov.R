@@ -1,5 +1,5 @@
 ####
-# Custom-made function to add stable time-udpated covariates to person-interval data and adhere to specific rules:
+# Custom-made function to add stable time-updated covariates to person-interval data and adhere to specific rules:
 #### 
 # Rule a–c:
 ## If covariate date is NA -> all intervals = 0
