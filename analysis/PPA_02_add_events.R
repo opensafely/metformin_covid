@@ -62,10 +62,18 @@ df_months <- fn_assign_treatment(df_months,
                                  date_treat_vars,
                                  start_var = "start_date_month", 
                                  end_var = "end_date_month")
+# I only have treatment starting date data from the control group. 
+# But adding this extra step I get the overall time-varying "treat" variable for both groups (always treat = 1 in intervention)
+# My PP question is: "starting metformin monotherapy (within 6 months of T2D diagnosis) vs never starting metformin" and since all those who did not start metformin are assigned to control, only the control group can deviate from protocol. This PP question/estimand also means we are not interested in what is happening after initiation (all subsequent "treat" rows are assigned 1 once initiated)
+df_months <- df_months %>% 
+  mutate(treat = case_when(exp_bin_treat == 0 & cens_bin_metfin_start_cont == 0 ~ 0,
+                           exp_bin_treat == 0 & cens_bin_metfin_start_cont == 1 ~ 1,
+                           exp_bin_treat == 1 ~ 1))
+
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
-#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
+#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont, treat,
 #                 out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
 #                 cens_date_ltfu_afterlandmark,
 #                 cov_cat_sex, cov_num_age
@@ -73,8 +81,6 @@ df_months <- fn_assign_treatment(df_months,
 #   # dplyr::filter(exp_bin_treat == 0) %>%
 #   # dplyr::filter(cens_bin_metfin_start_cont == 1)
 #   View()
-
-# cens_bin_metfin_start_cont is now the corresponding flag variable for treatment start in control group
 
 
 # There are two types of time-updated covariates:
@@ -146,7 +152,7 @@ df_months <- fn_assign_stable_tu_cov(df_months,
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
-#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
+#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont, treat,
 #                 cov_date_ami, cov_bin_ami,
 #                 cov_date_hypertension, cov_bin_hypertension,
 #                 cov_date_all_stroke, cov_bin_all_stroke,
@@ -407,9 +413,9 @@ df_months <- df_months %>%
 #   # filter(is.na(cov_cat_tc_hdl_ratio)) %>%
 #   View()
 
-# drop the baseline values that are not needed anymore
+# drop the baseline helper values, easier to continue with a clean reduced dataset
 df_months <- df_months %>%
-  select(!c(cov_num_hdl_chol_b,cov_num_chol_b,
+  select(!c(cov_num_hdl_chol_b, cov_num_chol_b,
             cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
             cov_num_hba1c_b, cov_cat_hba1c_b,
             cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity))
