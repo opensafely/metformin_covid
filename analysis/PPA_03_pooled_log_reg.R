@@ -565,7 +565,7 @@ plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(risk_graph,
 
 
 
-# FROM HERE ONWARDS, DELETE, OLD APPROACH - but should give the same?! ----
+# FROM HERE ONWARDS, DELETE, OLD APPROACH - DON'T REVIEW ----
 
 # Baseline confounding ONLY: Fit baseline treatment model and calculate stabilized weights, constant over time ----------------------
 print('Baseline confounding: Fit baseline treatment model and calculate stabilized weights, constant over time')
