@@ -48,6 +48,11 @@ class data_processed(PatientFrame):
     #qa_num_birth_year = Series(int) # could import it, too, but creates friction with data formatting function
     ethnicity_cat = Series(str)
     t2dm_date = Series(date)
+    step_1 = Series(str)
+    step_1a = Series(str)
+    step_2 = Series(str)
+    step_3 = Series(str)
+    step_4 = Series(str)
 
 # random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
@@ -59,7 +64,7 @@ random.seed(19283) # random seed
 # INITIALISE the dataset and set the dummy dataset size
 #######################################################################################
 dataset = create_dataset()
-dataset.configure_dummy_data(population_size=8000)
+dataset.configure_dummy_data(population_size=7000)
 dataset.define_population(patients.exists_for_patient())
 
 #######################################################################################
@@ -71,6 +76,15 @@ with open("output/study_dates.json") as f:
 studyend_date = study_dates["studyend_date"]
 pandemicstart_date = study_dates["pandemicstart_date"]
 mid2018_date = study_dates["mid2018_date"]
+
+#######################################################################################
+# DM algorithm helper variables, to explore the DM algo
+#######################################################################################
+dataset.step_1 = data_processed.step_1
+dataset.step_1a = data_processed.step_1a
+dataset.step_2 = data_processed.step_2
+dataset.step_3 = data_processed.step_3
+dataset.step_4 = data_processed.step_4
 
 #######################################################################################
 # Table 2) QUALITY ASSURANCES and completeness criteria

@@ -51,11 +51,11 @@ print('Add covariates')
 covariate_names <- names(df) %>%
     grep("^cov_", ., value = TRUE) %>% 
     # exclude those not needed in the model:
-    ## cov_bin_obesity covers for cov_num_bmi_b & cov_cat_bmi_groups,
+    ## cov_cat_bmi_groups covers for cov_bin_obesity & cov_num_bmi_b,
     ## cov_cat_hba1c_b covers cov_num_hba1c_b
     ## cov_cat_tc_hdl_ratio_b covers cov_num_tc_hdl_ratio_b, cov_num_chol_b, cov_num_hdl_chol_b,
     ## cov_num_age_spline covers cov_cat_age and cov_num_age
-    setdiff(c("cov_num_bmi_b", "cov_cat_bmi_groups", 
+    setdiff(c("cov_num_bmi_b", "cov_bin_obesity", 
               "cov_num_hba1c_b", 
               "cov_num_tc_hdl_ratio_b", "cov_num_chol_b", "cov_num_hdl_chol_b",
               "cov_cat_age", "cov_num_age")) 

@@ -40,19 +40,19 @@ df$exp_bin_treat <- ordered(df$exp_bin_treat,
 
 # Define the covariates included in the PS model
 covariate_names <- names(df) %>%
-  grep("^cov_", ., value = TRUE) %>% 
+  grep("^(cov_|strat_)", ., value = TRUE) %>% 
   # exclude those not needed in the model:
-  ## cov_bin_obesity is covering for cov_num_bmi_b & cov_cat_bmi_groups,
+  ## cov_cat_bmi_groups is covering cov_bin_obesity & cov_num_bmi_b,
   ## cov_cat_hba1c_b is covering for cov_num_hba1c_b
   ## cov_cat_tc_hdl_ratio_b is covering for cov_num_tc_hdl_ratio_b
   ## spline(cov_num_age) is covering for cov_cat_age
-  setdiff(c("cov_num_bmi_b", "cov_cat_bmi_groups", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
+  setdiff(c("cov_num_bmi_b", "cov_bin_obesity", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
             )) 
 print(covariate_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + ")))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
@@ -264,7 +264,7 @@ var_labels <- list(
   cov_cat_smoking_status ~ "Smoking status",
   cov_bin_healthcare_worker ~ "Healthcare worker",
   cov_num_consrate ~ "Consultation rate in previous year",
-  cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",
+  cov_cat_bmi_groups ~ "Body Mass Index (BMI) categories",
   cov_bin_ami ~ "History of acute myocardial infarct",
   cov_bin_all_stroke  ~ "History of stroke",
   cov_bin_other_arterial_embolism ~ "History of other arterial embolism",
@@ -286,72 +286,72 @@ var_labels <- list(
 ) %>%
   set_names(., map_chr(., all.vars))
 
-# Explore PS groups in intervention, use cut-off 0.55 and 0.9
-df <- df %>%
-  mutate(
-    ps_group = factor(
-      case_when(
-        exp_bin_treat == "metformin" & ps < 0.55 ~ "PS < 0.55",
-        exp_bin_treat == "metformin" & ps >= 0.55 & ps <= 0.9 ~ "0.55 ≤ PS ≤ 0.9",
-        exp_bin_treat == "metformin" & ps > 0.9 ~ "PS > 0.9",
-        TRUE ~ NA_character_  
-      ),
-      levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55")
-    )
-  )
-table_int <-
-  df %>% filter(exp_bin_treat == "metformin") %>% 
-  mutate(
-    N=1L,
-    ps_group = factor(ps_group, levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55"))
-  ) %>%
-  select(
-    ps_group,
-    all_of(names(var_labels)),
-  ) %>%
-  tbl_summary(
-    by = ps_group,
-    label = unname(var_labels[names(.)]),
-    statistic = list(
-      N ~ "{N}",
-      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
-    ),
-  )
-# Extract the summary table as a data frame
-table_int_df <- as_tibble(table_int)
-
-# Explore PS groups in control, use cut-off 0.55
-df <- df %>%
-  mutate(
-    ps_group = factor(
-      case_when(
-        exp_bin_treat == "nothing" & ps < 0.55 ~ "PS < 0.55",
-        exp_bin_treat == "nothing" & ps >= 0.55 ~ "PS >= 0.55",
-        TRUE ~ NA_character_  
-      )
-    )
-  )
-table_cont <-
-  df %>% filter(exp_bin_treat == "nothing") %>% 
-  mutate(
-    N=1L,
-    ps_group = factor(ps_group, levels = c("PS < 0.55", "PS >= 0.55"))
-  ) %>%
-  select(
-    ps_group,
-    all_of(names(var_labels)),
-  ) %>%
-  tbl_summary(
-    by = ps_group,
-    label = unname(var_labels[names(.)]),
-    statistic = list(
-      N ~ "{N}",
-      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
-    ),
-  )
-
-# Extract
-table_cont_df <- as_tibble(table_cont)
+# # Explore PS groups in intervention, use cut-off 0.55 and 0.9
+# df <- df %>%
+#   mutate(
+#     ps_group = factor(
+#       case_when(
+#         exp_bin_treat == "metformin" & ps < 0.55 ~ "PS < 0.55",
+#         exp_bin_treat == "metformin" & ps >= 0.55 & ps <= 0.9 ~ "0.55 ≤ PS ≤ 0.9",
+#         exp_bin_treat == "metformin" & ps > 0.9 ~ "PS > 0.9",
+#         TRUE ~ NA_character_  
+#       ),
+#       levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55")
+#     )
+#   )
+# table_int <-
+#   df %>% filter(exp_bin_treat == "metformin") %>% 
+#   mutate(
+#     N=1L,
+#     ps_group = factor(ps_group, levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55"))
+#   ) %>%
+#   select(
+#     ps_group,
+#     all_of(names(var_labels)),
+#   ) %>%
+#   tbl_summary(
+#     by = ps_group,
+#     label = unname(var_labels[names(.)]),
+#     statistic = list(
+#       N ~ "{N}",
+#       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+#     ),
+#   )
+# # Extract the summary table as a data frame
+# table_int_df <- as_tibble(table_int)
+# 
+# # Explore PS groups in control, use cut-off 0.55
+# df <- df %>%
+#   mutate(
+#     ps_group = factor(
+#       case_when(
+#         exp_bin_treat == "nothing" & ps < 0.55 ~ "PS < 0.55",
+#         exp_bin_treat == "nothing" & ps >= 0.55 ~ "PS >= 0.55",
+#         TRUE ~ NA_character_  
+#       )
+#     )
+#   )
+# table_cont <-
+#   df %>% filter(exp_bin_treat == "nothing") %>% 
+#   mutate(
+#     N=1L,
+#     ps_group = factor(ps_group, levels = c("PS < 0.55", "PS >= 0.55"))
+#   ) %>%
+#   select(
+#     ps_group,
+#     all_of(names(var_labels)),
+#   ) %>%
+#   tbl_summary(
+#     by = ps_group,
+#     label = unname(var_labels[names(.)]),
+#     statistic = list(
+#       N ~ "{N}",
+#       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+#     ),
+#   )
+# 
+# # Extract
+# table_cont_df <- as_tibble(table_cont)
 
 # Save output -------------------------------------------------------------
 print('Save output')
@@ -370,6 +370,6 @@ ggsave(filename = here::here("output", "ps", "density_plot_trimmed.png"), densit
 # Histograms
 ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")
-# PS stratified tables
-write.csv(table_int_df, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
-write.csv(table_cont_df, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))
+# # PS stratified tables
+# write.csv(table_int_df, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
+# write.csv(table_cont_df, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))
