@@ -439,6 +439,12 @@ dataset.cov_num_chol_b = last_matching_event_clinical_snomed_between(cholesterol
 ## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
 dataset.cov_num_hdl_chol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
 
+## Count HbA1c measurement, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_counthba1c = count_matching_event_clinical_snomed_between(hba1c_measurement_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm)
+
+## Count lifestyle advice discussions, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_countlifestyle = count_matching_event_clinical_snomed_between(lifestyle_advice_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm)
+
 
 #######################################################################################
 # Table 6) Outcomes and censoring events
@@ -554,3 +560,6 @@ dataset.tmp_out_bin_dm_death = matching_death_between(diabetes_type2_icd10, data
 dataset.out_date_dm_death = case(when(dataset.tmp_out_bin_dm_death).then(ons_deaths.date))
 ## Neg control: Fracture, after elig_date_t2dm
 dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
+
+## Flag patients on diet intervention only, no drug intervention, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.tmp_date_diet_only = first_matching_event_clinical_snomed_between(diet_only_snomed, dataset.elig_date_t2dm, studyend_date).date

@@ -58,6 +58,8 @@ var_labels_main <- list(
   cov_bin_diabetescomp = "Diabetes complication",
   cov_num_hba1c_b = "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
+  cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
+  cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
@@ -109,6 +111,8 @@ var_labels_death_ltfu1 <- list(
   cov_bin_diabetescomp = "Diabetes complication",
   cov_num_hba1c_b = "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
+  cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
+  cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
@@ -160,6 +164,8 @@ var_labels_death_ltfu2 <- list(
   cov_bin_diabetescomp = "Diabetes complication",
   cov_num_hba1c_b = "HbA1c in mmol/mol",
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
+  cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
+  cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",

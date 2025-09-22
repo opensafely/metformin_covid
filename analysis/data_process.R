@@ -535,7 +535,23 @@ n_dm_algo_midpoint6 <- tibble(
   n_diag_clin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_clin_code, threshold),
   n_diag_med_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_med_code, threshold))
 
-# (3) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
+# (4) Explore DM diet only flag
+data_processed <- data_processed %>% 
+  mutate(tmp_cat_diet_only = case_when(exp_bin_treat == 0 & (!is.na(tmp_date_diet_only) & (tmp_date_diet_only <= landmark_date)) ~ "In control, diet treatment only, within 6m",
+                                       exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, any",
+                                       exp_bin_treat == 0 & is.na(tmp_date_diet_only) ~ "In control, no diet treatment documentation",
+                                       exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, any",
+                                       exp_bin_treat == 1 & (!is.na(tmp_date_diet_only) & (tmp_date_diet_only <= landmark_date)) ~ "In intervention, diet treatment only, within 6m",
+                                       exp_bin_treat == 1 & is.na(tmp_date_diet_only) ~ "In intervention, no diet treatment documentation",
+                                       TRUE ~ "Unknown"
+                                       )
+  )
+n_cat_diet_only_midpoint6 <- data_processed %>%
+  count(tmp_cat_diet_only) %>%
+  mutate(n_rounded = fn_roundmid_any(n, threshold)) %>%
+  select(-n)
+
+# (5) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
 data_processed <- data_processed %>% 
   select(patient_id, 
          elig_date_t2dm, 
@@ -568,6 +584,8 @@ arrow::write_feather(data_processed, here::here("output", "data", "data_processe
 arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "data_processed_death_ltfu.arrow"))
 # for exploratory purpose, show who got into T2DM diagnosis and how
 write.csv(n_dm_algo_midpoint6, file = here::here("output", "data_description", "n_dm_algo_midpoint6.csv"))
+# for exploratory purpose, show who only has a DM diet intervention, no drug treatment
+write.csv(n_cat_diet_only_midpoint6, file = here::here("output", "data_description", "n_cat_diet_only_midpoint6.csv"))
 # Lab value dens plots
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")
