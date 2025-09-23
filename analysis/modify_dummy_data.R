@@ -96,9 +96,11 @@ data_extracted <- data_extracted %>%
 data_extracted <- data_extracted %>%
   mutate(cov_bin_prediabetes = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.5, 0.5))) # see prelim data
 
-# cov_bin_obesity only contains very few TRUE
+# cov_cat_bmi_groups only contains very few values
+cov_cat_bmi_groups_categories <- c("Underweight", "Healthy weight (18.5-24.9)", "Overweight (25-29.9)", "Obese (>30)", "Unknown")
+cov_cat_bmi_groups_prob <- c(0.05, 0.25, 0.3, 0.2, 0.2)
 data_extracted <- data_extracted %>%
-  mutate(cov_bin_obesity = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.3, 0.7)))
+  mutate(cov_cat_bmi_groups = as.factor(sample(cov_cat_bmi_groups_categories, n(), replace = TRUE, prob = cov_cat_bmi_groups_prob)))
 
 # Complete rural/urban info
 cov_cat_rural_urban_categories <- c("1", "2", "3", "4", "5", "6", "7", "8")

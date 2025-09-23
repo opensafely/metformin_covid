@@ -136,6 +136,8 @@ user/alainamstutz/diabetes-complications-bristol/7da4a9f1
 user/alainamstutz/diabetes-complications-icd10-bristol/1a95138b
 
 opensafely/glycated-haemoglobin-hba1c-tests/2ab11f20
+nhsd-primary-care-domain-refsets/lifestyleint_cod/75d83d5e
+user/alainamstutz/diabetes-diet-only/7e32e792
 
 user/alainamstutz/ogtt-bristol/0185a056
 

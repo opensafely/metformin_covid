@@ -224,6 +224,12 @@ cholesterol_snomed = codelist_from_csv("codelists/opensafely-cholesterol-tests-n
 # HDL Cholesterol
 hdl_cholesterol_snomed = codelist_from_csv("codelists/bristol-hdl-cholesterol.csv",column="code")
 
+# Any lifestyle advice discussion
+lifestyle_advice_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-lifestyleint_cod.csv",column="code")
+
+# Flag patients on diet intervention only, no drug intervention
+diet_only_snomed = codelist_from_csv("codelists/user-alainamstutz-diabetes-diet-only.csv",column="code")
+
 
 #######################################################################################
 # OUTCOME variables
