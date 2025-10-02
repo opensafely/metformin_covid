@@ -36,6 +36,8 @@ from codelists import *
 ## variable helper functions 
 from variable_helper_functions import *
 
+import project_permissions
+
 ## json (for the dates)
 import json
 
