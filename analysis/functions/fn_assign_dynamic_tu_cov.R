@@ -36,13 +36,20 @@ fn_assign_dynamic_tu_cov <- function(data,
     group_by(!!patient_id_col, !!variable_col, !!month_col) %>%
     arrange(!!date_col, .by_group = TRUE) %>%
     
+    # time_diff_to_end can be calculated irrespective if there is treatment change in that month, but 
+    # time_diff_to_treat needs to be calculate ONLY for covariate date_col that happens before treat_col in same interval, see use further down
+    # function handles treat_col = NA correctly: 
+    ## No KEEPER is flagged for NA treatment months
+    ## MOVERS are still considered based on rule (c)
     mutate(
       time_diff_to_end = as.numeric(!!end_col - !!date_col),
-      time_diff_to_treat = as.numeric(!!date_col - !!treat_col)
+      time_diff_to_treat_before = if_else(!!date_col <= !!treat_col,
+                                          as.numeric(!!date_col - !!treat_col),
+                                          NA_real_)
     ) %>%
     
     mutate(
-      # flag all (rows) that are in same interval as our treatment information change/update variable (cens_date_metfin_start_cont)
+      # flag all (rows) that are in same interval as our treatment information change/update date variable
       is_treat_month = case_when(
         !is.na(!!treat_col) &
           !!treat_col >= !!start_col & !!treat_col <= !!end_col &
@@ -53,8 +60,8 @@ fn_assign_dynamic_tu_cov <- function(data,
     
     # Precompute groupwise minima to avoid rowwise min() warnings
     mutate(
-      min_time_diff_to_end = suppressWarnings(min(abs(time_diff_to_end),   na.rm = TRUE)),
-      min_time_diff_to_treat = suppressWarnings(min(abs(time_diff_to_treat), na.rm = TRUE))
+      min_time_diff_to_end = suppressWarnings(min(abs(time_diff_to_end), na.rm = TRUE)),
+      min_time_diff_to_treat_before = suppressWarnings(min(abs(time_diff_to_treat_before), na.rm = TRUE))
     ) %>%
     
     mutate(
@@ -67,7 +74,7 @@ fn_assign_dynamic_tu_cov <- function(data,
       # rule (b)
       is_treat_month_before_treat_keep = case_when(
         is_treat_month & !!date_col <= !!treat_col &
-          abs(time_diff_to_treat) == min_time_diff_to_treat ~ TRUE,
+          abs(time_diff_to_treat_before) == min_time_diff_to_treat_before ~ TRUE,
         TRUE ~ FALSE
       ),
       # rule (c)
@@ -99,9 +106,9 @@ fn_assign_dynamic_tu_cov <- function(data,
     
     # Drop helper columns
     select(-c(time_diff_to_end,
-              time_diff_to_treat,
+              time_diff_to_treat_before,
               min_time_diff_to_end,
-              min_time_diff_to_treat,
+              min_time_diff_to_treat_before,
               is_treat_month,
               is_treat_month_after_treat_move,
               is_treat_month_before_treat_keep,
