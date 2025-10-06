@@ -203,10 +203,21 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 df_ppa_long <- df_ppa_long %>%
   select(!cens_date_metfin_start_cont)
 
+# Remove illogical values, see protocol (and data_process.R, same rules/code applied there for baseline)
+df_ppa_long <- df_ppa_long %>%
+  mutate(
+    num = case_when(
+      variable == "chol" & (num > 20 | num < 1.75) ~ NA_real_,
+      variable == "hdl_chol" & (num > 5  | num < 0.4) ~ NA_real_,
+      variable == "hba1c" & (num > 120 | num < 0) ~ NA_real_,
+      variable == "bmi" & (num > 70 | num < 12) ~ NA_real_,
+      TRUE ~ num)) %>%
+  filter(!is.na(num))
+
 # Perform the non-equi join with df_months to attach the num values from df_ppa to the correct monthly intervals from df_months, while still working in a reduced dataset
 df_ppa_long <- df_ppa_long %>%
-  # left_join to keep all rows=months from df_months => allow for many-to-many relationship
-  left_join(df_months, by = "patient_id") %>%
+  # left_join to keep all rows=months from df_months => explicitly acknowledge many-to-many relationship to silence warning
+  left_join(df_months, by = "patient_id", relationship = "many-to-many") %>%
   filter(
     date >= start_date_month, # left open, right open is correct the way the interval data is set up coming from fn_expand_intervals.R
     date <= end_date_month
@@ -254,7 +265,11 @@ dupl_same_id_variable_month <- df_ppa_long %>%
   add_count(name = "count") %>%
   filter(count > 1) %>%
   arrange(patient_id, variable, new_month)
-print(dupl_same_id_variable_month) # should be empty
+if (nrow(dupl_same_id_variable_month) > 0) {
+  warning("Error: Duplicate rows detected in df_ppa_long, i.e. several covariate info updates per person-interval within one variable category (BMI, lipids, or HbA1c)")
+} else {
+  message("Success: No duplicates found in df_ppa_long")
+}
 
 # Now, pivot it to wide format to have the individual measurements as separate columns to be able to merge with df_months
 df_ppa_wide <- df_ppa_long %>%
@@ -277,7 +292,11 @@ duplicates_in_final <- df_ppa_wide %>%
   add_count(name = "count") %>%
   filter(count > 1) %>%
   ungroup()
-print(duplicates_in_final) # should be empty
+if (nrow(duplicates_in_final) > 0) {
+  warning("Error: Duplicate rows detected in df_ppa_wide, i.e. several covariate info updates per person-interval due to either BMI, lipids, or HbA1c")
+} else {
+  message("Success: No duplicates found in df_ppa_wide")
+}
 
 
 # 7. Merge and assign the dynamic time-updated covariates from df_ppa to df_months --------
@@ -306,57 +325,48 @@ baseline_lookup <- c(
 df_months <- df_months %>%
   group_by(patient_id) %>%
   arrange(start_date_month, .by_group = TRUE) %>%
-  mutate(across(all_of(tv_cov_num_cols), 
-                .fns = ~ {
-                  baseline_col <- baseline_lookup[[cur_column()]]
-                  base_val <- cur_data()[[baseline_col]][1]
-                  
-                  first_non_na <- which(!is.na(.x))[1]
-                  
-                  if (is.na(first_non_na)) {
-                    # no observed values
-                    if (!is.na(base_val)) {
-                      # use baseline if available
-                      rep(base_val, length(.x))
-                    } else {
-                      # leave all NA
-                      .x
-                    }
-                  } else {
-                    # mask before first non-NA
-                    masked <- .x
-                    if (!is.na(base_val)) {
-                      masked[1:(first_non_na - 1)] <- base_val
-                    } else {
-                      masked[1:(first_non_na - 1)] <- NA
-                    }
-                    
-                    # forward fill
-                    tidyr::fill(data.frame(masked), masked, .direction = "down")$masked
-                  }
-                })) %>%
+  mutate(across(
+    all_of(tv_cov_num_cols),
+    .fns = ~ {
+      baseline_col <- baseline_lookup[[cur_column()]]
+      base_val <- cur_data_all()[[baseline_col]][1]
+      
+      first_non_na <- which(!is.na(.x))[1]
+      
+      if (is.na(first_non_na)) {
+        # no observed values
+        if (!is.na(base_val)) {
+          # use baseline if available
+          rep(base_val, length(.x))
+        } else {
+          # leave all NA
+          .x
+        }
+      } else {
+        # mask before first non-NA
+        masked <- .x
+        if (!is.na(base_val)) {
+          masked[1:(first_non_na - 1)] <- base_val
+        } else {
+          masked[1:(first_non_na - 1)] <- NA
+        }
+        
+        # forward fill
+        tidyr::fill(data.frame(masked), masked, .direction = "down")$masked
+      }
+    }
+  )) %>%
   ungroup()
 
-# recreate the lipid ratio, HbA1c cat, and BMI cat (based on the monthly filled up values)
+# Recreate the lipid ratio, HbA1c cat, and BMI cat (based on the monthly filled up values) - but without data cleaning, this happened at an earlier step.
+# All data formatting was done on the underlying numeric value. We may loose some information by using the lipid ratio instead of using HDL and Tot Chol separately, but it makes clinically more sense, and when HDL is measured also Tot Chol is measured, so both should be available or not.
 df_months <- df_months %>%
   mutate(
     # See data_process.R
-    cov_num_chol = if_else(
-      cov_num_chol > 20 | cov_num_chol < 1.75,
-      NA_real_,
-      cov_num_chol),
-    cov_num_hdl_chol = if_else(
-      cov_num_hdl_chol > 5 | cov_num_hdl_chol < 0.4,
-      NA_real_,
-      cov_num_hdl_chol),
-    cov_num_tc_hdl_ratio = cov_num_chol / cov_num_hdl_chol, # also overwrites the baseline value
-    cov_num_tc_hdl_ratio = if_else(
-      cov_num_tc_hdl_ratio > 50 | cov_num_tc_hdl_ratio < 1,
-      NA_real_,
-      cov_num_tc_hdl_ratio),
+    cov_num_tc_hdl_ratio = cov_num_chol / cov_num_hdl_chol,
     cov_cat_tc_hdl_ratio = cut(
       cov_num_tc_hdl_ratio,
-      breaks = c(1, 3.5, 5.11, 50),  # 50 is upper limit, above set to NA already
+      breaks = c(1, 3.5, 5.11, 50), # should not have any illogical values since underlying values have been cleaned (below 1, above 50), but in case it does, it replaces it with "Unknown"
       labels = c("below 3.5:1" ,"3.5:1 to 5:1", "above 5:1"),
       right = FALSE) %>% 
       forcats::fct_expand("Unknown"),
@@ -365,13 +375,9 @@ df_months <- df_months %>%
   ) %>% 
   mutate(
     # See data_process.R
-    cov_num_hba1c = if_else( 
-      cov_num_hba1c < 0.00 | cov_num_hba1c > 120.00,
-      NA_real_,
-      cov_num_hba1c), # also overwrites the baseline value
     cov_cat_hba1c = cut(
       cov_num_hba1c,
-      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      breaks = c(0, 42, 59, 76, 120), # should not have any illogical values since underlying values have been cleaned (below 0, above 120), but in case it does, it replaces it with "Unknown"
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE) %>% 
       forcats::fct_expand("Unknown"),
@@ -379,13 +385,9 @@ df_months <- df_months %>%
                                                             levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c)
   ) %>% 
   mutate(
-    cov_num_bmi = if_else(
-      cov_num_bmi < 12.00 | cov_num_bmi > 70.00,
-      NA_real_,
-      cov_num_bmi), # also overwrites the baseline value
     cov_cat_bmi = cut(
       cov_num_bmi,
-      breaks = c(12, 30, 70),
+      breaks = c(12, 30, 70), # should not have any illogical values since underlying values have been cleaned, but in case it does (below 12, above 70), it replaces it with "Unknown"
       labels = c("Not obese", "Obese"),
       right = FALSE) %>% 
       forcats::fct_expand("Unknown"),
@@ -397,13 +399,16 @@ df_months <- df_months %>%
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
 #                 cov_date_chol, cov_num_chol, cov_date_hdl_chol, cov_num_hdl_chol, cov_num_chol_b, cov_num_hdl_chol_b,
-#                 cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
-#                 cov_num_tc_hdl_ratio, cov_cat_tc_hdl_ratio,
-#                 cov_date_hba1c, cov_num_hba1c, 
+#                 cov_num_tc_hdl_ratio_b, 
+#                 cov_cat_tc_hdl_ratio_b,
+#                 cov_num_tc_hdl_ratio, 
+#                 cov_cat_tc_hdl_ratio,
+#                 cov_date_hba1c, cov_num_hba1c,
 #                 cov_cat_hba1c,
 #                 cov_num_hba1c_b, cov_cat_hba1c_b,
-#                 cov_date_bmi, cov_num_bmi, 
-#                 cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity, 
+#                 cov_date_bmi, cov_num_bmi,
+#                 cov_num_bmi_b, 
+#                 cov_cat_bmi_groups, cov_bin_obesity,
 #                 cov_cat_bmi,
 #                 cov_bin_ami, cov_bin_hypertension, cov_bin_all_stroke,
 #                 out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
