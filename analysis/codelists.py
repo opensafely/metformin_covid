@@ -61,8 +61,8 @@ diabetes_diagnostic_ctv3_clinical = codelist_from_csv("codelists/user-hjforbes-n
 hba1c_snomed = codelist_from_csv("codelists/opensafely-glycated-haemoglobin-hba1c-tests-numerical-value.csv",column="code")
 # Antidiabetic drugs
 insulin_dmd = codelist_from_csv("codelists/opensafely-insulin-medication.csv",column="id")
-antidiabetic_drugs_snomed_clinical = codelist_from_csv("codelists/opensafely-antidiabetic-drugs.csv",column="id")
-non_metformin_dmd = codelist_from_csv("codelists/user-r_denholm-non-metformin-antidiabetic-drugs_bristol.csv",column="id")
+antidiabetic_drugs_dmd = codelist_from_csv("codelists/opensafely-antidiabetic-drugs.csv",column="id")
+non_metformin_dmd = codelist_from_csv("codelists/user-alainamstutz-non-metformin-oral-antidiabetic.csv",column="code")
 
 ## Prediabetes
 prediabetes_snomed = codelist_from_csv("codelists/opensafely-prediabetes-snomed.csv",column="code")
@@ -110,16 +110,16 @@ ever_smoking = codelist_from_csv("codelists/user-alainamstutz-ever-smoking-brist
 carehome = codelist_from_csv("codelists/primis-covid19-vacc-uptake-longres.csv",column="code")
 
 # other antidiabetics
-sulfonylurea_dmd = codelist_from_csv("codelists/user-alex-walker-sulfonylureas-dmd.csv",column="code")
-dpp4_dmd = codelist_from_csv("codelists/user-alex-walker-dpp-4-inhibitors-dmd.csv",column="code")
+sulfonylurea_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-sulfonylureas.csv",column="code")
+dpp4_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-dpp4.csv",column="code")
 dpp4_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-dpp4-without-metformin-bristol-dmd.csv",column="code")
-tzd_dmd = codelist_from_csv("codelists/user-alainamstutz-thiazolidinedione-bristol-dmd.csv",column="code")
+tzd_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-thiazolidinedione.csv",column="code")
 tzd_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-thiazolidinedione-without-metformin-bristol-dmd.csv",column="code")
-sglt2_dmd = codelist_from_csv("codelists/user-alex-walker-sglt-2-inhibitors-dmd.csv",column="code")
+sglt2_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-sglt2.csv",column="code")
 sglt2_mono_dmd = codelist_from_csv("codelists/user-alainamstutz-sglt2-without-metformin-bristol-dmd.csv",column="code")
-glp1_dmd = codelist_from_csv("codelists/user-alainamstutz-glp1-bristol-dmd.csv",column="code")
-meglitinides_dmd = codelist_from_csv("codelists/user-alainamstutz-meglitinides-bristol-dmd.csv",column="code")
-agi_dmd = codelist_from_csv("codelists/user-alainamstutz-alpha-glucosidase-inhibitors-bristol-dmd.csv",column="code")
+glp1_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-glp1.csv",column="code")
+meglitinides_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-meglitinides.csv",column="code")
+agi_dmd = codelist_from_csv("codelists/user-alainamstutz-diabetes-agi.csv",column="code")
 
 # obesity
 bmi_obesity_snomed_clinical = codelist_from_csv("codelists/user-elsie_horne-bmi_obesity_snomed.csv",column="code")

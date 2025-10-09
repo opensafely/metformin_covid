@@ -45,7 +45,7 @@ subgroups <- list(
   df_nonimd1= quote(cov_cat_deprivation_5 != "1 (most deprived)"),
   df_obese = quote(cov_cat_bmi_groups == "Obese (>30)"),
   df_overweight = quote(cov_cat_bmi_groups == "Overweight (25-29.9)"),
-  df_normlowweight = quote(cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "Underweight"),
+  df_normlowmissing = quote(cov_cat_bmi_groups == "Underweight, healthy, or unknown"),
   df_HbA1c59orabove = quote(cov_cat_hba1c_b == "59-75"),
   df_HbA1c42to58 = quote(cov_cat_hba1c_b == "42-58"),
   df_HbA1cbelow42 = quote(cov_cat_hba1c_b == "below 42")

@@ -120,11 +120,11 @@
       "downloaded_at": "2024-09-25 17:22:23.341747Z",
       "sha": "821d163d926e12fc6bd07fc78187f2756e1c221f"
     },
-    "user-r_denholm-non-metformin-antidiabetic-drugs_bristol.csv": {
-      "id": "user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58",
-      "url": "https://www.opencodelists.org/codelist/user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58/",
-      "downloaded_at": "2024-09-25 17:22:23.513535Z",
-      "sha": "1ac45646e6612579a38b3eff64524c72d150c6f1"
+    "user-alainamstutz-non-metformin-oral-antidiabetic.csv": {
+      "id": "user/alainamstutz/non-metformin-oral-antidiabetic/0641be78",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/non-metformin-oral-antidiabetic/0641be78/",
+      "downloaded_at": "2025-10-09 19:40:44.584666Z",
+      "sha": "ac5144461afda949328bc75af177a4e47292ef20"
     },
     "opensafely-glycated-haemoglobin-hba1c-tests-numerical-value.csv": {
       "id": "opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926",
@@ -234,17 +234,47 @@
       "downloaded_at": "2024-09-25 17:22:26.494299Z",
       "sha": "4d4c94b9c6aa267c6a60657150bbc5ec7d2d7625"
     },
-    "user-alex-walker-sulfonylureas-dmd.csv": {
-      "id": "user/alex-walker/sulfonylureas-dmd/6e0ab9fd",
-      "url": "https://www.opencodelists.org/codelist/user/alex-walker/sulfonylureas-dmd/6e0ab9fd/",
-      "downloaded_at": "2024-11-11 09:21:37.033714Z",
-      "sha": "7696cc3a4764f13703de7ebe7ec2a89668ca11d8"
+    "user-alainamstutz-diabetes-agi.csv": {
+      "id": "user/alainamstutz/diabetes-agi/67cccb56",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-agi/67cccb56/",
+      "downloaded_at": "2025-10-09 19:40:47.353936Z",
+      "sha": "a7d886dabbb21fb5770edf8ddfc4caeebe1375ce"
     },
-    "user-alex-walker-dpp-4-inhibitors-dmd.csv": {
-      "id": "user/alex-walker/dpp-4-inhibitors-dmd/57ae06be",
-      "url": "https://www.opencodelists.org/codelist/user/alex-walker/dpp-4-inhibitors-dmd/57ae06be/",
-      "downloaded_at": "2024-11-11 09:21:37.288837Z",
-      "sha": "ac0b81bb76553709e101493b26488891ba93ec61"
+    "user-alainamstutz-diabetes-dpp4.csv": {
+      "id": "user/alainamstutz/diabetes-dpp4/4ebd5821",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-dpp4/4ebd5821/",
+      "downloaded_at": "2025-10-09 19:40:47.503895Z",
+      "sha": "b3cb364b116ce97ce1a57809b51e528aa08793ab"
+    },
+    "user-alainamstutz-diabetes-sglt2.csv": {
+      "id": "user/alainamstutz/diabetes-sglt2/35ade4ec",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-sglt2/35ade4ec/",
+      "downloaded_at": "2025-10-09 19:40:47.621563Z",
+      "sha": "6fa57b864fd313dc76e10b2d5c6b4fa1eba367a2"
+    },
+    "user-alainamstutz-diabetes-meglitinides.csv": {
+      "id": "user/alainamstutz/diabetes-meglitinides/1c9e71b7",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-meglitinides/1c9e71b7/",
+      "downloaded_at": "2025-10-09 19:40:47.820240Z",
+      "sha": "6ff989803cf491417c763f8d06aa666cb9e64022"
+    },
+    "user-alainamstutz-diabetes-glp1.csv": {
+      "id": "user/alainamstutz/diabetes-glp1/038efe82",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-glp1/038efe82/",
+      "downloaded_at": "2025-10-09 19:40:47.945867Z",
+      "sha": "03eebe50cc6a5f969066d8260e88043c00ee3494"
+    },
+    "user-alainamstutz-diabetes-thiazolidinedione.csv": {
+      "id": "user/alainamstutz/diabetes-thiazolidinedione/6a7f8b4c",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-thiazolidinedione/6a7f8b4c/",
+      "downloaded_at": "2025-10-09 19:40:48.070453Z",
+      "sha": "4033228b7b11a98eff165509881d3974d3092636"
+    },
+    "user-alainamstutz-diabetes-sulfonylureas.csv": {
+      "id": "user/alainamstutz/diabetes-sulfonylureas/51701817",
+      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/diabetes-sulfonylureas/51701817/",
+      "downloaded_at": "2025-10-09 19:40:48.308538Z",
+      "sha": "26aedcc47abc87941c660cbaaccf97db7d72199d"
     },
     "user-alainamstutz-dpp4-without-metformin-bristol-dmd.csv": {
       "id": "user/alainamstutz/dpp4-without-metformin-bristol-dmd/4914e27c",
@@ -252,47 +282,17 @@
       "downloaded_at": "2024-12-19 08:43:40.673432Z",
       "sha": "1a61e13a7d240876828dbe4dc212861741da90e1"
     },
-    "user-alainamstutz-thiazolidinedione-bristol-dmd.csv": {
-      "id": "user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc",
-      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc/",
-      "downloaded_at": "2024-12-19 08:43:40.745047Z",
-      "sha": "c0f6e2ff0f9fdd9aaeeb9696c9cc260ca90e30b4"
-    },
     "user-alainamstutz-thiazolidinedione-without-metformin-bristol-dmd.csv": {
       "id": "user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d",
       "url": "https://www.opencodelists.org/codelist/user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d/",
       "downloaded_at": "2024-12-19 08:43:40.926859Z",
       "sha": "3943b945913a39f356db726a329b6703382564d1"
     },
-    "user-alex-walker-sglt-2-inhibitors-dmd.csv": {
-      "id": "user/alex-walker/sglt-2-inhibitors-dmd/2029a068",
-      "url": "https://www.opencodelists.org/codelist/user/alex-walker/sglt-2-inhibitors-dmd/2029a068/",
-      "downloaded_at": "2024-11-11 09:21:37.774059Z",
-      "sha": "350e157dc97b5ed1b921c922aba09a785ab0676c"
-    },
     "user-alainamstutz-sglt2-without-metformin-bristol-dmd.csv": {
       "id": "user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286",
       "url": "https://www.opencodelists.org/codelist/user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286/",
       "downloaded_at": "2024-12-19 08:43:41.176483Z",
       "sha": "eea50b1bfdeee4a96398e95c07c38756d6f16bf7"
-    },
-    "user-alainamstutz-glp1-bristol-dmd.csv": {
-      "id": "user/alainamstutz/glp1-bristol-dmd/7c628abb",
-      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/glp1-bristol-dmd/7c628abb/",
-      "downloaded_at": "2024-11-11 10:26:45.440968Z",
-      "sha": "b561df9eb2b7a72ae4c57d842f5e93c0a0e2f536"
-    },
-    "user-alainamstutz-meglitinides-bristol-dmd.csv": {
-      "id": "user/alainamstutz/meglitinides-bristol-dmd/79afcac5",
-      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/meglitinides-bristol-dmd/79afcac5/",
-      "downloaded_at": "2024-11-11 09:40:56.813344Z",
-      "sha": "a3259420b1edb60d08245af820a6be8a44bf432a"
-    },
-    "user-alainamstutz-alpha-glucosidase-inhibitors-bristol-dmd.csv": {
-      "id": "user/alainamstutz/alpha-glucosidase-inhibitors-bristol-dmd/4790e45b",
-      "url": "https://www.opencodelists.org/codelist/user/alainamstutz/alpha-glucosidase-inhibitors-bristol-dmd/4790e45b/",
-      "downloaded_at": "2024-11-11 09:40:57.009492Z",
-      "sha": "3ae84d905f30d53b8e4c511b161d0d866d76080a"
     },
     "user-elsie_horne-bmi_obesity_snomed.csv": {
       "id": "user/elsie_horne/bmi_obesity_snomed/0764e9b4",

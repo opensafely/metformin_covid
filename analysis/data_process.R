@@ -127,15 +127,14 @@ data_processed <- data_extracted %>%
       cov_num_bmi_b < 12.00 | cov_num_bmi_b > 70.00, # BMI values: remove biologically implausible values
       NA_real_,
       cov_num_bmi_b),
-    # bin for subgroup and exploratory
+    # not sure needed anymore...
     cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
     # main cat variable
     cov_cat_bmi_groups = fn_case_when(
-      cov_cat_bmi_groups == "Underweight" ~ "Underweight",
-      cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" ~ "Healthy weight (18.5-24.9)",
+      cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "missing" ~ "Underweight, healthy, or unknown",
       cov_cat_bmi_groups == "Overweight (25-29.9)" ~ "Overweight (25-29.9)",
       cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
-      TRUE ~ "Unknown"),
+      TRUE ~ NA_character_), # will have no missing
     
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
@@ -526,14 +525,44 @@ data_processed <- data_processed %>%
                                         TRUE ~ FALSE),
          tmp_diag_med_code = case_when(step_1 == "No" & step_2 == "No" & step_3 == "No" & step_4 == "Yes" |
                                          step_1 == "Yes" & step_1a == "Yes" & step_2 == "No" & step_3 == "No" & step_4 == "Yes" ~ TRUE,
-                                       TRUE ~ FALSE))
+                                       TRUE ~ FALSE),
+         tmp_diag_date_otherdm_date = case_when(tmp_first_diabetes_diag_date == tmp_otherdm_date ~ TRUE,
+                                                TRUE ~ FALSE),
+         tmp_diag_date_unspec_date = case_when(tmp_first_diabetes_diag_date == tmp_poccdm_date ~ TRUE,
+                                                TRUE ~ FALSE),
+         tmp_diag_date_t1dm_date = case_when(tmp_first_diabetes_diag_date == tmp_t1dm_date ~ TRUE,
+                                               TRUE ~ FALSE),
+         tmp_diag_date_t2dm_date = case_when(tmp_first_diabetes_diag_date == elig_date_t2dm ~ TRUE,
+                                             TRUE ~ FALSE),
+         tmp_diag_date_gestationaldm_date = case_when(tmp_first_diabetes_diag_date == tmp_gestationaldm_date ~ TRUE,
+                                             TRUE ~ FALSE),
+         tmp_diag_date_any_diabetes_med_date = case_when(tmp_first_diabetes_diag_date == tmp_diabetes_medication_date ~ TRUE,
+                                                      TRUE ~ FALSE),
+         tmp_diag_date_nonmetform_med_date = case_when(tmp_first_diabetes_diag_date == tmp_nonmetform_drugs_dmd_date ~ TRUE,
+                                                                TRUE ~ FALSE)
+         )
 count_dm_algo <- data_processed %>%
   summarise(
     n_diag_clin_code = sum(tmp_diag_clin_code, na.rm = TRUE),
-    n_diag_med_code = sum(tmp_diag_med_code, na.rm = TRUE))
+    n_diag_med_code = sum(tmp_diag_med_code, na.rm = TRUE),
+    n_diag_date_otherdm_date = sum(tmp_diag_date_otherdm_date, na.rm = TRUE),
+    n_diag_date_unspec_date = sum(tmp_diag_date_unspec_date, na.rm = TRUE),
+    n_diag_date_t1dm_date = sum(tmp_diag_date_t1dm_date, na.rm = TRUE),
+    n_diag_date_t2dm_date = sum(tmp_diag_date_t2dm_date, na.rm = TRUE),
+    n_diag_date_gestationaldm_date = sum(tmp_diag_date_gestationaldm_date, na.rm = TRUE),
+    n_diag_date_any_diabetes_med_date = sum(tmp_diag_date_any_diabetes_med_date, na.rm = TRUE),
+    n_diag_date_nonmetform_med_date = sum(tmp_diag_date_nonmetform_med_date, na.rm = TRUE)
+    )
 n_dm_algo_midpoint6 <- tibble(
   n_diag_clin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_clin_code, threshold),
-  n_diag_med_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_med_code, threshold))
+  n_diag_med_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_med_code, threshold),
+  n_diag_date_otherdm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_otherdm_date, threshold),
+  n_diag_date_unspec_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_unspec_date, threshold),
+  n_diag_date_t1dm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_t1dm_date, threshold),
+  n_diag_date_t2dm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_t2dm_date, threshold),
+  n_diag_date_gestationaldm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_gestationaldm_date, threshold),
+  n_diag_date_any_diabetes_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_any_diabetes_med_date, threshold),
+  n_diag_date_nonmetform_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_nonmetform_med_date, threshold))
 
 # (4) Explore DM diet only flag
 data_processed <- data_processed %>% 

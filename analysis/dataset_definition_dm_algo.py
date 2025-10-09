@@ -140,12 +140,12 @@ dataset.tmp_elig_date_max_hba1c = (
 
 ## Diabetes drugs
 # First dates
-dataset.tmp_elig_date_insulin_snomed = first_matching_med_dmd_before(insulin_dmd, pandemicstart_date).date
-dataset.tmp_elig_date_antidiabetic_drugs_snomed = first_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, pandemicstart_date).date
-dataset.tmp_elig_date_nonmetform_drugs_snomed = first_matching_med_dmd_before(non_metformin_dmd, pandemicstart_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, pandemicstart_date).date
+dataset.tmp_elig_date_antidiabetic_drugs = first_matching_med_dmd_before(antidiabetic_drugs_dmd, pandemicstart_date).date
+dataset.tmp_elig_date_nonmetform_drugs = first_matching_med_dmd_before(non_metformin_dmd, pandemicstart_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes medication was prescribed
-dataset.tmp_elig_date_diabetes_medication = minimum_of(dataset.tmp_elig_date_insulin_snomed, dataset.tmp_elig_date_antidiabetic_drugs_snomed) # why excluding tmp_elig_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_diabetes_medication = minimum_of(dataset.tmp_elig_date_insulin, dataset.tmp_elig_date_antidiabetic_drugs) # why excluding tmp_elig_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes diagnosis codes were recorded
 dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
@@ -155,7 +155,7 @@ dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
   dataset.elig_date_gestationaldm,
   dataset.tmp_elig_date_poccdm,
   dataset.tmp_elig_date_diabetes_medication,
-  dataset.tmp_elig_date_nonmetform_drugs_snomed
+  dataset.tmp_elig_date_nonmetform_drugs
 )
 
 ## DIABETES algo variables end ------------------------
