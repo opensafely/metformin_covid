@@ -577,10 +577,8 @@ data_processed <- data_processed %>%
       TRUE ~ "Unknown"
     )
   )
-n_cat_diet_only_midpoint6 <- data_processed %>%
-  count(tmp_cat_diet_only) %>%
-  mutate(n_rounded = fn_roundmid_any(n, threshold)) %>%
-  select(-n)
+n_cat_diet_only <- data_processed %>%
+  count(tmp_cat_diet_only)
 
 # (5) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
 data_processed <- data_processed %>% 
@@ -616,7 +614,7 @@ arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "da
 # for exploratory purpose, show who got into T2DM diagnosis and how
 write.csv(n_dm_algo_midpoint6, file = here::here("output", "data_description", "n_dm_algo_midpoint6.csv"))
 # for exploratory purpose, show who only has a DM diet intervention, no drug treatment
-write.csv(n_cat_diet_only_midpoint6, file = here::here("output", "data_description", "n_cat_diet_only_midpoint6.csv"))
+write.csv(n_cat_diet_only, file = here::here("output", "data_description", "n_cat_diet_only.csv"))
 # Lab value dens plots
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")

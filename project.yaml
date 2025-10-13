@@ -110,6 +110,7 @@ actions:
     - data_process
     outputs:
       moderately_sensitive:
+        data_tbl1: output/data_description/table1_main.csv
         data_tbl1: output/data_description/table1_main_midpoint6.csv
         data_tbl2: output/data_description/table1_death_ltfu1_midpoint6.csv
         data_tbl3: output/data_description/table1_death_ltfu2_midpoint6.csv
