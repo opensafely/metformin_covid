@@ -303,6 +303,7 @@ table_1_death_ltfu2_redacted <- table_1_death_ltfu2_redacted %>%
          control = stat_2)
 
 # Save output -------------------------------------------------------------
+write_csv(table_1_main, fs::path("output", "data_description", "table1_main.csv"))
 write_csv(table_1_main_redacted, fs::path("output", "data_description", "table1_main_midpoint6.csv"))
 write_csv(table_1_death_ltfu1_redacted, fs::path("output", "data_description", "table1_death_ltfu1_midpoint6.csv"))
 write_csv(table_1_death_ltfu2_redacted, fs::path("output", "data_description", "table1_death_ltfu2_midpoint6.csv"))
