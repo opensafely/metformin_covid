@@ -205,13 +205,28 @@ table_1_main_redacted <- table_1_main %>%
   mutate(
     across(
       starts_with("stat_"),
-      ~ stringr::str_replace_all(
-        ., "\\d+",
-        function(x) {
-          x <- as.character(x)  # ensures consistent handling across stringr versions
-          as.character(fn_roundmid_any(as.numeric(x), threshold))
-        }
-      )
+      ~ map_chr(.x, function(cell) {
+        # Skip if NA or empty
+        if (is.na(cell) || cell == "") return(cell)
+        
+        # Remove thousands separators
+        txt <- str_replace_all(cell, ",", "")
+        
+        # Normalize spaces
+        txt <- str_replace_all(txt, "[[:space:]]", " ")
+        
+        # Extract numeric substrings
+        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
+        if (length(nums) == 0) return(cell)
+        
+        # Apply the rounding function
+        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
+        
+        # Replace numbers sequentially
+        out <- txt
+        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
+        out
+      })
     ),
     var_label = factor(
       var_label,
@@ -219,6 +234,25 @@ table_1_main_redacted <- table_1_main %>%
     ),
     label = replace_na(as.character(label), "")
   )
+# table_1_main_redacted <- table_1_main %>%
+#   mutate(
+#     across(
+#       starts_with("stat_"),
+#       ~ stringr::str_replace_all(
+#         ., "\\d+",
+#         function(x) {
+#           x <- as.character(x)  # ensures consistent handling across stringr versions
+#           as.character(fn_roundmid_any(as.numeric(x), threshold))
+#         }
+#       )
+#     ),
+#   )
+  #   var_label = factor(
+  #     var_label,
+  #     levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
+  #   ),
+  #   label = replace_na(as.character(label), "")
+  # )
 # table_1_main_redacted <- table_1_main %>%
 #   mutate(
 #     across(
