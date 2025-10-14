@@ -163,22 +163,11 @@ data_processed <- data_extracted %>%
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
     ## remove HbA1c > 120; remove HbA1c 0 or below
-    cov_num_hba1c_b <- if_else(
-      is.na(cov_num_hba1c_b) | cov_num_hba1c_b <= 0 | cov_num_hba1c_b > 120,
+    cov_num_hba1c_b = if_else(
+      cov_num_hba1c_b <= 0 | cov_num_hba1c_b > 120,
       NA_real_,
       cov_num_hba1c_b
     ),
-    # cov_cat_hba1c_b <- cut(
-    #   cov_num_hba1c_b,
-    #   breaks = c(0, 42, 59, 76, 120),
-    #   labels = c("below 42", "42-58", "59-75", "above 75"),
-    #   right = TRUE, # include the upper bound (-> 120)
-    #   include.lowest = FALSE # 0 is excluded, since we start above 0
-    # ),
-    # cov_cat_hba1c_b <- forcats::fct_explicit_na(
-    #   cov_cat_hba1c_b,
-    #   na_level = "Unknown"
-    # ),
     cov_cat_hba1c_b = cut(
       cov_num_hba1c_b,
       breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
@@ -188,7 +177,7 @@ data_processed <- data_extracted %>%
     cov_cat_hba1c_b = case_when(is.na(cov_cat_hba1c_b) ~ factor("Unknown",
                                                                 levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_b),
     elig_num_hba1c_landmark_mmol_mol = if_else( 
-      elig_num_hba1c_landmark_mmol_mol < 0.00 | elig_num_hba1c_landmark_mmol_mol > 120.00,
+      elig_num_hba1c_landmark_mmol_mol <= 0 | elig_num_hba1c_landmark_mmol_mol > 120,
       NA_real_,
       elig_num_hba1c_landmark_mmol_mol),
     elig_cat_hba1c_landmark_mmol_mol = cut(

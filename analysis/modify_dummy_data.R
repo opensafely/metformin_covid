@@ -73,10 +73,10 @@ data_extracted <- data_extracted %>%
 # Modify covariates -------------------------------------------------------
 data_extracted <- data_extracted %>%
   mutate(
-    cov_num_hba1c_b = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 120), 0)),
+    cov_num_hba1c_b = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 140), 0)), # add some extreme values to test cleaning code
     cov_num_chol_b = round(pmax(pmin(rnorm(n(), mean = 5, sd = 0.8), 20), 1.75), 1),
     cov_num_hdl_chol_b = round(pmax(pmin(rnorm(n(), mean = 1.3, sd = 0.2), 5), 0.4), 1),
-    cov_num_bmi_b = round(pmax(pmin(rnorm(n(), mean = 27, sd = 4), 50), 16), 1),
+    cov_num_bmi_b = round(pmax(pmin(rnorm(n(), mean = 27, sd = 4), 50), 10), 1), # add some extreme values to test cleaning code
     elig_num_hba1c_landmark_mmol_mol = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 120), 0))
   ) %>%
   # randomly set ~10% of baseline values to NA
