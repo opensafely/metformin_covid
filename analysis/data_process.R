@@ -520,10 +520,10 @@ n_restricted_midpoint6 <- tibble(
 
 # (3) Explore DM algorithm
 data_processed <- data_processed %>% 
-  mutate(tmp_diag_clin_code = case_when((step_1 == "No" & step_2 == "Yes") | 
+  mutate(tmp_diag_nonmetfin_code = case_when((step_1 == "No" & step_2 == "Yes") | 
                                           (step_1 == "Yes" & step_1a == "Yes" & step_2 == "Yes") ~ TRUE,
                                         TRUE ~ FALSE),
-         tmp_diag_med_code = case_when((step_1 == "No" & step_2 == "No" & step_3 == "No" & step_4 == "Yes") |
+         tmp_diag_clin_code = case_when((step_1 == "No" & step_2 == "No" & step_3 == "No" & step_4 == "Yes") |
                                          (step_1 == "Yes" & step_1a == "Yes" & step_2 == "No" & step_3 == "No" & step_4 == "Yes") ~ TRUE,
                                        TRUE ~ FALSE),
          tmp_diag_date_otherdm_date = case_when(tmp_first_diabetes_diag_date == tmp_otherdm_date ~ TRUE,
@@ -569,10 +569,10 @@ data_processed <- data_processed %>%
   mutate(
     tmp_cat_diet_only = case_when(
       exp_bin_treat == 0 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In control, diet treatment only, within 6m",
-      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, any",
+      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, after 6m",
       exp_bin_treat == 0 & is.na(tmp_date_diet_only) ~ "In control, no diet treatment documentation",
       exp_bin_treat == 1 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In intervention, diet treatment only, within 6m",
-      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, any",
+      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, after 6m",
       exp_bin_treat == 1 & is.na(tmp_date_diet_only) ~ "In intervention, no diet treatment documentation",
       TRUE ~ "Unknown"
     )
