@@ -50,11 +50,11 @@ class data_processed(PatientFrame):
     #qa_num_birth_year = Series(int) # could import it, too, but creates friction with data formatting function
     ethnicity_cat = Series(str)
     t2dm_date = Series(date)
+    t1dm_date = Series(date)
+    gestationaldm_date = Series(date)
+    otherdm_date = Series(date)
     tmp_first_diabetes_diag_date = Series(date)
-    tmp_otherdm_date = Series(date)
     tmp_poccdm_date = Series(date)
-    tmp_t1dm_date = Series(date)
-    tmp_gestationaldm_date = Series(date)
     tmp_diabetes_medication_date = Series(date)
     tmp_nonmetform_drugs_dmd_date = Series(date)
     step_1 = Series(str)
@@ -96,10 +96,10 @@ dataset.step_3 = data_processed.step_3
 dataset.step_4 = data_processed.step_4
 
 dataset.tmp_first_diabetes_diag_date = data_processed.tmp_first_diabetes_diag_date
-dataset.tmp_otherdm_date = data_processed.tmp_otherdm_date
+dataset.tmp_otherdm_date = data_processed.otherdm_date
 dataset.tmp_poccdm_date = data_processed.tmp_poccdm_date
-dataset.tmp_t1dm_date = data_processed.tmp_t1dm_date
-dataset.tmp_gestationaldm_date = data_processed.tmp_gestationaldm_date
+dataset.tmp_t1dm_date = data_processed.t1dm_date
+dataset.tmp_gestationaldm_date = data_processed.gestationaldm_date
 dataset.tmp_diabetes_medication_date = data_processed.tmp_diabetes_medication_date
 dataset.tmp_nonmetform_drugs_dmd_date = data_processed.tmp_nonmetform_drugs_dmd_date
 
