@@ -556,7 +556,7 @@ data_processed <- data_processed %>%
 count_dm_algo <- data_processed %>%
   summarise(
     n_diag_clin_code = sum(tmp_diag_clin_code, na.rm = TRUE),
-    n_diag_med_code = sum(tmp_diag_med_code, na.rm = TRUE),
+    n_diag_nonmetfin_code = sum(tmp_diag_nonmetfin_code, na.rm = TRUE),
     n_diag_date_otherdm_date = sum(tmp_diag_date_otherdm_date, na.rm = TRUE),
     n_diag_date_unspec_date = sum(tmp_diag_date_unspec_date, na.rm = TRUE),
     n_diag_date_t1dm_date = sum(tmp_diag_date_t1dm_date, na.rm = TRUE),
@@ -567,7 +567,7 @@ count_dm_algo <- data_processed %>%
     )
 n_dm_algo_midpoint6 <- tibble(
   n_diag_clin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_clin_code, threshold),
-  n_diag_med_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_med_code, threshold),
+  n_diag_nonmetfin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_nonmetfin_code, threshold),
   n_diag_date_otherdm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_otherdm_date, threshold),
   n_diag_date_unspec_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_unspec_date, threshold),
   n_diag_date_t1dm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_t1dm_date, threshold),
