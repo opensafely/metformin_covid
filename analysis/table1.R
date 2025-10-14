@@ -208,66 +208,28 @@ table_1_main_redacted <- table_1_main %>%
       ~ map_chr(.x, function(cell) {
         # Skip if NA or empty
         if (is.na(cell) || cell == "") return(cell)
-        
         # Remove thousands separators
         txt <- str_replace_all(cell, ",", "")
-        
         # Normalize spaces
         txt <- str_replace_all(txt, "[[:space:]]", " ")
-        
         # Extract numeric substrings
         nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
         if (length(nums) == 0) return(cell)
-        
         # Apply the rounding function
         rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
-        
         # Replace numbers sequentially
         out <- txt
         for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
         out
       })
     ),
+    # keep the order (ignore the first two labels)
     var_label = factor(
       var_label,
       levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
     ),
     label = replace_na(as.character(label), "")
   )
-# table_1_main_redacted <- table_1_main %>%
-#   mutate(
-#     across(
-#       starts_with("stat_"),
-#       ~ stringr::str_replace_all(
-#         ., "\\d+",
-#         function(x) {
-#           x <- as.character(x)  # ensures consistent handling across stringr versions
-#           as.character(fn_roundmid_any(as.numeric(x), threshold))
-#         }
-#       )
-#     ),
-#   )
-  #   var_label = factor(
-  #     var_label,
-  #     levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
-  #   ),
-  #   label = replace_na(as.character(label), "")
-  # )
-# table_1_main_redacted <- table_1_main %>%
-#   mutate(
-#     across(
-#       starts_with("stat_"),
-#       ~ stringr::str_replace_all(
-#         ., "\\d+",
-#         function(x) as.character(fn_roundmid_any(as.numeric(x), threshold))
-#       )
-#     ),
-#     var_label = factor(
-#       var_label,
-#       levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
-#     ),
-#     label = replace_na(as.character(label), "")
-#   )
 table_1_main_redacted <- table_1_main_redacted %>% 
   rename(metformin = stat_1,
          control = stat_2)
@@ -294,26 +256,39 @@ table_1_death_ltfu1 <-
       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
     ),
   )
-
 table_1_death_ltfu1 <- as_tibble(table_1_death_ltfu1$table_body)
 table_1_death_ltfu1_redacted <- table_1_death_ltfu1 %>%
   mutate(
     across(
       starts_with("stat_"),
-      ~ stringr::str_replace_all(
-        ., "\\d+",
-        function(x) as.character(fn_roundmid_any(as.numeric(x), threshold))
-      )
+      ~ map_chr(.x, function(cell) {
+        # Skip if NA or empty
+        if (is.na(cell) || cell == "") return(cell)
+        # Remove thousands separators
+        txt <- str_replace_all(cell, ",", "")
+        # Normalize spaces
+        txt <- str_replace_all(txt, "[[:space:]]", " ")
+        # Extract numeric substrings
+        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
+        if (length(nums) == 0) return(cell)
+        # Apply the rounding function
+        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
+        # Replace numbers sequentially
+        out <- txt
+        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
+        out
+      })
     ),
+    # keep the order (ignore the first two labels)
     var_label = factor(
       var_label,
-      levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
+      levels = map_chr(var_labels_death_ltfu1[-c(1, 2)], ~ last(as.character(.)))
     ),
     label = replace_na(as.character(label), "")
   )
 table_1_death_ltfu1_redacted <- table_1_death_ltfu1_redacted %>% 
-  rename(metformin = stat_1,
-         control = stat_2)
+  rename("Alive and in care at landmark" = stat_1,
+         "Died or LTFU until landmark" = stat_2)
 
 # Create the death/ltfu2 table ---------------------------------------------------------
 table_1_death_ltfu2 <-
@@ -333,26 +308,40 @@ table_1_death_ltfu2 <-
       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
     ),
   )
-
 table_1_death_ltfu2 <- as_tibble(table_1_death_ltfu2$table_body)
 table_1_death_ltfu2_redacted <- table_1_death_ltfu2 %>%
   mutate(
     across(
       starts_with("stat_"),
-      ~ stringr::str_replace_all(
-        ., "\\d+",
-        function(x) as.character(fn_roundmid_any(as.numeric(x), threshold))
-      )
+      ~ map_chr(.x, function(cell) {
+        # Skip if NA or empty
+        if (is.na(cell) || cell == "") return(cell)
+        # Remove thousands separators
+        txt <- str_replace_all(cell, ",", "")
+        # Normalize spaces
+        txt <- str_replace_all(txt, "[[:space:]]", " ")
+        # Extract numeric substrings
+        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
+        if (length(nums) == 0) return(cell)
+        # Apply the rounding function
+        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
+        # Replace numbers sequentially
+        out <- txt
+        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
+        out
+      })
     ),
+    # keep the order (ignore the first two labels)
     var_label = factor(
       var_label,
-      levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
+      levels = map_chr(var_labels_death_ltfu2[-c(1, 2)], ~ last(as.character(.)))
     ),
     label = replace_na(as.character(label), "")
   )
 table_1_death_ltfu2_redacted <- table_1_death_ltfu2_redacted %>% 
-  rename(metformin = stat_1,
-         control = stat_2)
+  rename("Alive and in care at landmark" = stat_1,
+         "Died or LTFU until landmark" = stat_2)
+
 
 # Save output -------------------------------------------------------------
 write_csv(table_1_main, fs::path("output", "data_description", "table1_main.csv"))

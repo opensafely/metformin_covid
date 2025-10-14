@@ -282,7 +282,6 @@ registered = spanning_regs.sort_by(
     practice_registrations.practice_pseudo_id,
 ).last_for_patient()
 dataset.strat_cat_region = registered.practice_nuts1_region_name ## Region
-dataset.practice_date_systmone = registered.practice_systmone_go_live_date ## Date on which the practice started using the SystmOne EHR platform.
 dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification ## Rurality
 
 ## Smoking status at elig_date_t2dm
