@@ -36,6 +36,8 @@ from codelists import *
 ## variable helper functions 
 from variable_helper_functions import *
 
+import project_permissions
+
 ## json (for the dates)
 import json
 
@@ -48,6 +50,18 @@ class data_processed(PatientFrame):
     #qa_num_birth_year = Series(int) # could import it, too, but creates friction with data formatting function
     ethnicity_cat = Series(str)
     t2dm_date = Series(date)
+    t1dm_date = Series(date)
+    gestationaldm_date = Series(date)
+    otherdm_date = Series(date)
+    tmp_first_diabetes_diag_date = Series(date)
+    tmp_poccdm_date = Series(date)
+    tmp_diabetes_medication_date = Series(date)
+    tmp_nonmetform_drugs_dmd_date = Series(date)
+    step_1 = Series(str)
+    step_1a = Series(str)
+    step_2 = Series(str)
+    step_3 = Series(str)
+    step_4 = Series(str)
 
 # random seed (ideally use numpy, but currently not working on my local environment)
 #import numpy as np 
@@ -71,6 +85,23 @@ with open("output/study_dates.json") as f:
 studyend_date = study_dates["studyend_date"]
 pandemicstart_date = study_dates["pandemicstart_date"]
 mid2018_date = study_dates["mid2018_date"]
+
+#######################################################################################
+# DM algorithm helper variables, to explore the DM algo
+#######################################################################################
+dataset.step_1 = data_processed.step_1
+dataset.step_1a = data_processed.step_1a
+dataset.step_2 = data_processed.step_2
+dataset.step_3 = data_processed.step_3
+dataset.step_4 = data_processed.step_4
+
+dataset.tmp_first_diabetes_diag_date = data_processed.tmp_first_diabetes_diag_date
+dataset.tmp_otherdm_date = data_processed.otherdm_date
+dataset.tmp_poccdm_date = data_processed.tmp_poccdm_date
+dataset.tmp_t1dm_date = data_processed.t1dm_date
+dataset.tmp_gestationaldm_date = data_processed.gestationaldm_date
+dataset.tmp_diabetes_medication_date = data_processed.tmp_diabetes_medication_date
+dataset.tmp_nonmetform_drugs_dmd_date = data_processed.tmp_nonmetform_drugs_dmd_date
 
 #######################################################################################
 # Table 2) QUALITY ASSURANCES and completeness criteria
@@ -251,7 +282,6 @@ registered = spanning_regs.sort_by(
     practice_registrations.practice_pseudo_id,
 ).last_for_patient()
 dataset.strat_cat_region = registered.practice_nuts1_region_name ## Region
-dataset.practice_date_systmone = registered.practice_systmone_go_live_date ## Date on which the practice started using the SystmOne EHR platform.
 dataset.cov_cat_rural_urban = addresses.for_patient_on(dataset.elig_date_t2dm).rural_urban_classification ## Rurality
 
 ## Smoking status at elig_date_t2dm
@@ -425,6 +455,12 @@ dataset.cov_num_chol_b = last_matching_event_clinical_snomed_between(cholesterol
 ## HDL Cholesterol, most recent value, within previous 2 years, on or before elig_date_t2dm
 dataset.cov_num_hdl_chol_b = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm).numeric_value # Calculated from 1 year = 365.25 days, taking into account leap years.
 
+## Count HbA1c measurement, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_counthba1c = count_matching_event_clinical_snomed_between(hba1c_measurement_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm)
+
+## Count lifestyle advice discussions, within previous 2 years, on or before elig_date_t2dm
+dataset.cov_num_countlifestyle = count_matching_event_clinical_snomed_between(lifestyle_advice_snomed, dataset.elig_date_t2dm - days(2*366), dataset.elig_date_t2dm)
+
 
 #######################################################################################
 # Table 6) Outcomes and censoring events
@@ -540,3 +576,6 @@ dataset.tmp_out_bin_dm_death = matching_death_between(diabetes_type2_icd10, data
 dataset.out_date_dm_death = case(when(dataset.tmp_out_bin_dm_death).then(ons_deaths.date))
 ## Neg control: Fracture, after elig_date_t2dm
 dataset.out_date_fracture = first_matching_event_apc_between(fracture_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
+
+## Flag patients on diet intervention only, no drug intervention, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.tmp_date_diet_only = first_matching_event_clinical_snomed_between(diet_only_snomed, dataset.elig_date_t2dm, studyend_date).date

@@ -40,19 +40,19 @@ df$exp_bin_treat <- ordered(df$exp_bin_treat,
 
 # Define the covariates included in the PS model
 covariate_names <- names(df) %>%
-  grep("^cov_", ., value = TRUE) %>% 
+  grep("^(cov_|strat_)", ., value = TRUE) %>% 
   # exclude those not needed in the model:
-  ## cov_bin_obesity is covering for cov_num_bmi_b & cov_cat_bmi_groups,
+  ## cov_cat_bmi_groups is covering cov_bin_obesity & cov_num_bmi_b,
   ## cov_cat_hba1c_b is covering for cov_num_hba1c_b
   ## cov_cat_tc_hdl_ratio_b is covering for cov_num_tc_hdl_ratio_b
   ## spline(cov_num_age) is covering for cov_cat_age
-  setdiff(c("cov_num_bmi_b", "cov_cat_bmi_groups", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
+  setdiff(c("cov_num_bmi_b", "cov_bin_obesity", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
             )) 
 print(covariate_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + ")))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
@@ -241,117 +241,117 @@ histogram_trimmed <- ggplot(df_trimmed_hist, aes(x = ps, fill = group)) +
     axis.text.x = element_text(size = 10)
   )
 
-# Modify dummy data --------------------------------------------------------
-# add a few high PS to be able to run the code on the dummy data
-if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
-  message("Running locally, adapt dummy data")
-  df <- df %>%
-    mutate(ps = case_when(ps < 0.12 ~ 0.65,
-                          ps < 0.18 ~ 0.92,
-                          TRUE ~ ps))
-  message("Dummy data successfully modified")
-}
+# Density plot for HbA1c subgroups -----------------------------------------
+print('Density plot for HbA1c subgroups')
 
-# Explore the PS  ----------------------------------------------------------
-var_labels <- list(
-  N  ~ "Total N",
-  ps_group ~ "PS group",
-  cov_num_age ~ "Age",
-  cov_cat_sex ~ "Sex",
-  cov_cat_ethnicity ~ "Ethnicity",
-  cov_cat_deprivation_5 ~ "Deprivation",
-  cov_cat_rural_urban ~ "Rural/urban",
-  cov_cat_smoking_status ~ "Smoking status",
-  cov_bin_healthcare_worker ~ "Healthcare worker",
-  cov_num_consrate ~ "Consultation rate in previous year",
-  cov_bin_obesity ~ "Body Mass Index > 30 kg/m^2",
-  cov_bin_ami ~ "History of acute myocardial infarct",
-  cov_bin_all_stroke  ~ "History of stroke",
-  cov_bin_other_arterial_embolism ~ "History of other arterial embolism",
-  cov_bin_vte ~ "History of venous thromboembolism",
-  cov_bin_hf ~ "History of heart failure",
-  cov_bin_angina ~ "History of angina pectoris",
-  cov_bin_dementia ~ "History of dementia",
-  cov_bin_cancer ~ "History of cancer",
-  cov_bin_hypertension ~ "History of arterial hypertension",
-  cov_bin_depression ~ "History of depression",
-  cov_bin_copd ~ "History of COPD",
-  cov_bin_liver_disease ~ "History of liver disease",
-  cov_bin_chronic_kidney_disease ~ "History of CKD",
-  cov_bin_pcos ~ "History of PCOS",
-  cov_bin_prediabetes ~ "History of prediabetes",
-  cov_bin_diabetescomp ~ "Diabetes complication",
-  cov_cat_hba1c_b ~ "HbA1c in mmol/mol",
-  cov_cat_tc_hdl_ratio_b ~ "TC/Chol ratio"
-) %>%
-  set_names(., map_chr(., all.vars))
-
-# Explore PS groups in intervention, use cut-off 0.55 and 0.9
-df <- df %>%
-  mutate(
-    ps_group = factor(
-      case_when(
-        exp_bin_treat == "metformin" & ps < 0.55 ~ "PS < 0.55",
-        exp_bin_treat == "metformin" & ps >= 0.55 & ps <= 0.9 ~ "0.55 ≤ PS ≤ 0.9",
-        exp_bin_treat == "metformin" & ps > 0.9 ~ "PS > 0.9",
-        TRUE ~ NA_character_  
-      ),
-      levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55")
-    )
-  )
-table_int <-
-  df %>% filter(exp_bin_treat == "metformin") %>% 
-  mutate(
-    N=1L,
-    ps_group = factor(ps_group, levels = c("PS > 0.9", "0.55 ≤ PS ≤ 0.9", "PS < 0.55"))
-  ) %>%
-  select(
-    ps_group,
-    all_of(names(var_labels)),
-  ) %>%
-  tbl_summary(
-    by = ps_group,
-    label = unname(var_labels[names(.)]),
-    statistic = list(
-      N ~ "{N}",
-      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
-    ),
-  )
-# Extract the summary table as a data frame
-table_int_df <- as_tibble(table_int)
-
-# Explore PS groups in control, use cut-off 0.55
-df <- df %>%
-  mutate(
-    ps_group = factor(
-      case_when(
-        exp_bin_treat == "nothing" & ps < 0.55 ~ "PS < 0.55",
-        exp_bin_treat == "nothing" & ps >= 0.55 ~ "PS >= 0.55",
-        TRUE ~ NA_character_  
-      )
-    )
-  )
-table_cont <-
-  df %>% filter(exp_bin_treat == "nothing") %>% 
-  mutate(
-    N=1L,
-    ps_group = factor(ps_group, levels = c("PS < 0.55", "PS >= 0.55"))
-  ) %>%
-  select(
-    ps_group,
-    all_of(names(var_labels)),
-  ) %>%
-  tbl_summary(
-    by = ps_group,
-    label = unname(var_labels[names(.)]),
-    statistic = list(
-      N ~ "{N}",
-      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
-    ),
+dens_treated_HbA1c59orabove <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "59-75"])
+df_treated_HbA1c59orabove <- data.frame(dens_x = dens_treated_HbA1c59orabove$x, dens_y = dens_treated_HbA1c59orabove$y, group = "metformin (untrimmed)")
+dens_untreated_HbA1c59orabove <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "59-75"])
+df_untreated_HbA1c59orabove <- data.frame(dens_x = dens_untreated_HbA1c59orabove$x, dens_y = dens_untreated_HbA1c59orabove$y, group = "nothing (untrimmed)")
+ps_density_data_untrimmed_HbA1c59orabove <- bind_rows(df_treated_HbA1c59orabove, df_untreated_HbA1c59orabove)
+density_plot_untrimmed_HbA1c59orabove <- ggplot(ps_density_data_untrimmed_HbA1c59orabove, aes(x = dens_x, y = dens_y, color = group)) +
+  geom_line(linewidth = 1) +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed; _HbA1c59orabove",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)
   )
 
-# Extract
-table_cont_df <- as_tibble(table_cont)
+dens_treated_HbA1c42to58 <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "42-58"])
+df_treated_HbA1c42to58 <- data.frame(dens_x = dens_treated_HbA1c42to58$x, dens_y = dens_treated_HbA1c42to58$y, group = "metformin (untrimmed)")
+dens_untreated_HbA1c42to58 <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "42-58"])
+df_untreated_HbA1c42to58 <- data.frame(dens_x = dens_untreated_HbA1c42to58$x, dens_y = dens_untreated_HbA1c42to58$y, group = "nothing (untrimmed)")
+ps_density_data_untrimmed_HbA1c42to58 <- bind_rows(df_treated_HbA1c42to58, df_untreated_HbA1c42to58)
+density_plot_untrimmed_HbA1c42to58 <- ggplot(ps_density_data_untrimmed_HbA1c42to58, aes(x = dens_x, y = dens_y, color = group)) +
+  geom_line(linewidth = 1) +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed; _HbA1c42to58",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)
+  )
+
+dens_treated_HbA1cbelow42 <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "below 42"])
+df_treated_HbA1cbelow42 <- data.frame(dens_x = dens_treated_HbA1cbelow42$x, dens_y = dens_treated_HbA1cbelow42$y, group = "metformin (untrimmed)")
+dens_untreated_HbA1cbelow42 <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "below 42"])
+df_untreated_HbA1cbelow42 <- data.frame(dens_x = dens_untreated_HbA1cbelow42$x, dens_y = dens_untreated_HbA1cbelow42$y, group = "nothing (untrimmed)")
+ps_density_data_untrimmed_HbA1cbelow42 <- bind_rows(df_treated_HbA1cbelow42, df_untreated_HbA1cbelow42)
+density_plot_untrimmed_HbA1cbelow42 <- ggplot(ps_density_data_untrimmed_HbA1cbelow42, aes(x = dens_x, y = dens_y, color = group)) +
+  geom_line(linewidth = 1) +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed; _HbA1cbelow42",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)
+  )
+
+dens_treated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "Unknown"])
+df_treated_HbA1cUnknown <- data.frame(dens_x = dens_treated_HbA1cUnknown$x, dens_y = dens_treated_HbA1cUnknown$y, group = "metformin (untrimmed)")
+dens_untreated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "Unknown"])
+df_untreated_HbA1cUnknown <- data.frame(dens_x = dens_untreated_HbA1cUnknown$x, dens_y = dens_untreated_HbA1cUnknown$y, group = "nothing (untrimmed)")
+ps_density_data_untrimmed_HbA1cUnknown <- bind_rows(df_treated_HbA1cUnknown, df_untreated_HbA1cUnknown)
+density_plot_untrimmed_HbA1cUnknown <- ggplot(ps_density_data_untrimmed_HbA1cUnknown, aes(x = dens_x, y = dens_y, color = group)) +
+  geom_line(linewidth = 1) +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.1), 
+    minor_breaks = seq(0, 1, by = 0.05), 
+    labels = scales::number_format(accuracy = 0.1)
+  ) +
+  labs(
+    title = "Propensity Score Density Plot; Untrimmed; _HbA1cUnknown",
+    x = "Propensity Score",
+    y = "Density",
+    color = "Group"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 10)
+  )
+
 
 # Save output -------------------------------------------------------------
 print('Save output')
@@ -365,11 +365,16 @@ write.csv(smd_sw, file = here::here("output", "ps", "smd_weighted_stabilized.csv
 # Density plot and underlying data
 write.csv(ps_density_data_untrimmed, file = here::here("output", "ps", "density_plot_untrimmed.csv"))
 write.csv(ps_density_data_trimmed, file = here::here("output", "ps", "density_plot_trimmed.csv"))
+write.csv(ps_density_data_untrimmed_HbA1c59orabove, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1c59orabove.csv"))
+write.csv(ps_density_data_untrimmed_HbA1c42to58, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1c42to58.csv"))
+write.csv(ps_density_data_untrimmed_HbA1cbelow42, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1cbelow42.csv"))
+write.csv(ps_density_data_untrimmed_HbA1cUnknown, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1cUnknown.csv"))
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed.png"), density_plot_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_trimmed.png"), density_plot_trimmed, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1c59orabove.png"), density_plot_untrimmed_HbA1c59orabove, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1c42to58.png"), density_plot_untrimmed_HbA1c42to58, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cbelow42.png"), density_plot_untrimmed_HbA1cbelow42, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cUnknown.png"), density_plot_untrimmed_HbA1cUnknown, width = 20, height = 20, units = "cm")
 # Histograms
 ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")
-# PS stratified tables
-write.csv(table_int_df, file = here::here("output", "ps", "tbl_ps_int_groups.csv"))
-write.csv(table_cont_df, file = here::here("output", "ps", "tbl_ps_cont_groups.csv"))

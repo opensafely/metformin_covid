@@ -121,13 +121,20 @@ data_processed <- data_extracted %>%
       cov_cat_smoking_status == "N" ~ "Never",
       TRUE ~ NA_character_), # will have no missing
     
-    cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
-    
-    # BMI values: remove biologically implausible values
+    # BMI
+    # num for PPA
     cov_num_bmi_b = if_else(
-      cov_num_bmi_b < 12.00 | cov_num_bmi_b > 70.00,
+      cov_num_bmi_b < 12.00 | cov_num_bmi_b > 70.00, # BMI values: remove biologically implausible values
       NA_real_,
       cov_num_bmi_b),
+    # not sure needed anymore...
+    cov_bin_obesity = cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)",
+    # main cat variable
+    cov_cat_bmi_groups = fn_case_when(
+      cov_cat_bmi_groups == "Underweight" | cov_cat_bmi_groups == "Healthy weight (18.5-24.9)" | cov_cat_bmi_groups == "missing" ~ "Underweight, healthy, or unknown",
+      cov_cat_bmi_groups == "Overweight (25-29.9)" ~ "Overweight (25-29.9)",
+      cov_bin_obesity == TRUE | cov_cat_bmi_groups == "Obese (>30)" ~ "Obese (>30)",
+      TRUE ~ NA_character_), # will have no missing
     
     # TC/HDL ratio values: remove biologically implausible values: https://doi.org/10.1093/ije/dyz099
     # TC/HDL ratio categories: https://www.urmc.rochester.edu/encyclopedia/content?ContentTypeID=167&ContentID=lipid_panel_hdl_ratio#:~:text=Most%20healthcare%20providers%20want%20the,1%20is%20considered%20very%20good.
@@ -155,21 +162,22 @@ data_processed <- data_extracted %>%
                                                                           levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio_b),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
-    ## remove HbA1c > 120; remove HbA1c below 0
-    cov_num_hba1c_b = if_else( 
-      cov_num_hba1c_b < 0.00 | cov_num_hba1c_b > 120.00,
+    ## remove HbA1c > 120; remove HbA1c 0 or below
+    cov_num_hba1c_b = if_else(
+      cov_num_hba1c_b <= 0 | cov_num_hba1c_b > 120,
       NA_real_,
-      cov_num_hba1c_b),
+      cov_num_hba1c_b
+    ),
     cov_cat_hba1c_b = cut(
       cov_num_hba1c_b,
       breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
-      right = FALSE) %>% 
+      right = FALSE) %>%
       forcats::fct_expand("Unknown"),
-    cov_cat_hba1c_b = case_when(is.na(cov_cat_hba1c_b) ~ factor("Unknown", 
+    cov_cat_hba1c_b = case_when(is.na(cov_cat_hba1c_b) ~ factor("Unknown",
                                                                 levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_b),
     elig_num_hba1c_landmark_mmol_mol = if_else( 
-      elig_num_hba1c_landmark_mmol_mol < 0.00 | elig_num_hba1c_landmark_mmol_mol > 120.00,
+      elig_num_hba1c_landmark_mmol_mol <= 0 | elig_num_hba1c_landmark_mmol_mol > 120,
       NA_real_,
       elig_num_hba1c_landmark_mmol_mol),
     elig_cat_hba1c_landmark_mmol_mol = cut(
@@ -467,8 +475,8 @@ write.csv(data_processed_full_desc, file = here::here("output", "data_descriptio
 arrow::write_feather(data_processed_full, here::here("output", "data", "data_processed_full.arrow"))
 
 
-# Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic ----
-print('Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic')
+# Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm ----
+print('Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm')
 # (1) Explore deaths/ltfu
 # died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
@@ -511,7 +519,69 @@ n_restricted_midpoint6 <- tibble(
   n_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_ltfu_landmark, threshold),
   n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
 
-# (3) Filter main dataset: Only keep necessary variables
+# (3) Explore DM algorithm
+data_processed <- data_processed %>% 
+  mutate(tmp_diag_nonmetfin_code = case_when((step_1 == "No" & step_2 == "Yes") | 
+                                          (step_1 == "Yes" & step_1a == "Yes" & step_2 == "Yes") ~ TRUE,
+                                        TRUE ~ FALSE),
+         tmp_diag_clin_code = case_when((step_1 == "No" & step_2 == "No" & step_3 == "No" & step_4 == "Yes") |
+                                         (step_1 == "Yes" & step_1a == "Yes" & step_2 == "No" & step_3 == "No" & step_4 == "Yes") ~ TRUE,
+                                       TRUE ~ FALSE),
+         tmp_diag_date_otherdm_date = case_when(tmp_first_diabetes_diag_date == tmp_otherdm_date ~ TRUE,
+                                                TRUE ~ FALSE),
+         tmp_diag_date_unspec_date = case_when(tmp_first_diabetes_diag_date == tmp_poccdm_date ~ TRUE,
+                                                TRUE ~ FALSE),
+         tmp_diag_date_t1dm_date = case_when(tmp_first_diabetes_diag_date == tmp_t1dm_date ~ TRUE,
+                                               TRUE ~ FALSE),
+         tmp_diag_date_t2dm_date = case_when(tmp_first_diabetes_diag_date == elig_date_t2dm ~ TRUE,
+                                             TRUE ~ FALSE),
+         tmp_diag_date_gestationaldm_date = case_when(tmp_first_diabetes_diag_date == tmp_gestationaldm_date ~ TRUE,
+                                             TRUE ~ FALSE),
+         tmp_diag_date_any_diabetes_med_date = case_when(tmp_first_diabetes_diag_date == tmp_diabetes_medication_date ~ TRUE,
+                                                      TRUE ~ FALSE),
+         tmp_diag_date_nonmetform_med_date = case_when(tmp_first_diabetes_diag_date == tmp_nonmetform_drugs_dmd_date ~ TRUE,
+                                                                TRUE ~ FALSE)
+         )
+count_dm_algo <- data_processed %>%
+  summarise(
+    n_diag_clin_code = sum(tmp_diag_clin_code, na.rm = TRUE),
+    n_diag_nonmetfin_code = sum(tmp_diag_nonmetfin_code, na.rm = TRUE),
+    n_diag_date_otherdm_date = sum(tmp_diag_date_otherdm_date, na.rm = TRUE),
+    n_diag_date_unspec_date = sum(tmp_diag_date_unspec_date, na.rm = TRUE),
+    n_diag_date_t1dm_date = sum(tmp_diag_date_t1dm_date, na.rm = TRUE),
+    n_diag_date_t2dm_date = sum(tmp_diag_date_t2dm_date, na.rm = TRUE),
+    n_diag_date_gestationaldm_date = sum(tmp_diag_date_gestationaldm_date, na.rm = TRUE),
+    n_diag_date_any_diabetes_med_date = sum(tmp_diag_date_any_diabetes_med_date, na.rm = TRUE),
+    n_diag_date_nonmetform_med_date = sum(tmp_diag_date_nonmetform_med_date, na.rm = TRUE)
+    )
+n_dm_algo_midpoint6 <- tibble(
+  n_diag_clin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_clin_code, threshold),
+  n_diag_nonmetfin_code_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_nonmetfin_code, threshold),
+  n_diag_date_otherdm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_otherdm_date, threshold),
+  n_diag_date_unspec_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_unspec_date, threshold),
+  n_diag_date_t1dm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_t1dm_date, threshold),
+  n_diag_date_t2dm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_t2dm_date, threshold),
+  n_diag_date_gestationaldm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_gestationaldm_date, threshold),
+  n_diag_date_any_diabetes_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_any_diabetes_med_date, threshold),
+  n_diag_date_nonmetform_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_nonmetform_med_date, threshold))
+
+# (4) Explore DM diet only flag
+data_processed <- data_processed %>% 
+  mutate(
+    tmp_cat_diet_only = case_when(
+      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In control, diet treatment only, within 6m",
+      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, after 6m",
+      exp_bin_treat == 0 & is.na(tmp_date_diet_only) ~ "In control, no diet treatment documentation",
+      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In intervention, diet treatment only, within 6m",
+      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, after 6m",
+      exp_bin_treat == 1 & is.na(tmp_date_diet_only) ~ "In intervention, no diet treatment documentation",
+      TRUE ~ "Unknown"
+    )
+  )
+n_cat_diet_only <- data_processed %>%
+  count(tmp_cat_diet_only)
+
+# (5) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
 data_processed <- data_processed %>% 
   select(patient_id, 
          elig_date_t2dm, 
@@ -542,6 +612,10 @@ write.csv(n_restricted_midpoint6, file = here::here("output", "data_description"
 arrow::write_feather(data_processed, here::here("output", "data", "data_processed.arrow"))
 # for descriptive purpose, to create table ones: Incl. flags for those who died/LTFU during landmark period and between landmark and pandemic start
 arrow::write_feather(data_processed_death_ltfu, here::here("output", "data", "data_processed_death_ltfu.arrow"))
+# for exploratory purpose, show who got into T2DM diagnosis and how
+write.csv(n_dm_algo_midpoint6, file = here::here("output", "data_description", "n_dm_algo_midpoint6.csv"))
+# for exploratory purpose, show who only has a DM diet intervention, no drug treatment
+write.csv(n_cat_diet_only, file = here::here("output", "data_description", "n_cat_diet_only.csv"))
 # Lab value dens plots
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")

@@ -24,7 +24,7 @@ user/hjforbes/nondiagnostic-diabetes-codes/50f30a3b
 
 opensafely/insulin-medication/2020-04-26
 opensafely/antidiabetic-drugs/2020-07-16
-user/r_denholm/non-metformin-antidiabetic-drugs_bristol/7207eb58
+user/alainamstutz/non-metformin-oral-antidiabetic/0641be78
 
 opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926
 opensafely/prediabetes-snomed/6bdbb7dd
@@ -54,16 +54,18 @@ user/alainamstutz/ever-smoking-bristol/00731978
 
 primis-covid19-vacc-uptake/longres/v1
 
-user/alex-walker/sulfonylureas-dmd/6e0ab9fd
-user/alex-walker/dpp-4-inhibitors-dmd/57ae06be
+
+user/alainamstutz/diabetes-agi/67cccb56
+user/alainamstutz/diabetes-dpp4/4ebd5821
+user/alainamstutz/diabetes-sglt2/35ade4ec
+user/alainamstutz/diabetes-meglitinides/1c9e71b7
+user/alainamstutz/diabetes-glp1/038efe82
+user/alainamstutz/diabetes-thiazolidinedione/6a7f8b4c
+user/alainamstutz/diabetes-sulfonylureas/51701817
 user/alainamstutz/dpp4-without-metformin-bristol-dmd/4914e27c
-user/alainamstutz/thiazolidinedione-bristol-dmd/7de688dc
 user/alainamstutz/thiazolidinedione-without-metformin-bristol-dmd/32b82f3d
-user/alex-walker/sglt-2-inhibitors-dmd/2029a068
 user/alainamstutz/sglt2-without-metformin-bristol-dmd/46622286
-user/alainamstutz/glp1-bristol-dmd/7c628abb
-user/alainamstutz/meglitinides-bristol-dmd/79afcac5
-user/alainamstutz/alpha-glucosidase-inhibitors-bristol-dmd/4790e45b
+
 
 user/elsie_horne/bmi_obesity_snomed/0764e9b4
 user/alainamstutz/obesity-secondary-care/20fad3c2
@@ -136,6 +138,8 @@ user/alainamstutz/diabetes-complications-bristol/7da4a9f1
 user/alainamstutz/diabetes-complications-icd10-bristol/1a95138b
 
 opensafely/glycated-haemoglobin-hba1c-tests/2ab11f20
+nhsd-primary-care-domain-refsets/lifestyleint_cod/75d83d5e
+user/alainamstutz/diabetes-diet-only/7e32e792
 
 user/alainamstutz/ogtt-bristol/0185a056
 

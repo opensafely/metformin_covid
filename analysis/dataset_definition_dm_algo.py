@@ -22,6 +22,8 @@ from codelists import *
 ## variable helper functions 
 from variable_helper_functions import *
 
+import project_permissions
+
 ## json (for the dates)
 import json
 
@@ -75,7 +77,7 @@ dataset.cov_cat_ethnicity = case(
 ## Type 1 Diabetes 
 # First date from primary+secondary, but also primary care date separately for diabetes algo
 dataset.tmp_elig_date_t1dm_ctv3 = first_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, pandemicstart_date).date
-dataset.elig_date_t1dm = minimum_of(
+dataset.tmp_elig_date_t1dm = minimum_of(
     (first_matching_event_clinical_ctv3_before(diabetes_type1_ctv3_clinical, pandemicstart_date).date),
     (first_matching_event_apc_before(diabetes_type1_icd10, pandemicstart_date).admission_date)
 )
@@ -99,13 +101,13 @@ dataset.tmp_elig_count_t2dm = tmp_elig_count_t2dm_ctv3 + tmp_elig_count_t2dm_hes
 
 ## Diabetes unspecified/other
 # First date
-dataset.elig_date_otherdm = first_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, pandemicstart_date).date
+dataset.tmp_elig_date_otherdm = first_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, pandemicstart_date).date
 # Count codes
 dataset.tmp_elig_count_otherdm = count_matching_event_clinical_ctv3_before(diabetes_other_ctv3_clinical, pandemicstart_date)
 
 ## Gestational diabetes ## Comment 10/12/2024: Search in both primary and secondary
 # First date from primary+secondary
-dataset.elig_date_gestationaldm = minimum_of(
+dataset.tmp_elig_date_gestationaldm = minimum_of(
     (first_matching_event_clinical_ctv3_before(diabetes_gestational_ctv3_clinical, pandemicstart_date).date),
     (first_matching_event_apc_before(diabetes_gestational_icd10, pandemicstart_date).admission_date)
 )
@@ -138,22 +140,22 @@ dataset.tmp_elig_date_max_hba1c = (
 
 ## Diabetes drugs
 # First dates
-dataset.tmp_elig_date_insulin_snomed = first_matching_med_dmd_before(insulin_dmd, pandemicstart_date).date
-dataset.tmp_elig_date_antidiabetic_drugs_snomed = first_matching_med_dmd_before(antidiabetic_drugs_snomed_clinical, pandemicstart_date).date
-dataset.tmp_elig_date_nonmetform_drugs_snomed = first_matching_med_dmd_before(non_metformin_dmd, pandemicstart_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_insulin = first_matching_med_dmd_before(insulin_dmd, pandemicstart_date).date
+dataset.tmp_elig_date_antidiabetic_drugs = first_matching_med_dmd_before(antidiabetic_drugs_dmd, pandemicstart_date).date
+dataset.tmp_elig_date_nonmetform_drugs = first_matching_med_dmd_before(non_metformin_dmd, pandemicstart_date).date # this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes medication was prescribed
-dataset.tmp_elig_date_diabetes_medication = minimum_of(dataset.tmp_elig_date_insulin_snomed, dataset.tmp_elig_date_antidiabetic_drugs_snomed) # why excluding tmp_elig_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
+dataset.tmp_elig_date_diabetes_medication = minimum_of(dataset.tmp_elig_date_insulin, dataset.tmp_elig_date_antidiabetic_drugs) # why excluding tmp_elig_date_nonmetform_drugs_snomed? -> this extra step makes sense for the diabetes algorithm (otherwise not)
 
 # Identify first date (in same period) that any diabetes diagnosis codes were recorded
 dataset.tmp_elig_date_first_diabetes_diag = minimum_of(
   dataset.elig_date_t2dm, 
-  dataset.elig_date_t1dm,
-  dataset.elig_date_otherdm,
-  dataset.elig_date_gestationaldm,
+  dataset.tmp_elig_date_t1dm,
+  dataset.tmp_elig_date_otherdm,
+  dataset.tmp_elig_date_gestationaldm,
   dataset.tmp_elig_date_poccdm,
   dataset.tmp_elig_date_diabetes_medication,
-  dataset.tmp_elig_date_nonmetform_drugs_snomed
+  dataset.tmp_elig_date_nonmetform_drugs
 )
 
 ## DIABETES algo variables end ------------------------

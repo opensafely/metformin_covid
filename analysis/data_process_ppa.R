@@ -60,7 +60,7 @@ df <- df %>%
   mutate(
     across(
       matches("^cov_num_hba1c_\\d+$"),
-      ~ ifelse(.x < hba1c_min | .x > hba1c_max, NA_real_, .x)
+      ~ ifelse(.x <= hba1c_min | .x > hba1c_max, NA_real_, .x)
     ),
     across(
       matches("^cov_num_chol_\\d+$"),

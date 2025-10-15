@@ -73,10 +73,10 @@ data_extracted <- data_extracted %>%
 # Modify covariates -------------------------------------------------------
 data_extracted <- data_extracted %>%
   mutate(
-    cov_num_hba1c_b = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 120), 0)),
+    cov_num_hba1c_b = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 140), 0)), # add some extreme values to test cleaning code
     cov_num_chol_b = round(pmax(pmin(rnorm(n(), mean = 5, sd = 0.8), 20), 1.75), 1),
     cov_num_hdl_chol_b = round(pmax(pmin(rnorm(n(), mean = 1.3, sd = 0.2), 5), 0.4), 1),
-    cov_num_bmi_b = round(pmax(pmin(rnorm(n(), mean = 27, sd = 4), 50), 16), 1),
+    cov_num_bmi_b = round(pmax(pmin(rnorm(n(), mean = 27, sd = 4), 50), 10), 1), # add some extreme values to test cleaning code
     elig_num_hba1c_landmark_mmol_mol = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 120), 0))
   ) %>%
   # randomly set ~10% of baseline values to NA
@@ -96,9 +96,11 @@ data_extracted <- data_extracted %>%
 data_extracted <- data_extracted %>%
   mutate(cov_bin_prediabetes = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.5, 0.5))) # see prelim data
 
-# cov_bin_obesity only contains very few TRUE
+# cov_cat_bmi_groups only contains very few values
+cov_cat_bmi_groups_categories <- c("Underweight", "Healthy weight (18.5-24.9)", "Overweight (25-29.9)", "Obese (>30)", "missing")
+cov_cat_bmi_groups_prob <- c(0.05, 0.25, 0.3, 0.2, 0.2)
 data_extracted <- data_extracted %>%
-  mutate(cov_bin_obesity = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.3, 0.7)))
+  mutate(cov_cat_bmi_groups = as.factor(sample(cov_cat_bmi_groups_categories, n(), replace = TRUE, prob = cov_cat_bmi_groups_prob)))
 
 # Complete rural/urban info
 cov_cat_rural_urban_categories <- c("1", "2", "3", "4", "5", "6", "7", "8")
