@@ -20,7 +20,7 @@ print('Import libraries and functions')
 library(arrow)
 library(here)
 library(tidyverse)
-library(zoo) # for fn_assign_stable_tu_cov.R
+library(zoo) # for fn_assign_stable_tu_cov.R & fn_fill_forward_incl_baseline.R
 
 source(here::here("analysis", "functions", "fn_assign_treatment.R"))
 source(here::here("analysis", "functions", "fn_assign_stable_tu_cov.R"))
@@ -333,7 +333,8 @@ df_months <- df_months %>%
   arrange(start_date_month, .by_group = TRUE) %>%
   mutate(across(
     all_of(tv_cov_num_cols),
-    ~ fn_fill_forward_incl_baseline(.x, baseline_lookup[[cur_column()]])
+    # Applying the custom function to the column’s subset for each patient & extract baseline value/vector to pass to function
+    ~ fn_fill_forward_incl_baseline(.x, df_months[[baseline_lookup[[cur_column()]]]][cur_group_rows()])
   )) %>%
   ungroup()
 

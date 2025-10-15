@@ -4,27 +4,16 @@
 # If the first interval is missing, take the value from a separate corresponding baseline variable (e.g. the time-fixed cov_num_bmi_b to fill in the time-updated cov_num_bmi at baseline and then take it from there)
 ####
 
-fn_fill_forward_incl_baseline <- function(x, baseline_col_name) {
-  # pick() returns a data frame of the current group (i.e. current covariate within a person) 
-  base_val <- pick(all_of(baseline_col_name))[[1]][1]  # select first row, and convert to vector
+fn_fill_forward_incl_baseline <- function(x, baseline_vec) {
+  # x: time-updated vector | baseline_vec: corresponding baseline vector (same length as x, usually repeated per patient)
   
-  first_non_na <- which(!is.na(x))[1]
+  base_val <- baseline_vec[1]
   
-  # first deal with case where no observed values exist in x
-  if (is.na(first_non_na)) {
-    if (!is.na(base_val)) {
-      rep(base_val, length(x)) # use baseline value (if baseline missing, then all NA)
-    } else {
-      x
-    }
-  } else {
-    # in the case where at least one observed value exists in x
-    masked <- x
-    if (!is.na(base_val)) {
-      masked[1:(first_non_na - 1)] <- base_val # fills all missing values before the first observed value with the baseline.
-    } else {
-      masked[1:(first_non_na - 1)] <- NA
-    }
-    tidyr::fill(data.frame(masked), masked, .direction = "down")$masked # forward fills missing values in the vector.
+  # if first element is NA, fill it with baseline (if available)
+  if (is.na(x[1]) && !is.na(base_val)) {
+    x[1] <- base_val
   }
+  
+  # forward-fill | na.rm = FALSE keeps leading NAs if no baseline
+  zoo::na.locf(x, na.rm = FALSE)
 }
