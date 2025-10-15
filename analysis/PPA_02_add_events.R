@@ -410,9 +410,9 @@ df_months <- df_months %>%
 # drop all unnecessary covariate date variables used for assigning events to correct intervals
 df_months <- df_months %>%
   select(-starts_with("cov_date"))
-# drop all unnecessary bin flags of outcomes and censoring events
+# drop all unnecessary bin flags of outcomes events
 df_months <- df_months %>%
-  select(-c(contains("out_bin"), contains("cens_bin")))
+  select(-contains("out_bin"))
 # drop outcomes we are not interested in the PPA
 df_months <- df_months %>%        
   select(-c(contains("fracture"), contains("dm_death")))
