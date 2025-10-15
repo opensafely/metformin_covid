@@ -25,6 +25,7 @@ source(here::here("analysis", "functions", "fn_assign_treatment.R"))
 source(here::here("analysis", "functions", "fn_assign_stable_tu_cov.R"))
 source(here::here("analysis", "functions", "fn_assign_dynamic_tu_cov.R"))
 source(here::here("analysis", "functions", "fn_add_and_shift_out_comp_cens_events.R"))
+source(here::here("analysis", "functions", "fn_fill_forward_incl_baseline.R"))
 
 
 # Create directories for output -------------------------------------------
@@ -209,7 +210,7 @@ df_ppa_long <- df_ppa_long %>%
     num = case_when(
       variable == "chol" & (num > 20 | num < 1.75) ~ NA_real_,
       variable == "hdl_chol" & (num > 5  | num < 0.4) ~ NA_real_,
-      variable == "hba1c" & (num > 120 | num < 0) ~ NA_real_,
+      variable == "hba1c" & (num > 120 | num <= 0) ~ NA_real_,
       variable == "bmi" & (num > 70 | num < 12) ~ NA_real_,
       TRUE ~ num)) %>%
   filter(!is.na(num))
@@ -249,6 +250,7 @@ df_ppa_long <- df_ppa_long %>% arrange(patient_id, variable, date)
 ### (ii) We may have the scenario whereby treatment update info and covariate update info change on same date (and no time-stamp to differentiate)
 #### => Solution: Regard these covariate info as measured BEFORE treatment info change (see rule b above). Alternatively (sensitivity analyses), simply adapt rule a and b to regard them as measured AFTER treatment info change
 
+##### NOTE: This function defines what to do with all OBSERVED covariate info (and to select to correct one in the correct interval). For all UNOBSERVED covariate in between we use "fill forward" (see below -> filling up the Swiss cheese), but only after merging to the existing monthly-interval dataset.
 ##### At the end, this results in only 1 covariate info update per person-interval for each measurement (BMI, lipids, HbA1c)
 df_ppa_long <- fn_assign_dynamic_tu_cov(data = df_ppa_long,
                                          patient_id_col = patient_id,
@@ -314,6 +316,9 @@ df_months <- df_months %>%
 
 # 8. Fill up the Swiss cheese and reassign the lipid ratio --------
 print('Fill up the Swiss cheese and reassign the lipid ratio')
+
+# fill forward, always taking the latest value into account
+# if the first interval (month 0) is missing, then take that value from a separate corresponding baseline variable (e.g. use the info from the time-fixed cov_num_bmi_b to fill in the time-updated cov_num_bmi at baseline and then take it from there)
 tv_cov_num_cols <- c("cov_num_bmi", "cov_num_hba1c", "cov_num_chol", "cov_num_hdl_chol")
 baseline_lookup <- c(
   cov_num_bmi = "cov_num_bmi_b",
@@ -327,34 +332,7 @@ df_months <- df_months %>%
   arrange(start_date_month, .by_group = TRUE) %>%
   mutate(across(
     all_of(tv_cov_num_cols),
-    .fns = ~ {
-      baseline_col <- baseline_lookup[[cur_column()]]
-      base_val <- cur_data_all()[[baseline_col]][1]
-      
-      first_non_na <- which(!is.na(.x))[1]
-      
-      if (is.na(first_non_na)) {
-        # no observed values
-        if (!is.na(base_val)) {
-          # use baseline if available
-          rep(base_val, length(.x))
-        } else {
-          # leave all NA
-          .x
-        }
-      } else {
-        # mask before first non-NA
-        masked <- .x
-        if (!is.na(base_val)) {
-          masked[1:(first_non_na - 1)] <- base_val
-        } else {
-          masked[1:(first_non_na - 1)] <- NA
-        }
-        
-        # forward fill
-        tidyr::fill(data.frame(masked), masked, .direction = "down")$masked
-      }
-    }
+    ~ fn_fill_forward_incl_baseline(.x, baseline_lookup[[cur_column()]])
   )) %>%
   ungroup()
 
@@ -399,15 +377,15 @@ df_months <- df_months %>%
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
 #                 cov_date_chol, cov_num_chol, cov_date_hdl_chol, cov_num_hdl_chol, cov_num_chol_b, cov_num_hdl_chol_b,
-#                 cov_num_tc_hdl_ratio_b, 
+#                 cov_num_tc_hdl_ratio_b,
 #                 cov_cat_tc_hdl_ratio_b,
-#                 cov_num_tc_hdl_ratio, 
+#                 cov_num_tc_hdl_ratio,
 #                 cov_cat_tc_hdl_ratio,
 #                 cov_date_hba1c, cov_num_hba1c,
 #                 cov_cat_hba1c,
 #                 cov_num_hba1c_b, cov_cat_hba1c_b,
 #                 cov_date_bmi, cov_num_bmi,
-#                 cov_num_bmi_b, 
+#                 cov_num_bmi_b,
 #                 cov_cat_bmi_groups, cov_bin_obesity,
 #                 cov_cat_bmi,
 #                 cov_bin_ami, cov_bin_hypertension, cov_bin_all_stroke,
