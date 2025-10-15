@@ -7,10 +7,11 @@
 # 5. Assign the stable time-updated (first-ever, constant) in df_months. 
 # 6. Reformatting of the dynamic time-updated covariates in a long-format df_ppa, before merging to df_months. To test edge cases, further adapt dummy data.
 # 7. Merge and assign the dynamic time-updated covariates from df_ppa to df_months.
-# 8. Fill up the Swiss cheese and reassign the lipid ratio.
-# 9. Assign and shift outcomes, competing, and censoring events
-# 10. Define eligibility
-# 11. Save datasets
+# 8. Fill up the Swiss cheese and reassign the lipid ratio and other categorical variables
+# 9. Drop unnecessary helper variables created along the way
+# 10. Assign and shift outcomes, competing, and censoring events
+# 11. Define eligibility
+# 12. Save datasets
 ####
 
 
@@ -396,15 +397,26 @@ df_months <- df_months %>%
 #   # filter(is.na(cov_cat_tc_hdl_ratio)) %>%
 #   View()
 
-# drop the baseline helper values, easier to continue with a clean reduced dataset
+
+# 9. Drop unnecessary helper variables created along the way -------
+print('Drop unnecessary helper variables created along the way')
+# drop the baseline helper variables
 df_months <- df_months %>%
-  select(!c(cov_num_hdl_chol_b, cov_num_chol_b,
+  select(-c(cov_num_hdl_chol_b, cov_num_chol_b,
             cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
             cov_num_hba1c_b, cov_cat_hba1c_b,
             cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity))
+# drop all unnecessary covariate date variables used for assigning events to correct intervals
+df_months <- df_months %>%
+  select(-starts_with("cov_date"))
+# drop all unnecessary bin flags of outcomes and censoring events
+df_months <- df_months %>%
+  select(-c(contains("out_bin"), contains("cens_bin")))
+# drop outcomes we are not interested in the PPA
+df_months <- df_months %>%        
+  select(-c(contains("fracture"), contains("dm_death")))
 
-
-# 9. Assign and shift outcome, censoring due to LTFU and competing events --------
+# 10. Assign and shift outcome, censoring due to LTFU and competing events --------
 print('Assign and shift outcome, censoring due to LTFU, and competing events')
 # CAVE: use it only after the dataset has been interval-expanded (fn_expand_intervals.R) and after all events have been added (fn_assign* functions)
 
@@ -463,18 +475,17 @@ df_months_longcovid <- fn_add_and_shift_out_comp_cens_events(df_months,
 #                 outcome, comp_event, censor_LTFU, stop_date,
 #                 # event_date, is_event_interval, is_outcome_event, is_comp_event, is_cens_event, row_num, first_event_row,
 #                 exp_bin_treat,
-#                 out_date_severecovid_afterlandmark, out_bin_severecovid_afterlandmark,
-#                 out_date_noncoviddeath_afterlandmark, out_bin_noncoviddeath_afterlandmark,
-#                 cens_date_ltfu_afterlandmark, cens_bin_ltfu_afterlandmark,
-#                 out_date_death_afterlandmark, out_bin_death_afterlandmark,
-#                 out_date_covid_afterlandmark, out_bin_covid_afterlandmark,
-#                 cens_date_metfin_start_cont, cens_bin_metfin_start_cont,
-#                 out_date_longcovid_virfat_afterlandmark, out_bin_longcovid_virfat_afterlandmark,
+#                 out_date_severecovid_afterlandmark,
+#                 out_date_noncoviddeath_afterlandmark,
+#                 cens_date_ltfu_afterlandmark,
+#                 out_date_death_afterlandmark,
+#                 out_date_covid_afterlandmark,
+#                 cens_date_metfin_start_cont,
+#                 out_date_longcovid_virfat_afterlandmark,
 #                 cov_num_tc_hdl_ratio, cov_cat_tc_hdl_ratio,
-#                 cov_date_chol, cov_num_chol, cov_date_hdl_chol, cov_num_hdl_chol, 
-#                 cov_num_cholesterol_b, cov_num_hdl_cholesterol_b, 
-#                 cov_date_hba1c, cov_num_hba1c, cov_num_hba1c_mmol_mol, cov_cat_hba1c_mmol_mol, 
-#                 cov_date_bmi, cov_num_bmi, cov_cat_bmi_groups, cov_bin_obesity, cov_num_bmi_b, 
+#                 cov_num_chol, cov_num_hdl_chol,
+#                 cov_num_hba1c,
+#                 cov_num_bmi,
 #                 cov_cat_sex, cov_num_age,
 #                 cov_bin_ami, cov_bin_hypertension, cov_bin_all_stroke
 #                 ) %>%

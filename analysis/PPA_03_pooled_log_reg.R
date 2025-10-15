@@ -73,7 +73,8 @@ print(covariate_names)
 # Define bootstraps, total follow-up, and time^2 ------------------------
 print('Define bootstraps, total follow-up, and time^2')
 
-R <- 5 # Total bootstraps (ideally >500)
+R <- ifelse(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations"), 5, 100) # ideally increase to >500
+message("Number of bootstraps: ", R)
 
 # We currently only use the monthly interval data set => max follow-up is: K = 39 months (earliest possible landmark_date [01.01.2019] to study end [01.04.2022])
 # If weeks, then K = 169 weeks
