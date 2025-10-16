@@ -32,7 +32,7 @@ fn_redact_tbl_summary <- function(tbl_summary_obj, threshold = 6, # default thre
             txt <- str_trim(txt)
             count <- suppressWarnings(as.numeric(str_extract(txt, "^[0-9]+")))
             if (is.na(count)) return(cell)
-            fn_roundmid_any(count, threshold) |> as.character()
+            fn_roundmid_any(count, threshold) %>% as.character()
           }),
           .x
         )
@@ -47,11 +47,11 @@ fn_redact_tbl_summary <- function(tbl_summary_obj, threshold = 6, # default thre
   # Step 3: get redacted totals as scalars
   total_stat_1 <- tbl_df %>%
     filter(var_label == "Total N" & var_type == "categorical" & row_type == "level") %>%
-    pull(stat_1_count) |> as.numeric()
+    pull(stat_1_count) %>% as.numeric()
   
   total_stat_2 <- tbl_df %>%
     filter(var_label == "Total N" & var_type == "categorical" & row_type == "level") %>%
-    pull(stat_2_count) |> as.numeric()
+    pull(stat_2_count) %>% as.numeric()
   
   # Step 4: recalc percentages for non-total categorical/dichotomous rows
   tbl_df <- tbl_df %>%
