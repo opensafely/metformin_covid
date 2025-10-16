@@ -30,7 +30,8 @@ df <- read_feather(here("output", "data", "data_processed.arrow"))
 print('Add/compute splines')
 # Compute knot locations based on percentiles, according to study protocol
 age_knots <- quantile(df$cov_num_age, probs = c(0.10, 0.50, 0.90))
-# print(age_knots)
+df <- df %>%
+  mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
 
 # Define treatment variable, and covariates -------------------------------
 print('Define treatment variable, and covariates')
@@ -44,7 +45,7 @@ print(confounder_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(confounder_names, collapse = " + ")))
+ps_formula <- as.formula(paste("exp_bin_treat ~", paste(confounder_names, collapse = " + ")))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
