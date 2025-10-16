@@ -17,6 +17,7 @@ library(survival) # survival/TTE analyses
 library(ggfortify) # autoplot
 library(gtsummary) # tbl_regression
 library(survminer) # KM curve
+source(here::here("analysis", "confounders.R")) 
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -46,20 +47,9 @@ df$exp_bin_treat <- factor(df$exp_bin_treat,
                            levels = c(0, 1), # Reference first
                            labels = c("nothing", "metformin"))
 
-# Add covariates ----------------------------------------------------------
-print('Add covariates')
-covariate_names <- names(df) %>%
-    grep("^cov_", ., value = TRUE) %>% 
-    # exclude those not needed in the model:
-    ## cov_cat_bmi_groups covers for cov_bin_obesity & cov_num_bmi_b,
-    ## cov_cat_hba1c_b covers cov_num_hba1c_b
-    ## cov_cat_tc_hdl_ratio_b covers cov_num_tc_hdl_ratio_b, cov_num_chol_b, cov_num_hdl_chol_b,
-    ## cov_num_age_spline covers cov_cat_age and cov_num_age
-    setdiff(c("cov_num_bmi_b", "cov_bin_obesity", 
-              "cov_num_hba1c_b", 
-              "cov_num_tc_hdl_ratio_b", "cov_num_chol_b", "cov_num_hdl_chol_b",
-              "cov_cat_age", "cov_num_age")) 
-print(covariate_names)
+# Add covariates/confounders ----------------------------------------------
+print('Add covariates/confounders')
+print(confounder_names)
 
 # Checks before proceeding to Cox model -----------------------------------
 if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
@@ -68,14 +58,14 @@ if (any(df$cox_tt_severecovid < 0, na.rm = TRUE)) {
   print("Check passed: All values in cox_tt_severecovid are non-negative.")
 }
 
-if (anyNA(df[, c("cox_tt_severecovid", "out_bin_severecovid_afterlandmark", covariate_names)])) {
+if (anyNA(df[, c("cox_tt_severecovid", "out_bin_severecovid_afterlandmark", confounder_names)])) {
   warning("Missing values detected in model variables")
 }
 
 # Cox model ---------------------------------------------------------------
 print('Run Cox model')
 cox_formula_severecovid <- as.formula(paste("Surv(cox_tt_severecovid, out_bin_severecovid_afterlandmark) ~ exp_bin_treat +", 
-                                            paste(covariate_names, collapse = " + "), "+ strat(strat_cat_region)"))
+                                            paste(confounder_names, collapse = " + "), "+ strat(strat_cat_region)"))
 cox_model_severecovid <- coxph(cox_formula_severecovid, data = df)
 cox_severecovid <- tbl_regression(cox_model_severecovid, exp = TRUE)
 cox_severecovid_df <- cox_severecovid %>% 

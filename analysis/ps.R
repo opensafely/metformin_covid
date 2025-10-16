@@ -16,6 +16,7 @@ library(rms) # splines and strat
 library(cobalt) # SMD density
 library(ggplot2)
 library(gtsummary)
+source(here::here("analysis", "confounders.R")) 
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -38,21 +39,12 @@ df$exp_bin_treat <- ordered(df$exp_bin_treat,
                                        levels = c(0, 1), # Reference first
                                        labels = c("nothing", "metformin"))
 
-# Define the covariates included in the PS model
-covariate_names <- names(df) %>%
-  grep("^(cov_|strat_)", ., value = TRUE) %>% 
-  # exclude those not needed in the model:
-  ## cov_cat_bmi_groups is covering cov_bin_obesity & cov_num_bmi_b,
-  ## cov_cat_hba1c_b is covering for cov_num_hba1c_b
-  ## cov_cat_tc_hdl_ratio_b is covering for cov_num_tc_hdl_ratio_b
-  ## spline(cov_num_age) is covering for cov_cat_age
-  setdiff(c("cov_num_bmi_b", "cov_bin_obesity", "cov_num_hba1c_b", "cov_cat_age", "cov_num_tc_hdl_ratio_b", "cov_num_hdl_chol_b", "cov_num_chol_b"
-            )) 
-print(covariate_names)
+# Define the covariates/confounders included in the PS model
+print(confounder_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
-ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(covariate_names, collapse = " + ")))
+ps_formula <- as.formula(paste("exp_bin_treat ~ rcs(cov_num_age, age_knots) +", paste(confounder_names, collapse = " + ")))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
@@ -78,7 +70,7 @@ df$sw <- ifelse(df$exp_bin_treat == "metformin",
 
 # Assess covariate balance BEFORE IPW -------------------------------------
 print('Assess covariate balance BEFORE IPW')
-tbl1_unweighted <- bal.tab(df[covariate_names], 
+tbl1_unweighted <- bal.tab(df[confounder_names], 
                           treat = df$exp_bin_treat, 
                           binary = "std",
                           s.d.denom = "pooled") # standardization for binary variables
@@ -89,7 +81,7 @@ smd_unweighted <- smd_unweighted %>%
 
 # Assess covariate balance AFTER IPW --------------------------------------
 print('Assess covariate balance AFTER IPW')
-tbl1_sw <- bal.tab(df[covariate_names], 
+tbl1_sw <- bal.tab(df[confounder_names], 
                     treat = df$exp_bin_treat, 
                     weights = df$sw,
                     binary = "std", 
