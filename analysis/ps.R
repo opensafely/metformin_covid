@@ -12,7 +12,7 @@ print('Import libraries and functions')
 library(arrow)
 library(here)
 library(tidyverse)
-library(rms) # splines and strat
+library(splines) # spline
 library(cobalt) # SMD density
 library(ggplot2)
 library(gtsummary)
