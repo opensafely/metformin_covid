@@ -87,7 +87,11 @@ data_extracted <- data_extracted %>%
     cov_num_bmi_b = if_else(runif(n()) < 0.1, NA_real_, cov_num_bmi_b),
     elig_num_hba1c_landmark_mmol_mol = if_else(runif(n()) < 0.1, NA_real_, elig_num_hba1c_landmark_mmol_mol)
   )
-
+# cov_num_counthba1c
+data_extracted <- data_extracted %>%
+  mutate(
+    cov_num_counthba1c = round(pmax(pmin(rnorm(n(), mean = 3, sd = 1), 5), 1))
+  )
 # cov_bin_pcos only contains 1 TRUE
 data_extracted <- data_extracted %>%
   mutate(cov_bin_pcos = sample(c(TRUE, FALSE), n(), replace = TRUE, prob = c(0.05, 0.95)))

@@ -11,6 +11,7 @@ library('here')
 library('tidyverse')
 library('gtsummary')
 source(here::here("analysis", "functions", "utility.R")) # fn_roundmid_any
+source(here::here("analysis", "functions", "fn_redact_tbl_summary.R")) 
 
 # Create directories for output -------------------------------------------
 fs::dir_create(here::here("output", "data_description"))
@@ -23,6 +24,7 @@ df <- read_feather(here("output", "data", "data_processed.arrow"))
 df_death_ltfu <- read_feather(here("output", "data", "data_processed_death_ltfu.arrow"))
 
 # Label the data ---------------------------------------------------------
+print('Label the data')
 var_labels_main <- list(
   N  = "Total N",
   exp_bin_treat = "Treatment",
@@ -65,6 +67,7 @@ var_labels_main <- list(
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
   out_bin_covid_hosp_afterlandmark = "COVID hosp",
   out_bin_covid_death_afterlandmark = "COVID death",
+  out_bin_covid_afterlandmark_730 = "Any covid diagnosis, pos test or hosp within 730d",
   out_bin_covid_afterlandmark = "Any covid diagnosis, pos test or hosp",
   out_bin_longcovid_afterlandmark = "Any Long COVID diagnosis",
   out_bin_virfat_afterlandmark = "Any Viral Fatigue diagnosis",
@@ -181,60 +184,44 @@ var_labels_death_ltfu2 <- list(
   cens_bin_metfin_start_cont = "CONT: Any metformin start in control"
 )
 
-# Create the main table 1 ---------------------------------------------------------
-table_1_main <-
-  df %>%
+# Create the main table 1 ------------------------------------------------
+print('Create the main table 1')
+table_1_main <- df %>%
   mutate(
-    N=1L,
+    N = 1L,
     exp_bin_treat = factor(exp_bin_treat,
-                          levels = c(1,0),
-                          labels = c("Metformin mono", "Nothing"))
+                           levels = c(1,0),
+                           labels = c("Metformin mono", "Nothing"))
   ) %>%
-  select(names(var_labels_main)
-  ) %>%
+  select(names(var_labels_main)) %>%
   tbl_summary(
     by = exp_bin_treat,
     label = var_labels_main,
     statistic = list(
       N ~ "{N}",
-      all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
+      all_continuous() ~ "{median} ({p25}, {p75}); {mean} ({sd})"
     ),
+    type = list(
+      # explicitly force some numeric variables to be continuous since they do not contain enough variation
+      cov_num_consrate = "continuous",
+      cov_num_counthba1c = "continuous",
+      cov_num_countlifestyle = "continuous"
+    )
   )
-table_1_main <- as_tibble(table_1_main$table_body)
-table_1_main_redacted <- table_1_main %>%
-  mutate(
-    across(
-      starts_with("stat_"),
-      ~ map_chr(.x, function(cell) {
-        # Skip if NA or empty
-        if (is.na(cell) || cell == "") return(cell)
-        # Remove thousands separators
-        txt <- str_replace_all(cell, ",", "")
-        # Normalize spaces
-        txt <- str_replace_all(txt, "[[:space:]]", " ")
-        # Extract numeric substrings
-        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
-        if (length(nums) == 0) return(cell)
-        # Apply the rounding function
-        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
-        # Replace numbers sequentially
-        out <- txt
-        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
-        out
-      })
-    ),
-    # keep the order (ignore the first two labels)
-    var_label = factor(
-      var_label,
-      levels = map_chr(var_labels_main[-c(1, 2)], ~ last(as.character(.)))
-    ),
-    label = replace_na(as.character(label), "")
-  )
-table_1_main_redacted <- table_1_main_redacted %>% 
-  rename(metformin = stat_1,
-         control = stat_2)
 
-# Create the death/ltfu1 table ---------------------------------------------------------
+# REDACTION table 1 ------------------------------------------------------
+print('REDACTION table 1')
+table_1_main_df <- as_tibble(table_1_main$table_body) # just to double-check
+table_1_main_redacted <- fn_redact_tbl_summary(
+  tbl_summary_obj = table_1_main,
+  threshold = threshold,
+  col_names = c("stat_1", "stat_2"),
+  rename_cols = c("metformin", "control")
+)
+
+
+# Create the death/ltfu1 table -------------------------------------------
+print('Create the death/ltfu1 table')
 df_death_ltfu <- df_death_ltfu %>% 
   mutate(exp_bin_treat = factor(exp_bin_treat, 
                                 levels = c(1,0), 
@@ -255,40 +242,23 @@ table_1_death_ltfu1 <-
       N ~ "{N}",
       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
     ),
+    type = list(
+      # explicitly force some numeric variables to be continuous since they do not contain enough variation
+      cov_num_consrate = "continuous",
+      cov_num_counthba1c = "continuous",
+      cov_num_countlifestyle = "continuous"
+    )
   )
-table_1_death_ltfu1 <- as_tibble(table_1_death_ltfu1$table_body)
-table_1_death_ltfu1_redacted <- table_1_death_ltfu1 %>%
-  mutate(
-    across(
-      starts_with("stat_"),
-      ~ map_chr(.x, function(cell) {
-        # Skip if NA or empty
-        if (is.na(cell) || cell == "") return(cell)
-        # Remove thousands separators
-        txt <- str_replace_all(cell, ",", "")
-        # Normalize spaces
-        txt <- str_replace_all(txt, "[[:space:]]", " ")
-        # Extract numeric substrings
-        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
-        if (length(nums) == 0) return(cell)
-        # Apply the rounding function
-        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
-        # Replace numbers sequentially
-        out <- txt
-        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
-        out
-      })
-    ),
-    # keep the order (ignore the first two labels)
-    var_label = factor(
-      var_label,
-      levels = map_chr(var_labels_death_ltfu1[-c(1, 2)], ~ last(as.character(.)))
-    ),
-    label = replace_na(as.character(label), "")
-  )
-table_1_death_ltfu1_redacted <- table_1_death_ltfu1_redacted %>% 
-  rename("Alive and in care at landmark" = stat_1,
-         "Died or LTFU until landmark" = stat_2)
+
+# REDACTION table death/ltfu1 ---------------------------------------------
+print('REDACTION table death/ltfu1')
+table_1_death_ltfu1_redacted <- fn_redact_tbl_summary(
+  tbl_summary_obj = table_1_death_ltfu1,
+  threshold = threshold,
+  col_names = c("stat_1", "stat_2"),
+  rename_cols = c("Alive and in care at landmark", "Died or LTFU until landmark")
+)
+
 
 # Create the death/ltfu2 table ---------------------------------------------------------
 table_1_death_ltfu2 <-
@@ -307,44 +277,26 @@ table_1_death_ltfu2 <-
       N ~ "{N}",
       all_continuous() ~ "{median} ({p25}, {p75});  {mean} ({sd})"
     ),
+    type = list(
+      # explicitly force some numeric variables to be continuous since they do not contain enough variation
+      cov_num_consrate = "continuous",
+      cov_num_counthba1c = "continuous",
+      cov_num_countlifestyle = "continuous"
+    )
   )
-table_1_death_ltfu2 <- as_tibble(table_1_death_ltfu2$table_body)
-table_1_death_ltfu2_redacted <- table_1_death_ltfu2 %>%
-  mutate(
-    across(
-      starts_with("stat_"),
-      ~ map_chr(.x, function(cell) {
-        # Skip if NA or empty
-        if (is.na(cell) || cell == "") return(cell)
-        # Remove thousands separators
-        txt <- str_replace_all(cell, ",", "")
-        # Normalize spaces
-        txt <- str_replace_all(txt, "[[:space:]]", " ")
-        # Extract numeric substrings
-        nums <- str_extract_all(txt, "-?\\d*\\.?\\d+")[[1]]
-        if (length(nums) == 0) return(cell)
-        # Apply the rounding function
-        rounded <- map_chr(nums, ~ as.character(fn_roundmid_any(as.numeric(.x), threshold)))
-        # Replace numbers sequentially
-        out <- txt
-        for (i in seq_along(nums)) out <- sub(nums[i], rounded[i], out)
-        out
-      })
-    ),
-    # keep the order (ignore the first two labels)
-    var_label = factor(
-      var_label,
-      levels = map_chr(var_labels_death_ltfu2[-c(1, 2)], ~ last(as.character(.)))
-    ),
-    label = replace_na(as.character(label), "")
-  )
-table_1_death_ltfu2_redacted <- table_1_death_ltfu2_redacted %>% 
-  rename("Alive and in care at landmark" = stat_1,
-         "Died or LTFU until landmark" = stat_2)
+
+# REDACTION table death/ltfu2 ---------------------------------------------
+print('REDACTION table death/ltfu2')
+table_1_death_ltfu2_redacted <- fn_redact_tbl_summary(
+  tbl_summary_obj = table_1_death_ltfu2,
+  threshold = threshold,
+  col_names = c("stat_1", "stat_2"),
+  rename_cols = c("Alive and in care at pandemic start", "Died or LTFU between landmark and pandemic start")
+)
 
 
 # Save output -------------------------------------------------------------
-write_csv(table_1_main, fs::path("output", "data_description", "table1_main.csv"))
+write_csv(table_1_main_df, fs::path("output", "data_description", "table1_main.csv"))
 write_csv(table_1_main_redacted, fs::path("output", "data_description", "table1_main_midpoint6.csv"))
 write_csv(table_1_death_ltfu1_redacted, fs::path("output", "data_description", "table1_death_ltfu1_midpoint6.csv"))
 write_csv(table_1_death_ltfu2_redacted, fs::path("output", "data_description", "table1_death_ltfu2_midpoint6.csv"))
