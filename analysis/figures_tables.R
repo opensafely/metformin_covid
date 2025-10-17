@@ -382,7 +382,7 @@ density_plot_untrimmed <- ggplot(df_ps, aes(x = dens_x, y = dens_y, color = grou
 # Results figures ----------------------
 ## Main results ----
 df_results_cox <- df_results_cox %>% 
-  filter(term == "days0_730")
+  filter(term == "days0_550")
 
 df_results_main <- df_results_cox %>% 
   filter(!grepl("sg_", name)) %>% 

@@ -67,7 +67,7 @@ var_labels_main <- list(
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
   out_bin_covid_hosp_afterlandmark = "COVID hosp",
   out_bin_covid_death_afterlandmark = "COVID death",
-  out_bin_covid_afterlandmark_730 = "Any covid diagnosis, pos test or hosp within 730d",
+  out_bin_covid_afterlandmark_550 = "Any covid diagnosis, pos test or hosp within 550d",
   out_bin_covid_afterlandmark = "Any covid diagnosis, pos test or hosp",
   out_bin_longcovid_afterlandmark = "Any Long COVID diagnosis",
   out_bin_virfat_afterlandmark = "Any Viral Fatigue diagnosis",

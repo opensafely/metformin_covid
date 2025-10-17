@@ -217,7 +217,7 @@ data_processed <- data_processed %>%
 print('Assign the landmark date and max follow-up date')
 data_processed <- data_processed %>% 
   mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
-  mutate(max_fup_date = landmark_date + days(730))
+  mutate(max_fup_date = landmark_date + days(550))
 
 
 # Apply the quality assurance criteria ------------------------------------
@@ -314,7 +314,7 @@ data_processed <- data_processed %>%
     out_bin_covid_afterlandmark = !is.na(out_date_covid) & out_date_covid > landmark_date,
     out_date_covid_afterlandmark = case_when(out_bin_covid_afterlandmark == TRUE ~ out_date_covid, 
                                                    TRUE ~ as.Date(NA)),
-    out_bin_covid_afterlandmark_730 = !is.na(out_date_covid) & out_date_covid > landmark_date & out_date_covid < landmark_date + days(730),
+    out_bin_covid_afterlandmark_550 = !is.na(out_date_covid) & out_date_covid > landmark_date & out_date_covid < landmark_date + days(550),
     
     out_bin_longcovid_afterlandmark = !is.na(out_date_longcovid) & out_date_longcovid > landmark_date,
     out_date_longcovid_afterlandmark = case_when(out_bin_longcovid_afterlandmark == TRUE ~ out_date_longcovid, 
