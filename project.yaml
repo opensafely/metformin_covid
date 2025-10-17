@@ -84,7 +84,7 @@ actions:
         dataset: output/dataset_ppa.arrow
 
   data_process_ppa:
-    run: r:latest analysis/data_process_ppa.R
+    run: r:v2 analysis/data_process_ppa.R
     needs:
     - generate_dataset_ppa
     outputs:
@@ -105,7 +105,7 @@ actions:
         desc_tbl2: output/data_description/n_exp_out.csv
   
   table1:
-    run: r:latest analysis/table1.R
+    run: r:v2 analysis/table1.R
     needs:
     - data_process
     outputs:
@@ -176,7 +176,7 @@ actions:
         plot: output/te/cox_scripted/*.png
 
   ps:
-    run: r:latest analysis/ps.R
+    run: r:v2 analysis/ps.R
     needs:
     - data_process
     outputs:
@@ -187,7 +187,7 @@ actions:
   cox_primary:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_severecovid_afterlandmark --strata=strat_cat_region
-      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_cat_bmi_groups;cov_cat_hba1c_b;cov_cat_tc_hdl_ratio_b;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month
+      --covariate_sex=cov_cat_sex --covariate_age=cov_num_age --covariate_other=cov_cat_ethnicity;cov_cat_deprivation_5;cov_cat_rural_urban;cov_bin_healthcare_worker;cov_num_consrate;cov_cat_smoking_status;cov_cat_bmi_groups;cov_cat_hba1c_b;cov_cat_tc_hdl_ratio_b;cov_bin_ami;cov_bin_all_stroke;cov_bin_other_arterial_embolism;cov_bin_vte;cov_bin_hf;cov_bin_angina;cov_bin_dementia;cov_bin_cancer;cov_bin_hypertension;cov_bin_depression;cov_bin_copd;cov_bin_liver_disease;cov_bin_chronic_kidney_disease;cov_bin_pcos;cov_bin_prediabetes;cov_bin_diabetescomp;cov_num_period_month;cov_num_counthba1c
       --cox_start=landmark_date --cox_stop=cox_date_severecovid --study_start="2018-08-01"
       --study_stop="2022-04-01" --cut_points=550 --total_event_threshold=10
       --age_spline=TRUE --save_analysis_ready=FALSE --df_output=results_cox_primary.csv
