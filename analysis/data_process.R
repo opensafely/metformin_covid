@@ -217,7 +217,7 @@ data_processed <- data_processed %>%
 print('Assign the landmark date and max follow-up date')
 data_processed <- data_processed %>% 
   mutate(landmark_date = elig_date_t2dm + days(183)) %>% 
-  mutate(max_fup_date = landmark_date + days(730))
+  mutate(max_fup_date = landmark_date + days(550))
 
 
 # Apply the quality assurance criteria ------------------------------------
@@ -314,6 +314,8 @@ data_processed <- data_processed %>%
     out_bin_covid_afterlandmark = !is.na(out_date_covid) & out_date_covid > landmark_date,
     out_date_covid_afterlandmark = case_when(out_bin_covid_afterlandmark == TRUE ~ out_date_covid, 
                                                    TRUE ~ as.Date(NA)),
+    out_bin_covid_afterlandmark_550 = !is.na(out_date_covid) & out_date_covid > landmark_date & out_date_covid < landmark_date + days(550),
+    
     out_bin_longcovid_afterlandmark = !is.na(out_date_longcovid) & out_date_longcovid > landmark_date,
     out_date_longcovid_afterlandmark = case_when(out_bin_longcovid_afterlandmark == TRUE ~ out_date_longcovid, 
                                              TRUE ~ as.Date(NA)),
@@ -324,7 +326,11 @@ data_processed <- data_processed %>%
     out_date_longcovid_virfat_afterlandmark = case_when(out_bin_longcovid_virfat_afterlandmark == TRUE ~ out_date_longcovid_virfat, 
                                               TRUE ~ as.Date(NA)),
     # Other events.
-    out_bin_death_afterlandmark = out_bin_covid_death_afterlandmark | (!is.na(qa_date_of_death) & (qa_date_of_death > out_date_covid_death_afterlandmark)), # this additional step is needed to ensure order of death dates in dummy data (and no impact on real data)
+    out_bin_death_afterlandmark = 
+      out_bin_covid_death_afterlandmark |
+      (!is.na(qa_date_of_death) & is.na(out_date_covid_death_afterlandmark)) |
+      (!is.na(qa_date_of_death) & !is.na(out_date_covid_death_afterlandmark) &
+         qa_date_of_death >= out_date_covid_death_afterlandmark), # this additional step is needed to ensure logical order of death dates in dummy data (since both death dates are created independent of each other unlike in real data; has no impact on real data)
     out_date_death_afterlandmark = case_when(out_bin_death_afterlandmark == TRUE ~ qa_date_of_death, 
                                              TRUE ~ as.Date(NA)),
     out_bin_noncoviddeath_afterlandmark = (!is.na(qa_date_of_death) & qa_date_of_death > landmark_date) & is.na(out_date_covid_death_afterlandmark),
