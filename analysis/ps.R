@@ -16,7 +16,7 @@ library(splines) # spline
 library(cobalt) # SMD density
 library(ggplot2)
 library(gtsummary)
-source(here::here("analysis", "confounders.R")) 
+source(here::here("analysis", "covariates.R")) 
 
 # Create directories for output -------------------------------------------
 print('Create directories for output')
@@ -41,11 +41,11 @@ df$exp_bin_treat <- ordered(df$exp_bin_treat,
                                        labels = c("nothing", "metformin"))
 
 # Define the covariates/confounders included in the PS model
-print(confounder_names)
+print(covariates_names)
 
 # PS model ----------------------------------------------------------------
 print('PS model and predict')
-ps_formula <- as.formula(paste("exp_bin_treat ~", paste(confounder_names, collapse = " + ")))
+ps_formula <- as.formula(paste("exp_bin_treat ~", paste(covariates_names, collapse = " + ")))
 # Fit the PS model to estimate the PS for being in the metformin-mono group
 ps_model <- glm(ps_formula, family = binomial(link = "logit"), data = df)
 # summary(ps_model)
@@ -71,7 +71,7 @@ df$sw <- ifelse(df$exp_bin_treat == "metformin",
 
 # Assess covariate balance BEFORE IPW -------------------------------------
 print('Assess covariate balance BEFORE IPW')
-tbl1_unweighted <- bal.tab(df[confounder_names], 
+tbl1_unweighted <- bal.tab(df[covariates_names], 
                           treat = df$exp_bin_treat, 
                           binary = "std",
                           s.d.denom = "pooled") # standardization for binary variables
@@ -82,7 +82,7 @@ smd_unweighted <- smd_unweighted %>%
 
 # Assess covariate balance AFTER IPW --------------------------------------
 print('Assess covariate balance AFTER IPW')
-tbl1_sw <- bal.tab(df[confounder_names], 
+tbl1_sw <- bal.tab(df[covariates_names], 
                     treat = df$exp_bin_treat, 
                     weights = df$sw,
                     binary = "std", 
