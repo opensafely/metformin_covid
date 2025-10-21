@@ -162,27 +162,33 @@ data_processed <- data_extracted %>%
                                                                           levels = c("below 3.5:1", "3.5:1 to 5:1", "above 5:1", "Unknown")), TRUE ~ cov_cat_tc_hdl_ratio_b),
     
     # HbA1c categories: https://www.southtees.nhs.uk/resources/the-hba1c-test/
-    ## remove HbA1c > 120; remove HbA1c 0 or below
+    ## remove HbA1c > 115; remove HbA1c 0 or below
     cov_num_hba1c_b = if_else(
-      cov_num_hba1c_b <= 0 | cov_num_hba1c_b > 120,
+      cov_num_hba1c_b <= 0 | cov_num_hba1c_b > 115,
       NA_real_,
       cov_num_hba1c_b
     ),
+    # Log-transform
+    cov_num_hba1c_b_log = if_else(
+      !is.na(cov_num_hba1c_b),
+      log(cov_num_hba1c_b),
+      NA_real_
+    ),
     cov_cat_hba1c_b = cut(
       cov_num_hba1c_b,
-      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      breaks = c(0, 42, 59, 76, 115), # 115 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE) %>%
       forcats::fct_expand("Unknown"),
     cov_cat_hba1c_b = case_when(is.na(cov_cat_hba1c_b) ~ factor("Unknown",
                                                                 levels = c("below 42", "42-58", "59-75", "above 75", "Unknown")), TRUE ~ cov_cat_hba1c_b),
     elig_num_hba1c_landmark_mmol_mol = if_else( 
-      elig_num_hba1c_landmark_mmol_mol <= 0 | elig_num_hba1c_landmark_mmol_mol > 120,
+      elig_num_hba1c_landmark_mmol_mol <= 0 | elig_num_hba1c_landmark_mmol_mol > 115,
       NA_real_,
       elig_num_hba1c_landmark_mmol_mol),
     elig_cat_hba1c_landmark_mmol_mol = cut(
       elig_num_hba1c_landmark_mmol_mol,
-      breaks = c(0, 42, 59, 76, 120), # 120 is upper limit, above NA
+      breaks = c(0, 42, 59, 76, 115), # 115 is upper limit, above NA
       labels = c("below 42" ,"42-58", "59-75", "above 75"),
       right = FALSE) %>% 
       forcats::fct_expand("Unknown"),
@@ -371,7 +377,6 @@ data_processed <- data_processed %>%
     cov_cat_hba1c_b == "below 42" ~ "below 42",
     cov_cat_hba1c_b == "42-58" ~ "42-58",
     cov_cat_hba1c_b == "59-75" ~ "59-75",
-    cov_cat_hba1c_b == "Unknown" ~ "Unknown",
     TRUE ~ NA_character_))
 
 # plot the numeric lab values to check distribution (to see if there is any grouping indicating the use of comparators)
@@ -382,6 +387,15 @@ hba1c_plot <- data_processed %>%
   labs(title = "Density Plot of HbA1c",
        x = "HbA1c",
        y = "Density")
+hba1c_plot_log <- data_processed %>%
+  drop_na(cov_num_hba1c_b_log) %>%
+  ggplot(aes(x = cov_num_hba1c_b_log)) +
+  geom_density(fill = "blue", color = "black") +
+  labs(
+    title = "Density Plot of Log-Transformed HbA1c",
+    x = "log(HbA1c)",
+    y = "Density"
+  )
 totchol_plot <- data_processed %>% 
   drop_na(cov_num_chol_b) %>% 
   ggplot(aes(x = cov_num_chol_b)) +
@@ -483,7 +497,28 @@ arrow::write_feather(data_processed_full, here::here("output", "data", "data_pro
 
 # Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm ----
 print('Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm')
-# (1) Explore deaths/ltfu
+
+# (1) Explore DM diet only flag
+data_processed <- data_processed %>% 
+  mutate(
+    tmp_cat_diet_only = case_when(
+      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In control, diet treatment only, within 6m",
+      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, after 6m",
+      exp_bin_treat == 0 & is.na(tmp_date_diet_only) ~ "In control, no diet treatment documentation",
+      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In intervention, diet treatment only, within 6m",
+      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, after 6m",
+      exp_bin_treat == 1 & is.na(tmp_date_diet_only) ~ "In intervention, no diet treatment documentation",
+      TRUE ~ "Unknown"
+    )
+  )
+n_cat_diet_only <- data_processed %>%
+  count(tmp_cat_diet_only)
+
+data_processed <- data_processed %>% 
+  mutate(cov_bin_diet_only = case_when(!is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ TRUE,
+                                       TRUE ~ FALSE))
+
+# (2) Explore deaths/ltfu
 # died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
   mutate(death_landmark = (!is.na(qa_date_of_death) & (qa_date_of_death > elig_date_t2dm) & (qa_date_of_death <= landmark_date))) %>% 
@@ -511,7 +546,7 @@ count <- data_processed %>%
     n_ltfu_landmark = sum(ltfu_landmark, na.rm = TRUE),
     n_exp_bin_treat = sum(is.na(exp_bin_treat), na.rm = TRUE))
     
-# (2) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
+# (3) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
 data_processed <- data_processed %>%
   filter(
     !is.na(exp_bin_treat),
@@ -525,7 +560,7 @@ n_restricted_midpoint6 <- tibble(
   n_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_ltfu_landmark, threshold),
   n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
 
-# (3) Explore DM algorithm
+# (4) Explore DM algorithm
 data_processed <- data_processed %>% 
   mutate(tmp_diag_nonmetfin_code = case_when((step_1 == "No" & step_2 == "Yes") | 
                                           (step_1 == "Yes" & step_1a == "Yes" & step_2 == "Yes") ~ TRUE,
@@ -570,22 +605,6 @@ n_dm_algo_midpoint6 <- tibble(
   n_diag_date_gestationaldm_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_gestationaldm_date, threshold),
   n_diag_date_any_diabetes_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_any_diabetes_med_date, threshold),
   n_diag_date_nonmetform_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_nonmetform_med_date, threshold))
-
-# (4) Explore DM diet only flag
-data_processed <- data_processed %>% 
-  mutate(
-    tmp_cat_diet_only = case_when(
-      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In control, diet treatment only, within 6m",
-      exp_bin_treat == 0 & !is.na(tmp_date_diet_only) ~ "In control, diet treatment only, after 6m",
-      exp_bin_treat == 0 & is.na(tmp_date_diet_only) ~ "In control, no diet treatment documentation",
-      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ "In intervention, diet treatment only, within 6m",
-      exp_bin_treat == 1 & !is.na(tmp_date_diet_only) ~ "In intervention, diet treatment only, after 6m",
-      exp_bin_treat == 1 & is.na(tmp_date_diet_only) ~ "In intervention, no diet treatment documentation",
-      TRUE ~ "Unknown"
-    )
-  )
-n_cat_diet_only <- data_processed %>%
-  count(tmp_cat_diet_only)
 
 # (5) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
 data_processed <- data_processed %>% 
