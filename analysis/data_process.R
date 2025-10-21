@@ -169,7 +169,7 @@ data_processed <- data_extracted %>%
       cov_num_hba1c_b
     ),
     # Log-transform
-    cov_num_hba1c_b_log = if_else(
+    cov_num_hba1c_log_b = if_else(
       !is.na(cov_num_hba1c_b),
       log(cov_num_hba1c_b),
       NA_real_
@@ -387,9 +387,9 @@ hba1c_plot <- data_processed %>%
   labs(title = "Density Plot of HbA1c",
        x = "HbA1c",
        y = "Density")
-hba1c_plot_log <- data_processed %>%
-  drop_na(cov_num_hba1c_b_log) %>%
-  ggplot(aes(x = cov_num_hba1c_b_log)) +
+hba1c_log_plot <- data_processed %>%
+  drop_na(cov_num_hba1c_log_b) %>%
+  ggplot(aes(x = cov_num_hba1c_log_b)) +
   geom_density(fill = "blue", color = "black") +
   labs(
     title = "Density Plot of Log-Transformed HbA1c",
@@ -643,7 +643,7 @@ write.csv(n_dm_algo_midpoint6, file = here::here("output", "data_description", "
 write.csv(n_cat_diet_only, file = here::here("output", "data_description", "n_cat_diet_only.csv"))
 # Lab value dens plots
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "data_description", "hba1c_plot_log.png"), hba1c_plot_log, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "hba1c_log_plot.png"), hba1c_log_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "hdlchol_plot.png"), hdlchol_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "lipidratio_plot.png"), lipidratio_plot, width = 20, height = 20, units = "cm")
