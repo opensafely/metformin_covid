@@ -643,6 +643,7 @@ write.csv(n_dm_algo_midpoint6, file = here::here("output", "data_description", "
 write.csv(n_cat_diet_only, file = here::here("output", "data_description", "n_cat_diet_only.csv"))
 # Lab value dens plots
 ggsave(filename = here::here("output", "data_description", "hba1c_plot.png"), hba1c_plot, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "data_description", "hba1c_plot_log.png"), hba1c_plot_log, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "totchol_plot.png"), totchol_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "hdlchol_plot.png"), hdlchol_plot, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "data_description", "lipidratio_plot.png"), lipidratio_plot, width = 20, height = 20, units = "cm")
