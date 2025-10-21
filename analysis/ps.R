@@ -318,32 +318,32 @@ density_plot_untrimmed_HbA1cbelow42 <- ggplot(ps_density_data_untrimmed_HbA1cbel
     axis.text.x = element_text(size = 10)
   )
 
-dens_treated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "Unknown"])
-df_treated_HbA1cUnknown <- data.frame(dens_x = dens_treated_HbA1cUnknown$x, dens_y = dens_treated_HbA1cUnknown$y, group = "metformin (untrimmed)")
-dens_untreated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "Unknown"])
-df_untreated_HbA1cUnknown <- data.frame(dens_x = dens_untreated_HbA1cUnknown$x, dens_y = dens_untreated_HbA1cUnknown$y, group = "nothing (untrimmed)")
-ps_density_data_untrimmed_HbA1cUnknown <- bind_rows(df_treated_HbA1cUnknown, df_untreated_HbA1cUnknown)
-density_plot_untrimmed_HbA1cUnknown <- ggplot(ps_density_data_untrimmed_HbA1cUnknown, aes(x = dens_x, y = dens_y, color = group)) +
-  geom_line(linewidth = 1) +
-  scale_x_continuous(
-    breaks = seq(0, 1, by = 0.1), 
-    minor_breaks = seq(0, 1, by = 0.05), 
-    labels = scales::number_format(accuracy = 0.1)
-  ) +
-  labs(
-    title = "Propensity Score Density Plot; Untrimmed; _HbA1cUnknown",
-    x = "Propensity Score",
-    y = "Density",
-    color = "Group"
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
-    panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
-    panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
-    panel.grid.minor.y = element_blank(),
-    axis.text.x = element_text(size = 10)
-  )
+# dens_treated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "metformin" & df$cov_cat_hba1c_b == "Unknown"])
+# df_treated_HbA1cUnknown <- data.frame(dens_x = dens_treated_HbA1cUnknown$x, dens_y = dens_treated_HbA1cUnknown$y, group = "metformin (untrimmed)")
+# dens_untreated_HbA1cUnknown <- density(df$ps[df$exp_bin_treat == "nothing" & df$cov_cat_hba1c_b == "Unknown"])
+# df_untreated_HbA1cUnknown <- data.frame(dens_x = dens_untreated_HbA1cUnknown$x, dens_y = dens_untreated_HbA1cUnknown$y, group = "nothing (untrimmed)")
+# ps_density_data_untrimmed_HbA1cUnknown <- bind_rows(df_treated_HbA1cUnknown, df_untreated_HbA1cUnknown)
+# density_plot_untrimmed_HbA1cUnknown <- ggplot(ps_density_data_untrimmed_HbA1cUnknown, aes(x = dens_x, y = dens_y, color = group)) +
+#   geom_line(linewidth = 1) +
+#   scale_x_continuous(
+#     breaks = seq(0, 1, by = 0.1), 
+#     minor_breaks = seq(0, 1, by = 0.05), 
+#     labels = scales::number_format(accuracy = 0.1)
+#   ) +
+#   labs(
+#     title = "Propensity Score Density Plot; Untrimmed; _HbA1cUnknown",
+#     x = "Propensity Score",
+#     y = "Density",
+#     color = "Group"
+#   ) +
+#   theme_minimal() +
+#   theme(
+#     panel.grid.major.x = element_line(color = "gray80", linewidth = 0.5),
+#     panel.grid.minor.x = element_line(color = "gray90", linewidth = 0.3),
+#     panel.grid.major.y = element_line(color = "gray80", linewidth = 0.5),
+#     panel.grid.minor.y = element_blank(),
+#     axis.text.x = element_text(size = 10)
+#   )
 
 
 # Save output -------------------------------------------------------------
@@ -361,13 +361,13 @@ write.csv(ps_density_data_trimmed, file = here::here("output", "ps", "density_pl
 write.csv(ps_density_data_untrimmed_HbA1c59orabove, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1c59orabove.csv"))
 write.csv(ps_density_data_untrimmed_HbA1c42to58, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1c42to58.csv"))
 write.csv(ps_density_data_untrimmed_HbA1cbelow42, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1cbelow42.csv"))
-write.csv(ps_density_data_untrimmed_HbA1cUnknown, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1cUnknown.csv"))
+# write.csv(ps_density_data_untrimmed_HbA1cUnknown, file = here::here("output", "ps", "ps_density_data_untrimmed_HbA1cUnknown.csv"))
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed.png"), density_plot_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_trimmed.png"), density_plot_trimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1c59orabove.png"), density_plot_untrimmed_HbA1c59orabove, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1c42to58.png"), density_plot_untrimmed_HbA1c42to58, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cbelow42.png"), density_plot_untrimmed_HbA1cbelow42, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cUnknown.png"), density_plot_untrimmed_HbA1cUnknown, width = 20, height = 20, units = "cm")
+# ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cUnknown.png"), density_plot_untrimmed_HbA1cUnknown, width = 20, height = 20, units = "cm")
 # Histograms
 ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")

@@ -10,8 +10,8 @@ covariates_names <- c("cov_cat_sex", "cov_num_age_spline", "strat_cat_region",
                        "cov_bin_hf", "cov_bin_angina", "cov_bin_dementia", "cov_bin_cancer", "cov_bin_hypertension",
                        "cov_bin_depression", "cov_bin_copd", "cov_bin_liver_disease", "cov_bin_chronic_kidney_disease",
                        "cov_bin_pcos", "cov_bin_prediabetes", "cov_bin_diabetescomp", 
-                       
-                       "cov_cat_bmi_groups", "cov_cat_tc_hdl_ratio_b", "cov_cat_hba1c_b", "cov_num_period_month")
+                       "cov_num_counthba1c",
+                       "cov_cat_bmi_groups", "cov_cat_tc_hdl_ratio_b", "cov_num_hba1c_b_log", "cov_num_period_month")
 
 covariates_ex_strat_names <- c("cov_cat_sex", "cov_num_age_spline",
                       
@@ -22,5 +22,5 @@ covariates_ex_strat_names <- c("cov_cat_sex", "cov_num_age_spline",
                       "cov_bin_hf", "cov_bin_angina", "cov_bin_dementia", "cov_bin_cancer", "cov_bin_hypertension",
                       "cov_bin_depression", "cov_bin_copd", "cov_bin_liver_disease", "cov_bin_chronic_kidney_disease",
                       "cov_bin_pcos", "cov_bin_prediabetes", "cov_bin_diabetescomp", 
-                      
-                      "cov_cat_bmi_groups", "cov_cat_tc_hdl_ratio_b", "cov_cat_hba1c_b", "cov_num_period_month") 
+                      "cov_num_counthba1c",
+                      "cov_cat_bmi_groups", "cov_cat_tc_hdl_ratio_b", "cov_num_hba1c_b_log", "cov_num_period_month") 
