@@ -9,7 +9,7 @@ fn_case_when <- function(...) {
 }
 
 # Rounding function for redaction ----------------------------------------------
-fn_roundmid_any <- function(x, to=1){
+fn_roundmid_any <- function(x, to=6){ # default is midpoint rounding to 6
   # centers on (integer) midpoint of the rounding points
   ceiling(x/to)*to - (floor(to/2)*(x!=0))
 }
