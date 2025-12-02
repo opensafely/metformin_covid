@@ -62,12 +62,13 @@ var_labels_main <- list(
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
   cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
   cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
+  cov_bin_diet_only = "Diet intervention only, until landmark",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
   out_bin_covid_hosp_afterlandmark = "COVID hosp",
   out_bin_covid_death_afterlandmark = "COVID death",
-  out_bin_covid_afterlandmark_550 = "Any covid diagnosis, pos test or hosp within 550d",
+  out_bin_covid_afterlandmark_730 = "Any covid diagnosis, pos test or hosp within 730d",
   out_bin_covid_afterlandmark = "Any covid diagnosis, pos test or hosp",
   out_bin_longcovid_afterlandmark = "Any Long COVID diagnosis",
   out_bin_virfat_afterlandmark = "Any Viral Fatigue diagnosis",
@@ -116,6 +117,7 @@ var_labels_death_ltfu1 <- list(
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
   cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
   cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
+  cov_bin_diet_only = "Diet intervention only, until landmark",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",
@@ -169,6 +171,7 @@ var_labels_death_ltfu2 <- list(
   cov_num_tc_hdl_ratio_b = "TC/Chol ratio",
   cov_num_counthba1c = "Count HbA1c measurements, previous 2y",
   cov_num_countlifestyle = "Count lifestyle advices, previous 2y",
+  cov_bin_diet_only = "Diet intervention only, until landmark",
   
   cov_num_period_month = "Calendar period of T2DM diagnosis",
   out_bin_severecovid_afterlandmark = "COVID hosp or death",

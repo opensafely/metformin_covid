@@ -48,7 +48,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
 print('Process the data')
 # Define thresholds for each type of biomarker (see data_process)
 hba1c_min <- 0
-hba1c_max <- 120
+hba1c_max <- 115
 
 chol_min <- 1.75
 chol_max <- 20

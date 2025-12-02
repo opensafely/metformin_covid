@@ -77,7 +77,7 @@ data_extracted <- data_extracted %>%
     cov_num_chol_b = round(pmax(pmin(rnorm(n(), mean = 5, sd = 0.8), 20), 1.75), 1),
     cov_num_hdl_chol_b = round(pmax(pmin(rnorm(n(), mean = 1.3, sd = 0.2), 5), 0.4), 1),
     cov_num_bmi_b = round(pmax(pmin(rnorm(n(), mean = 27, sd = 4), 50), 10), 1), # add some extreme values to test cleaning code
-    elig_num_hba1c_landmark_mmol_mol = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 120), 0))
+    elig_num_hba1c_landmark_mmol_mol = round(pmax(pmin(rnorm(n(), mean = 50, sd = 15), 115), 0))
   ) %>%
   # randomly set ~10% of baseline values to NA
   mutate(
@@ -136,6 +136,14 @@ data_extracted <- data_extracted %>%
     exp_date_metfin_first
   )) %>%
   ungroup()
+data_extracted <- data_extracted %>%
+  rowwise() %>%
+  mutate(tmp_date_diet_only = ifelse(
+    is.na(tmp_date_diet_only) & !is.na(elig_date_t2dm) & (elig_date_t2dm < studyend_date),
+    sample(seq(elig_date_t2dm + 1, studyend_date, by = "day"), 1),
+    tmp_date_diet_only
+  )) %>%
+  ungroup()
 # Now, introduce ~10% missing values randomly in these
 data_extracted <- data_extracted %>%
   mutate(exp_date_metfin_mono_first = ifelse(
@@ -150,8 +158,15 @@ data_extracted <- data_extracted %>%
     exp_date_metfin_first
   ))
 data_extracted <- data_extracted %>%
+  mutate(tmp_date_diet_only = ifelse(
+    runif(n()) < 0.5,  # 50% probability of NA
+    NA,
+    tmp_date_diet_only
+  ))
+data_extracted <- data_extracted %>%
   mutate(exp_date_metfin_mono_first = as.Date(exp_date_metfin_mono_first, origin = "1970-01-01")) %>% 
-  mutate(exp_date_metfin_first = as.Date(exp_date_metfin_first, origin = "1970-01-01"))
+  mutate(exp_date_metfin_first = as.Date(exp_date_metfin_first, origin = "1970-01-01")) %>% 
+  mutate(tmp_date_diet_only = as.Date(tmp_date_diet_only, origin = "1970-01-01"))
 
 # (3) Ensure all exposure variables are between baseline date (elig_date_t2dm) and studyend date
 ## If the date is NA, leave it as NA.

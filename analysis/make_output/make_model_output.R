@@ -1,14 +1,15 @@
 # Load packages ----------------------------------------------------------------
 print('Load packages')
-
 library(magrittr)
 
 # Source common functions ------------------------------------------------------
 print('Source common functions')
-
 source(here::here("analysis", "functions", "utility.R"))
 
-# Define model output folder ---------------------------------------
+# Define redaction threshold ---------------------------------------------------
+threshold <- 6
+
+# Define model output folder ---------------------------------------------------
 print("Creating output/model output folder")
 
 # setting up the sub directory
@@ -94,9 +95,9 @@ readr::write_csv(df, paste0(makeout_dir, "results_cox.csv"))
 # Perform redaction ------------------------------------------------------------
 print('Perform redaction')
 
-df$N_total_midpoint6 <- fn_roundmid_any(df$N_total)
-df$N_exposed_midpoint6 <- fn_roundmid_any(df$N_exposed)
-df$N_events_midpoint6 <- fn_roundmid_any(df$N_events)
+df$N_total_midpoint6 <- fn_roundmid_any(df$N_total, threshold)
+df$N_exposed_midpoint6 <- fn_roundmid_any(df$N_exposed, threshold)
+df$N_events_midpoint6 <- fn_roundmid_any(df$N_events, threshold)
 df[, c("N_total", "N_exposed", "N_events")] <- NULL
 
 # Save model output ------------------------------------------------------------

@@ -83,7 +83,7 @@ vars <- list(
   list(
     name = "hba1c",
     date_fun = function(landmark_date, n) generate_dates(landmark_date, n),
-    value_fun = function(n) pmin(pmax(rnorm(n, mean = 50, sd = 15), 0), 120),
+    value_fun = function(n) pmin(pmax(rnorm(n, mean = 50, sd = 15), 0), 115),
     type = "numeric"
   ),
   list(
@@ -107,7 +107,7 @@ df <- generate_measurements(df, vars, n = 12)
 # Now, modify dummy data for HbA1c, Total Cholesterol, HDL Cholesterol to create outliers -------
 for(i in 1:12) {
   df[[paste0("cov_num_hba1c_", i)]] <- generate_lab_values(
-    n = nrow(df), mean = 50, sd = 15, min_val = 0, max_val = 120,
+    n = nrow(df), mean = 50, sd = 15, min_val = 0, max_val = 115,
     outlier_prob = 0.1, outlier_range = c(-20, 200)
   )
   
