@@ -405,7 +405,7 @@ print('Drop unnecessary helper variables created along the way')
 df_months <- df_months %>%
   select(-c(cov_num_hdl_chol_b, cov_num_chol_b,
             cov_num_tc_hdl_ratio_b, cov_cat_tc_hdl_ratio_b,
-            cov_num_hba1c_b, cov_cat_hba1c_b,
+            cov_num_hba1c_b, cov_cat_hba1c_b, cov_num_hba1c_log_b, # log HbA1c from main
             cov_num_bmi_b, cov_cat_bmi_groups, cov_bin_obesity))
 # drop all unnecessary covariate date variables used for assigning events to correct intervals
 df_months <- df_months %>%
@@ -455,20 +455,20 @@ df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
                                                                interval_type = "month")
 
 # Secondary outcome dataset: stops either at severe covid (includes covid deaths, hosp, diagnoses, tests), non-covid death, or deregistration
-df_months_covid_event <- fn_add_and_shift_out_comp_cens_events(df_months,
-                                                               outcome_date_variable = "out_date_covid",
-                                                               comp_date_variable = "out_date_noncoviddeath_afterlandmark",
-                                                               censor_date_variable = "cens_date_ltfu_afterlandmark",
-                                                               studyend_date,
-                                                               interval_type = "month")
+# df_months_covid_event <- fn_add_and_shift_out_comp_cens_events(df_months,
+#                                                                outcome_date_variable = "out_date_covid",
+#                                                                comp_date_variable = "out_date_noncoviddeath_afterlandmark",
+#                                                                censor_date_variable = "cens_date_ltfu_afterlandmark",
+#                                                                studyend_date,
+#                                                                interval_type = "month")
 
 # Secondary outcome dataset: stops either at Long covid diagnosis (includes viral fatigue), any death, or deregistration
-df_months_longcovid <- fn_add_and_shift_out_comp_cens_events(df_months,
-                                                             outcome_date_variable = "out_date_longcovid_virfat",
-                                                             comp_date_variable = "out_date_death_afterlandmark", # all-cause mortality as competing event for this analysis
-                                                             censor_date_variable = "cens_date_ltfu_afterlandmark",
-                                                             studyend_date,
-                                                             interval_type = "month")
+# df_months_longcovid <- fn_add_and_shift_out_comp_cens_events(df_months,
+#                                                              outcome_date_variable = "out_date_longcovid_virfat",
+#                                                              comp_date_variable = "out_date_death_afterlandmark", # all-cause mortality as competing event for this analysis
+#                                                              censor_date_variable = "cens_date_ltfu_afterlandmark",
+#                                                              studyend_date,
+#                                                              interval_type = "month")
 
 # To double-check
 # df_months_severecovid %>%
@@ -506,5 +506,5 @@ print('Define eligibility')
 # 11. Save output -------------------------------------------------------------
 print('Save output')
 arrow::write_feather(df_months_severecovid, here::here("output", "data", "df_months_severecovid.arrow"))
-arrow::write_feather(df_months_covid_event, here::here("output", "data", "df_months_covid_event.arrow"))
-arrow::write_feather(df_months_longcovid, here::here("output", "data", "df_months_longcovid.arrow"))
+# arrow::write_feather(df_months_covid_event, here::here("output", "data", "df_months_covid_event.arrow"))
+# arrow::write_feather(df_months_longcovid, here::here("output", "data", "df_months_longcovid.arrow"))
