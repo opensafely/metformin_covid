@@ -110,6 +110,7 @@ df_months_severecovid$treat_num <- predict(treat.num, df_months_severecovid, typ
 # => the weight calculation cumprod(treat_num / treat_denom) is only correct for the treatment group. For the control group, the probability of their observed treatment status (treat == 0) is 1 - treat_denom.
 df_months_severecovid <- df_months_severecovid %>%
   group_by(patient_id) %>%
+  arrange(month, .by_group = TRUE) %>%
   mutate(
     w_treat_stab = ifelse(
       exp_bin_treat == 1, cumprod(treat_num / treat_denom),
@@ -145,7 +146,7 @@ print('Adjust for baseline confounding and time-varying protocol deviation using
 # Transform estimates to risks at each time point in each group
 cum_risk_treat_severecovid <- fn_standardize_risks(
   df = df_months_severecovid,
-  K = K,
+  K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, i.e., start at month == 0, initial zero row added => Final estimate in K-1
   model = treat.severecovid,
   group_col = "exp_bin_treat",
   time_col = "month",
@@ -207,6 +208,7 @@ df_months_severecovid$ltfu_num <- predict(ltfu.num, df_months_severecovid, type=
 ## Take cumulative products starting at baseline
 df_months_severecovid <- df_months_severecovid %>%
   group_by(patient_id) %>%
+  arrange(month, .by_group = TRUE) %>%
   mutate(
     w_ltfu_stab = cumprod(ltfu_num/ltfu_denom),
     w_ltfu_stab = ifelse(cummax(censor_LTFU) == 1, 0, w_ltfu_stab)
@@ -227,13 +229,20 @@ summary(df_months_severecovid$w_treat_ltfu_stab_trunc)
 censoring_rates <- df_months_severecovid %>%
   group_by(month) %>%
   summarise(censor_rate = mean(censor_LTFU, na.rm = TRUE), .groups="drop") %>%
-  mutate(censor_rate_pct = round(censor_rate * 100, 2))
-plot_censoring_ltfu <- ggplot(censoring_rates, aes(x = month, y = censor_rate_pct)) +
-  geom_line() +
-  geom_point() +
-  ylab("Censoring for LTFU per month (%)") +
+  mutate(
+    censor_rate_pct = round(censor_rate * 100, 2),
+    cum_censor_rate = cumsum(censor_rate),
+    cum_censor_rate_pct = round(cum_censor_rate * 100, 2)
+  )
+plot_censoring_ltfu <- ggplot(censoring_rates, aes(x = month)) +
+  geom_line(aes(y = censor_rate_pct), color = "blue") +
+  geom_point(aes(y = censor_rate_pct), color = "blue") +
+  geom_line(aes(y = cum_censor_rate_pct), color = "red") +
+  geom_point(aes(y = cum_censor_rate_pct), color = "red") +
+  ylab("Censoring (%)") +
   xlab("Month") +
-  theme_minimal()
+  theme_minimal() +
+  ggtitle("Monthly (blue) and cumulative (red) LTFU censoring rate")
 censoring_weights <- df_months_severecovid %>%
   group_by(month) %>%
   summarise(
@@ -241,7 +250,6 @@ censoring_weights <- df_months_severecovid %>%
     sd_w = sd(w_ltfu_stab, na.rm = TRUE),
     max_w = max(w_ltfu_stab, na.rm = TRUE)
   )
-print(censoring_weights, n = Inf)
 
 
 ## Fit the outcome model -------
@@ -262,7 +270,7 @@ if (anyNA(coef_summary[, "Estimate"])) {
 print('Adjust additionally for time-varying LTFU: Standardization')
 cum_risk_treat_ltfu_severecovid <- fn_standardize_risks(
   df = df_months_severecovid,
-  K = K,
+  K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, initial zero row added => Final estimate in K-1
   model = severecovid.treat.ltfu,
   group_col = "exp_bin_treat",
   time_col = "month",
@@ -337,6 +345,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     # Cumulative product and ensure correct inverse and censoring behaviour
     d <- d %>%
       group_by(boot_patient_id) %>%
+      arrange(month, .by_group = TRUE) %>%
       mutate(
         w_treat_stab = ifelse(
           exp_bin_treat == 1, cumprod(treat_num / treat_denom),
@@ -378,6 +387,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     # Cumulative product and ensure correct inverse and censoring behaviour
     d <- d %>%
       group_by(boot_patient_id) %>%
+      arrange(month, .by_group = TRUE) %>%
       mutate(
         w_ltfu_stab = cumprod(ltfu_num/ltfu_denom),
         w_ltfu_stab = ifelse(cummax(censor_LTFU) == 1, 0, w_ltfu_stab)
@@ -416,7 +426,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     ### (6) Standardization/Marginalization
     results_std <- fn_standardize_risks(
       df = d,
-      K = K,
+      K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, i.e., start at month == 0, initial zero row added => Final estimate in K-1
       model = severecovid.treat.ltfu,
       group_col = "exp_bin_treat",
       time_col = "month",
@@ -454,11 +464,20 @@ te_iptw_ipcw_rd_rr_withCI_severecovid_boot <- boot(
 cat("Number of failed bootstrap samples:", boot_failures, "\n")
 
 # Identify target months (indices) for when to extract risk estimates.
-# The final time point is index K, since R indexes from 1 (even though we shifted month to K - 1 above to start at month == 0)
-k_39_index <- K   # final time point (K = 39 if months 0 to 38)
-k_18_index <- 19  # corresponds to month 18, because R is 1-indexed => corresponds to Cox 550 days timepoint
-indices_39 <- c(k_39_index, 2*k_39_index, 3*k_39_index, 4*k_39_index)
-indices_18 <- c(k_18_index, 2*k_18_index, 3*k_18_index, 4*k_18_index)
+n_timepoints <- K + 1 # 40 rows in total (remember, we added a baseline month when standardizing, for the graph)
+k_38_index <- n_timepoints # Row 40 = month 38 (final timepoint)
+k_24_index <- 26 # Row 26 = month 24 (corresponds to 730 days, same timepoint as Cox primary model)
+
+# Correct indices: add n_timepoints for each measure
+indices_39 <- c(k_38_index, # risk0
+                k_38_index + n_timepoints, # risk1 (position 80)
+                k_38_index + 2*n_timepoints, # rd (position 120)
+                k_38_index + 3*n_timepoints) # rr (position 160)
+
+indices_24 <- c(k_24_index, # risk0 (position 26)
+                k_24_index + n_timepoints, # risk1 (position 66)
+                k_24_index + 2*n_timepoints, # rd (position 106)
+                k_24_index + 3*n_timepoints) # rr (position 146)
 
 # Build the risk tables for specific timepoints
 te_plr_iptw_ipcw_severecovid_39_boot_tbl <- data.frame(
@@ -468,12 +487,12 @@ te_plr_iptw_ipcw_severecovid_39_boot_tbl <- data.frame(
   Lower_CI = sapply(indices_39, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
   Upper_CI = sapply(indices_39, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
 )
-te_plr_iptw_ipcw_severecovid_18_boot_tbl <- data.frame(
+te_plr_iptw_ipcw_severecovid_24_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate_original = te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t0[indices_18],
-  Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, indices_18], na.rm = TRUE),
-  Lower_CI = sapply(indices_18, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
-  Upper_CI = sapply(indices_18, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
+  Estimate_original = te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t0[indices_24],
+  Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, indices_24], na.rm = TRUE),
+  Lower_CI = sapply(indices_24, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
+  Upper_CI = sapply(indices_24, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
 )
 
 ### Build the risk table for the cum risk graph
@@ -523,25 +542,29 @@ plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(risk_graph,
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank())+
-  scale_color_manual(values=c("#E7B800",
-                              "#2E9FDF"),
-                     breaks=c('No Metformin',
-                              'Metformin')) +
-  scale_fill_manual(values=c("#E7B800",
-                             "#2E9FDF"),
-                    breaks=c('No Metformin',
-                             'Metformin'))
+  scale_color_manual(
+    name = "",
+    values = c("Metformin" = "#2E9FDF",
+               "No Metformin" = "#E7B800")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("Metformin" = "#2E9FDF",
+               "No Metformin" = "#E7B800")
+  )
 
 
 # Save output -------------------------------------------------------------
 print('Save output')
 # Treatment effect (risk) estimates at max follow-up (39 months)
 write.csv(te_plr_iptw_ipcw_severecovid_39_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_severecovid_39_boot_tbl.csv"))
-# Treatment effect (risk) estimates at 18 months (corresponding to Cox model)
-write.csv(te_plr_iptw_ipcw_severecovid_18_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_severecovid_18_boot_tbl.csv"))
+# Treatment effect (risk) estimates at 24 months (corresponding to Cox model)
+write.csv(te_plr_iptw_ipcw_severecovid_24_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_severecovid_24_boot_tbl.csv"))
 # Marginal parametric cumulative incidence (risk) curves from plr model, last one including 95% CI
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_severecovid.png"), plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_ltfu_severecovid.png"), plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_ltfu_ci_severecovid.png"), plot_cum_risk_treat_ltfu_ci_severecovid, width = 20, height = 20, units = "cm")
-# Censoring plot
+# Censoring plot and underlying data
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_ltfu.png"), plot_censoring_ltfu, width = 20, height = 20, units = "cm")
+write.csv(censoring_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
+write.csv(censoring_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_weights.csv"))
