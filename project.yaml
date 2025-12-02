@@ -534,8 +534,8 @@ actions:
     outputs:
       highly_sensitive:
         dataset1: output/data/df_months_severecovid.arrow
-        dataset2: output/data/df_months_covid_event.arrow
-        dataset3: output/data/df_months_longcovid.arrow
+        # dataset2: output/data/df_months_covid_event.arrow
+        # dataset3: output/data/df_months_longcovid.arrow
 
   PPA_03_pooled_log_reg:
     run: r:latest analysis/PPA_03_pooled_log_reg.R
