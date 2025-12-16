@@ -38,6 +38,7 @@ df <- df %>%
   select(patient_id, 
          elig_date_t2dm, 
          landmark_date,
+         max_fup_date,
          exp_bin_treat,
          starts_with("strat_"), # Stratification variable
          starts_with("cov_"), # Covariates
@@ -53,6 +54,7 @@ print('Expand the dataset')
 ## a. any death (out_date_death_afterlandmark), 
 ## b. deregistration from TPP (cens_date_ltfu_afterlandmark), 
 ## c. end of study (studyend_date = 01.04.2022)
+## d. maximum individual follow-up (max_fup_date = landmark_date + days(730))
 # (3) Our outcomes of interest: 
 ## a. out_date_severecovid_afterlandmark (includes covid deaths): Primary outcome
 ## b. out_date_noncoviddeath_afterlandmark: Competing event. In primary analysis, we simply treat it as censoring event ("controlled direct effect")
@@ -68,7 +70,7 @@ print('Expand the dataset')
 ## CAVE: only choose stopping events that are distinct and overarching (e.g. all-cause death instead of cause-specific deaths or overlapping outcomes)
 df_months <- fn_expand_intervals(df, 
                                  start_date_variable = "landmark_date", # start expanding from landmark date, not elig_date_t2dm (due to landmark design)
-                                 stop_date_columns = c("out_date_death_afterlandmark", "cens_date_ltfu_afterlandmark"),
+                                 stop_date_columns = c("out_date_death_afterlandmark", "cens_date_ltfu_afterlandmark", "max_fup_date"),
                                  studyend_date,
                                  interval_type = "month") # currently, function takes "month" or "week"
 ## NOTE: the function will add the final interval, even if the final interval is just 1 day (check stop_date == 2022-04-01)
@@ -76,10 +78,11 @@ df_months <- fn_expand_intervals(df,
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
+#                 max_fup_date,
 #                 cens_date_ltfu_afterlandmark, stop_date, start_date_month, end_date_month, month,
 #                 cov_cat_sex, cov_num_age
 #   ) %>%
-#   dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
+#   # dplyr::filter(!is.na(out_date_death_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
 #   # dplyr::filter(stop_date == "2022-04-01") %>%
 #   View()

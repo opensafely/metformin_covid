@@ -13,7 +13,7 @@
 #   A list containing the final standardized risk data frame and the final
 #   risk difference (rd) and risk ratio (rr) estimates.
 # After binding:
-# Row 1: month = 0 (zero row)
+# Row 1: month = 0 (zero row, time_0 = 0)
 # Row 2: month = 0 (from risk_summary where time_0 = 1)
 # Row 3: month = 1 (from risk_summary where time_0 = 2)
 

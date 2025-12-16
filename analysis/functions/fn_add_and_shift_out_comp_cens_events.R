@@ -10,11 +10,11 @@
 
 ## b) censor_LTFU is happening in CURRENT (k + 1) interval:
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
-### ii) assign to the PREVIOUS (k) row/person-interval: outcome=NA, censor_LTFU=1, comp_event=NA # I still think it is possible to replace all NA with 0 without making any difference, since the outcome model is restricted to only rows with df_months[df_months$censor==0 & df_months$comp_event == 0,], but need to check. This is how Miguel's data set is set up, maybe it will have a reason later on, e.g. when looking at competing events. TBD
+### ii) assign to the PREVIOUS (k) row/person-interval: outcome=NA, censor_LTFU=1, comp_event=0 
 
 ## c) comp_event is happening in CURRENT (k + 1) interval:
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
-### ii) assign to the PREVIOUS (k) row/person-interval : outcome=NA, censor_LTFU=0, comp_event=1 # same comment re NA as above
+### ii) assign to the PREVIOUS (k) row/person-interval : outcome=NA, censor_LTFU=0, comp_event=1 
 
 ## Edge case rules
 ### d) if outcome and censor_LTFU have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order in function.
@@ -29,7 +29,8 @@
 fn_add_and_shift_out_comp_cens_events <- function(data, 
                                           outcome_date_variable, 
                                           comp_date_variable, 
-                                          censor_date_variable, 
+                                          censor_date_variable,
+                                          max_fup_date_variable,
                                           studyend_date, 
                                           interval_type = c("week", "month")) {
   interval_type <- match.arg(interval_type)
@@ -38,7 +39,7 @@ fn_add_and_shift_out_comp_cens_events <- function(data,
     group_by(patient_id) %>%
     mutate(
       # Use the dates (not the bin flags), since in some scenarios an outcome and censoring or competing event might occur in same interval. I will only consider what happens first (pmin)
-      event_date = pmin(.data[[outcome_date_variable]], .data[[comp_date_variable]], .data[[censor_date_variable]], studyend_date, na.rm = TRUE),
+      event_date = pmin(.data[[outcome_date_variable]], .data[[comp_date_variable]], .data[[censor_date_variable]], .data[[max_fup_date_variable]], studyend_date, na.rm = TRUE),
 
       is_event_interval = (.data[[paste0("start_date_", interval_type)]] <= event_date) & (event_date <= .data[[paste0("end_date_", interval_type)]]),
 
@@ -62,7 +63,7 @@ fn_add_and_shift_out_comp_cens_events <- function(data,
         # define entry for interval prior to event
         lead(is_outcome_event, default = 0) == 1 ~ 0, 
         lead(is_comp_event, default = 0) == 1 ~ 1, 
-        lead(is_cens_event, default = 0) == 1 ~ NA_real_,
+        lead(is_cens_event, default = 0) == 1 ~ 0,
         # define entry for interval when event is happening
         is_comp_event == 1 ~ NA_real_,
         is_outcome_event == 1 ~ NA_real_,

@@ -430,11 +430,11 @@ print('Assign and shift outcome, censoring due to LTFU, and competing events')
 
 ## b) censor_LTFU is happening in CURRENT (k + 1) interval:
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
-### ii) assign to the PREVIOUS (k) row/person-interval: outcome=NA, censor_LTFU=1, comp_event=NA # I still think it is possible to replace all NA with 0 without making any difference, since the outcome model is restricted to only rows with df_months[df_months$censor==0 & df_months$comp_event == 0,], but need to check. This is how Miguel's data set is set up, maybe it will have a reason later on, e.g. when looking at competing events. TBD
+### ii) assign to the PREVIOUS (k) row/person-interval: outcome=NA, censor_LTFU=1, comp_event=0
 
 ## c) comp_event is happening in CURRENT (k + 1) interval:
 ### i) assign to CURRENT (k + 1) row/person-interval: outcome=NA, censor_LTFU=NA, comp_event=NA
-### ii) assign to the PREVIOUS (k) row/person-interval : outcome=NA, censor_LTFU=0, comp_event=1 # same comment re NA as above
+### ii) assign to the PREVIOUS (k) row/person-interval : outcome=NA, censor_LTFU=0, comp_event=1
 
 ## Edge case RULES
 ### d) if outcome and censor_LTFU have the EXACT same date, then pick the outcome as the defining event. Ensured by case_when() order in function.
@@ -446,11 +446,12 @@ print('Assign and shift outcome, censoring due to LTFU, and competing events')
 
 # Currently, only calendar month and calendar week are implemented
 
-# Primary outcome dataset: stops either at severe covid (includes death and hosp), non-covid death, or deregistration
+# Primary outcome dataset: stops either at severe covid (includes death and hosp), non-covid death, deregistration, study end (01/04/2022) or individual maximum follow-up (2 years)
 df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
                                                                outcome_date_variable = "out_date_severecovid_afterlandmark",
                                                                comp_date_variable = "out_date_noncoviddeath_afterlandmark",
                                                                censor_date_variable = "cens_date_ltfu_afterlandmark",
+                                                               max_fup_date_variable = "max_fup_date",
                                                                studyend_date,
                                                                interval_type = "month")
 
@@ -459,6 +460,7 @@ df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
 #                                                                outcome_date_variable = "out_date_covid",
 #                                                                comp_date_variable = "out_date_noncoviddeath_afterlandmark",
 #                                                                censor_date_variable = "cens_date_ltfu_afterlandmark",
+#                                                                max_fup_date_variable = "max_fup_date",
 #                                                                studyend_date,
 #                                                                interval_type = "month")
 
@@ -467,6 +469,7 @@ df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
 #                                                              outcome_date_variable = "out_date_longcovid_virfat",
 #                                                              comp_date_variable = "out_date_death_afterlandmark", # all-cause mortality as competing event for this analysis
 #                                                              censor_date_variable = "cens_date_ltfu_afterlandmark",
+#                                                              max_fup_date_variable = "max_fup_date",
 #                                                              studyend_date,
 #                                                              interval_type = "month")
 
