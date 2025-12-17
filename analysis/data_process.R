@@ -537,11 +537,11 @@ data_processed_death_ltfu <- data_processed_death_ltfu %>%
     death_ltfu_landmark_pandemic = death_ltfu_landmark | death_ltfu_pandemic,
     death_ltfu_pandemic_without_landmark = case_when(death_ltfu_pandemic & !death_ltfu_landmark ~ TRUE,
                                                      !death_ltfu_pandemic & !death_ltfu_landmark ~ FALSE,
-                                                     TRUE ~ NA)
-    )
+                                                     TRUE ~ NA))
 # count died/ltfu between elig_date_t2dm and landmark and those fulfilling one of the two final treatment strategies
 count <- data_processed %>%
   summarise(
+    n_total = n(),
     n_death_landmark = sum(death_landmark, na.rm = TRUE),
     n_ltfu_landmark = sum(ltfu_landmark, na.rm = TRUE),
     n_exp_bin_treat = sum(is.na(exp_bin_treat), na.rm = TRUE))
@@ -550,11 +550,10 @@ count <- data_processed %>%
 data_processed <- data_processed %>%
   filter(
     !is.na(exp_bin_treat),
-    !death_ltfu_landmark
-    )
+    !death_ltfu_landmark)
 # tibble out incl. midpoint6 rounding (!)
 n_restricted_midpoint6 <- tibble(
-  n_before_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed_death_ltfu), threshold),
+  n_before_exclusion_midpoint6 = fn_roundmid_any(count$n_total, threshold),
   n_exp_bin_treat_midpoint6 = fn_roundmid_any(count$n_exp_bin_treat, threshold),
   n_death_landmark_midpoint6 = fn_roundmid_any(count$n_death_landmark, threshold),
   n_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_ltfu_landmark, threshold),
