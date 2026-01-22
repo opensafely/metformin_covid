@@ -643,13 +643,13 @@ plot_cum_risk_treat_ltfu_comp_ci_severecovid <- ggplot(risk_graph,
         panel.grid.major.y = element_blank())+
   scale_color_manual(
     name = "",
-    values = c("Metformin" = "#2E9FDF",
-               "No Metformin" = "#E7B800")
+    values = c("No Metformin" = "#E7B800",
+               "Metformin" = "#2E9FDF")
   ) +
   scale_fill_manual(
     name = "",
-    values = c("Metformin" = "#2E9FDF",
-               "No Metformin" = "#E7B800")
+    values = c("No Metformin" = "#E7B800",
+               "Metformin" = "#2E9FDF")
   )
 
 
