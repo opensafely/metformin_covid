@@ -24,6 +24,48 @@ source(here::here("analysis", "functions", "fn_extract_ci_boot.R"))
 source(here::here("analysis", "covariates.R"))
 
 
+# Parse command line arguments --------------------------------------------
+args <- commandArgs(trailingOnly = TRUE)
+
+# Default values
+include_interaction <- TRUE
+R_arg <- NULL  # store the command-line R value if provided
+
+# Parse arguments
+if (length(args) > 0) {
+  for (i in seq_along(args)) {
+    if (args[i] == "no_interaction") {
+      include_interaction <- FALSE
+    } else if (grepl("^R=", args[i])) {
+      R_arg <- as.integer(sub("^R=", "", args[i]))
+    }
+  }
+}
+
+# Set R based on environment and arguments
+if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
+  # Local/test environment: always use 5 bootstraps only !!
+  R <- 5
+  if (!is.null(R_arg)) {
+    message("Note: Running on local/test data - ignoring R argument and using R=5 by default")
+  }
+} else {
+  # Real data environment: use argument if provided, otherwise default to 100
+  R <- ifelse(!is.null(R_arg), R_arg, 100)
+}
+
+# Set output suffix based on interaction
+if (include_interaction) {
+  print('Running analysis WITH interaction terms')
+  output_suffix <- ""
+} else {
+  print('Running analysis WITHOUT interaction terms')
+  output_suffix <- "_no_interaction"
+}
+
+message("Number of bootstraps: ", R)
+
+
 # Create directories for output -------------------------------------------
 print('Create directories for output')
 fs::dir_create(here::here("output", "te", "pooled_log_reg"))
@@ -57,9 +99,9 @@ print(covariates_tv_names)
 
 
 # Define bootstraps, primary time point of risk estimation, and time^2 ----------------------------
-print('Define bootstraps, primary time point of risk estimation, and time^2')
-R <- ifelse(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations"), 5, 500) # 500 on real data
-message("Number of bootstraps: ", R)
+# print('Define bootstraps, primary time point of risk estimation, and time^2')
+# R <- ifelse(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations"), 5, 500) # 500 on real data
+# message("Number of bootstraps: ", R)
 # We currently use monthly intervals => 2-year risk estimation time point is K = 24 months
 K <- 24
 df_months_severecovid$monthsqr <- df_months_severecovid$month^2 # add months square to model time in PLR
@@ -131,10 +173,15 @@ summary(df_months_severecovid$w_treat_stab_trunc)
 
 ## Fit the outcome model -------
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Fit the outcome model')
-treat.severecovid <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
-                                family = binomial(link = 'logit'),
-                                data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
-                                weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_stab_trunc)
+outcome_formula <- if (include_interaction) {
+  outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+} else {
+  outcome ~ exp_bin_treat + month + monthsqr
+}
+treat.severecovid <- parglm(outcome_formula,
+                            family = binomial(link = 'logit'),
+                            data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
+                            weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_stab_trunc)
 coef_summary <- summary(treat.severecovid)$coefficients
 if (anyNA(coef_summary[, "Estimate"])) {
   warning("Some coefficient estimates from the treat.severecovid with w_treat_stab_trunc are NA!")
@@ -329,7 +376,12 @@ summary(df_months_severecovid$w_treat_ltfu_comp_stab_trunc)
 print('Adjust additionally for time-varying LTFU: Fit the outcome model')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW (both for PPA and LTFU)
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-severecovid.treat.ltfu.comp <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr), 
+outcome_formula <- if (include_interaction) {
+  outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+} else {
+  outcome ~ exp_bin_treat + month + monthsqr
+}
+severecovid.treat.ltfu.comp <- parglm(outcome_formula, 
                                 family = binomial(link = 'logit'),
                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
@@ -375,7 +427,7 @@ plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_comp_severeco
 # All steps together incl. 95% CI using bootstrapping -------------------------
 print('All steps together incl. 95% CI using bootstrapping')
 
-te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_names, K) {
+te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_names, K, include_interaction = TRUE) {
   
   # capture and count unsuccessful bootstraps
   tryCatch({
@@ -517,11 +569,17 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     ### (6) Fit the outcome model
     # Include the treatment group indicator, the follow-up time (linear and quadratic terms), and product terms between the treatment group indicator and follow-up time
     # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-    # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it would mirror the cox model
-    severecovid.treat.ltfu.comp <- parglm(outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr),
-                                    family = binomial(link = 'logit'),
-                                    data = d[d$censor_LTFU==0 & d$comp_event == 0,],
-                                    weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
+    # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it mirrors the cox model
+    outcome_formula <- if (include_interaction) {
+      outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+    } else {
+      outcome ~ exp_bin_treat + month + monthsqr
+    }
+    
+    severecovid.treat.ltfu.comp <- parglm(outcome_formula,
+                                          family = binomial(link = 'logit'),
+                                          data = d[d$censor_LTFU==0 & d$comp_event == 0,],
+                                          weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
     coef_summary <- summary(severecovid.treat.ltfu.comp)$coefficients
     if (anyNA(coef_summary[, "Estimate"])) {
       warning("Some severecovid.treat.ltfu.comp coefficient estimates are NA!")
@@ -562,7 +620,9 @@ study_ids <- data.frame(patient_id = unique(df_months_severecovid$patient_id))
 te_iptw_ipcw_rd_rr_withCI_severecovid_boot <- boot(
   data = study_ids,
   statistic = function(data, indices) {
-    te_iptw_ipcw_rd_rr_withCI(data, indices, data_full = df_months_severecovid, covariates_tv_names = covariates_tv_names, K = K)
+    te_iptw_ipcw_rd_rr_withCI(data, indices, data_full = df_months_severecovid, 
+                              covariates_tv_names = covariates_tv_names, K = K,
+                              include_interaction = include_interaction)
   },
   R = R
 )
@@ -655,12 +715,20 @@ plot_cum_risk_treat_ltfu_comp_ci_severecovid <- ggplot(risk_graph,
 
 # Save output -------------------------------------------------------------
 print('Save output')
-# Treatment effect (risk) estimates at 24 months (corresponding to Cox model)
-write.csv(te_plr_iptw_ipcw_severecovid_boot_tbl, file = here::here("output", "te", "pooled_log_reg", "te_plr_iptw_ipcw_severecovid_boot_tbl.csv"))
-# Marginal parametric cumulative incidence (risk) curves from plr model, last one including 95% CI
-ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_severecovid.png"), plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_ltfu_severecovid.png"), plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_cum_risk_treat_ltfu_comp_ci_severecovid.png"), plot_cum_risk_treat_ltfu_comp_ci_severecovid, width = 20, height = 20, units = "cm")
+# Treatment effect (risk) estimates at 24 months, once with interaction and once without (to mirror Cox), depending on terminal args
+write.csv(te_plr_iptw_ipcw_severecovid_boot_tbl, 
+          file = here::here("output", "te", "pooled_log_reg", 
+                            paste0("te_plr_iptw_ipcw_severecovid_boot_tbl", output_suffix, ".csv")))
+# Marginal parametric cumulative incidence (risk) curves from plr models, first two only with point estimates, last one including 95% CI (from bootstrap)
+ggsave(filename = here::here("output", "te", "pooled_log_reg", 
+                             paste0("plot_cum_risk_treat_severecovid", output_suffix, ".png")), 
+       plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "te", "pooled_log_reg", 
+                             paste0("plot_cum_risk_treat_ltfu_severecovid", output_suffix, ".png")), 
+       plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "te", "pooled_log_reg", 
+                             paste0("plot_cum_risk_treat_ltfu_comp_ci_severecovid", output_suffix, ".png")), 
+       plot_cum_risk_treat_ltfu_comp_ci_severecovid, width = 20, height = 20, units = "cm")
 # Censoring plots and underlying data
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_ltfu.png"), plot_censoring_ltfu, width = 20, height = 20, units = "cm")
 write.csv(censoring_ltfu_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
