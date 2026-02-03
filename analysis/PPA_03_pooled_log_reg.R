@@ -98,10 +98,8 @@ print('Define covariates')
 print(covariates_tv_names)
 
 
-# Define bootstraps, primary time point of risk estimation, and time^2 ----------------------------
-# print('Define bootstraps, primary time point of risk estimation, and time^2')
-# R <- ifelse(Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations"), 5, 500) # 500 on real data
-# message("Number of bootstraps: ", R)
+# Define the primary time point of risk estimation, and time^2 --------------
+print('Define the primary time point of risk estimation, and time^2')
 # We currently use monthly intervals => 2-year risk estimation time point is K = 24 months
 K <- 24
 df_months_severecovid$monthsqr <- df_months_severecovid$month^2 # add months square to model time in PLR
