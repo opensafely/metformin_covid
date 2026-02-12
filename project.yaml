@@ -120,7 +120,7 @@ actions:
         data_tbl4: output/data_description/table1_death_ltfu2_midpoint6.csv
 
   km_primary:
-    run: kaplan-meier-function:v0.0.17 
+    run: kaplan-meier-function:v0.0.18 
       --df_input=output/data/data_processed.arrow
       --dir_output=output/te/km_primary
       --exposure=exp_bin_treat
@@ -137,7 +137,7 @@ actions:
         png: output/te/km_primary/*.png
 
   km_covid_event:
-    run: kaplan-meier-function:v0.0.17 
+    run: kaplan-meier-function:v0.0.18 
       --df_input=output/data/data_processed.arrow
       --dir_output=output/te/km_covid_event
       --exposure=exp_bin_treat
@@ -154,7 +154,7 @@ actions:
         png: output/te/km_covid_event/*.png
 
   km_longvirfat:
-    run: kaplan-meier-function:v0.0.17 
+    run: kaplan-meier-function:v0.0.18 
       --df_input=output/data/data_processed.arrow
       --dir_output=output/te/km_longvirfat
       --exposure=exp_bin_treat
@@ -521,3 +521,21 @@ actions:
       moderately_sensitive:
         model_output: output/make_output/results_cox.csv
         model_output_midpoint6: output/make_output/results_cox_midpoint6.csv
+
+  km_primary_weighted:
+    run: kaplan-meier-function:v0.0.18 
+      --df_input=output/data/data_processed.arrow
+      --dir_output=output/te/km_primary_weighted
+      --exposure=exp_bin_treat
+      --origin_date=landmark_date
+      --event_date=out_date_severecovid_afterlandmark
+      --censor_date=cox_date_severecovid
+      --weight=w_treat_stab
+      --max_fup=730
+      --plot=TRUE
+    needs:
+    - data_process
+    outputs:
+      moderately_sensitive:
+        km_treat_estimates: output/te/km_primary_weighted/*.csv
+        png: output/te/km_primary_weighted/*.png

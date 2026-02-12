@@ -1,17 +1,20 @@
 ####
 ## This script does the following:
-# 1. Import/extract feather dataset from OpenSAFELY
-# 2. Basic type formatting of variables -> fn_extract_data.R()
+# 1. Set parameters
+# 2. Import feather dataset from OpenSAFELY and do basic type formatting -> fn_extract_data.R()
 # 3. Modify dummy data if run locally
-# 4. Process covariates
+# 4. Process covariates, assign calendar period and landmark date and max fup date
 # 5. Evaluate/apply the quality assurance criteria -> fn_quality_assurance_midpoint6()
 # 6. Evaluate/apply the completeness criteria: -> fn_completeness_criteria_midpoint6()
 # 7. Evaluate/apply the eligibility criteria: -> fn_elig_criteria_midpoint6()
-# 8. Add the landmark date, treatment/exposure and outcome variables
-# 9. Restrict the dataset
-# 10. Save the full dataset, the restricted dataset, the codebook and all flowchart tables
+# 8. Assign treatment/exposure, outcome variables, HbA1c, Cox variables
+# 9. Save and inspect full processed dataset
+# 10. Restrict the dataset and explore key variables
+# 11. Create IPTW for a weighted KM
+# 12. Save all output
 ####
 
+# (1) ----
 
 # Import libraries and user functions -------------------------------------
 print('Import libraries and functions')
@@ -27,11 +30,13 @@ library('jsonlite')
 library('skimr')
 library('splines')
 library('ggplot2')
+library('parglm')
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
+source(here::here("analysis", "covariates.R"))
 
 
 # Create directories for output -------------------------------------------
@@ -54,11 +59,15 @@ pandemicstart_date <- as.Date(study_dates$pandemicstart_date, format = "%Y-%m-%d
 threshold <- 6
 
 
+# (2) ----
+
 # Import the dataset and pre-process --------------------------------------
 print('Import the dataset and pre-process')
 input_filename <- "dataset.arrow"
 data_extracted <- fn_extract_data(input_filename)
 
+
+# (3) ----
 
 # Modify dummy data -------------------------------------------------------
 print('Modify dummy data')
@@ -68,6 +77,8 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Dummy data successfully modified")
 }
 
+
+# (4) ----
 
 # Process the data --------------------------------------------------------
 print('Process the data')
@@ -226,6 +237,8 @@ data_processed <- data_processed %>%
   mutate(max_fup_date = landmark_date + days(730))
 
 
+# (5) ----
+
 # Apply the quality assurance criteria ------------------------------------
 print('Apply the quality assurance criteria')
 qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
@@ -233,12 +246,16 @@ n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
 data_processed <- qa$data_processed
 
 
+# (6) ----
+
 # Apply the completeness criteria -----------------------------------------
 print('Apply the completeness criteria')
 completeness <- fn_completeness_criteria_midpoint6(data_processed, threshold)
 n_completeness_excluded_midpoint6 <- completeness$n_completeness_excluded_midpoint6
 data_processed <- completeness$data_processed
 
+
+# (7) ----
 
 # Apply the eligibility criteria ------------------------------------------
 print('Apply the eligibility criteria')
@@ -249,6 +266,8 @@ n_elig_excluded <- eligibility$n_elig_excluded
 n_elig_excluded_midpoint6 <- eligibility$n_elig_excluded_midpoint6
 data_processed <- eligibility$data_processed
 
+
+# (8) ----
 
 # Assign treatment/exposure -----------------------------------------------
 print('Assign treatment/exposure')
@@ -487,6 +506,8 @@ data_processed <- data_processed %>%
   )
 
 
+# (9) ----
+
 # Save and inspect full processed dataset ---------------------------------
 print('Save and inspect full processed dataset')
 data_processed_full <- data_processed
@@ -495,10 +516,12 @@ write.csv(data_processed_full_desc, file = here::here("output", "data_descriptio
 arrow::write_feather(data_processed_full, here::here("output", "data", "data_processed_full.arrow"))
 
 
+# (10) ----
+
 # Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm ----
 print('Restrict the dataset for the pipeline onwards, and explore deaths/ltfu before landmark & pandemic & DM algorithm')
 
-# (1) Explore DM diet only flag
+# (a) Explore DM diet only flag
 data_processed <- data_processed %>% 
   mutate(
     tmp_cat_diet_only = case_when(
@@ -518,7 +541,7 @@ data_processed <- data_processed %>%
   mutate(cov_bin_diet_only = case_when(!is.na(tmp_date_diet_only) & tmp_date_diet_only <= landmark_date ~ TRUE,
                                        TRUE ~ FALSE))
 
-# (2) Explore deaths/ltfu
+# (b) Explore deaths/ltfu
 # died/ltfu between elig_date_t2dm and landmark -> add to data_processed to filter out
 data_processed <- data_processed %>%
   mutate(death_landmark = (!is.na(qa_date_of_death) & (qa_date_of_death > elig_date_t2dm) & (qa_date_of_death <= landmark_date))) %>% 
@@ -546,7 +569,7 @@ count <- data_processed %>%
     n_ltfu_landmark = sum(ltfu_landmark, na.rm = TRUE),
     n_exp_bin_treat = sum(is.na(exp_bin_treat), na.rm = TRUE))
     
-# (3) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
+# (c) Filter: only keep those fulfilling one of the two final treatment strategies and still alive and in care at landmark 
 data_processed <- data_processed %>%
   filter(
     !is.na(exp_bin_treat),
@@ -559,7 +582,7 @@ n_restricted_midpoint6 <- tibble(
   n_ltfu_landmark_midpoint6 = fn_roundmid_any(count$n_ltfu_landmark, threshold),
   n_after_exclusion_midpoint6 = fn_roundmid_any(nrow(data_processed), threshold))
 
-# (4) Explore DM algorithm
+# (d) Explore DM algorithm
 data_processed <- data_processed %>% 
   mutate(tmp_diag_nonmetfin_code = case_when((step_1 == "No" & step_2 == "Yes") | 
                                           (step_1 == "Yes" & step_1a == "Yes" & step_2 == "Yes") ~ TRUE,
@@ -605,7 +628,7 @@ n_dm_algo_midpoint6 <- tibble(
   n_diag_date_any_diabetes_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_any_diabetes_med_date, threshold),
   n_diag_date_nonmetform_med_date_midpoint6 = fn_roundmid_any(count_dm_algo$n_diag_date_nonmetform_med_date, threshold))
 
-# (5) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
+# (e) Filter main dataset: Only keep necessary variables; also filters carry-overs from the diabetes algorithm in case parameter remove_helper == FALSE
 data_processed <- data_processed %>% 
   select(patient_id, 
          elig_date_t2dm, 
@@ -620,6 +643,70 @@ data_processed <- data_processed %>%
          starts_with("cox_"), # Cox variables
   )
 
+
+# (11) ----
+
+# Add splines for age ------------------------------------------------------
+print('Add/compute splines')
+# Compute knot locations based on percentiles, according to study protocol
+age_knots <- quantile(data_processed$cov_num_age, probs = c(0.10, 0.50, 0.90))
+data_processed <- data_processed %>%
+  mutate(cov_num_age_spline = ns(cov_num_age, knots = age_knots))
+
+
+# (12) ----
+
+# Create IPTW for the weighted Kaplan Meier --------------------------------
+print('Create IPTW for the weighted Kaplan Meier')
+
+## Denominator model: probability of treatment given baseline covariates
+treat_denom_formula <- as.formula(paste("I(exp_bin_treat == 1) ~", paste(c(covariates_names), collapse = " + ")))
+treat.denom <- parglm(treat_denom_formula,
+                      family = binomial(link = 'logit'),
+                      data = data_processed)
+
+coef_summary <- summary(treat.denom)$coefficients
+if (anyNA(coef_summary[, "Estimate"])) {
+  warning("Some coefficient estimates from treat.denom are NA!")
+}
+
+data_processed$treat_denom <- predict(treat.denom, data_processed, type = "response")
+
+## Numerator model: marginal probability of treatment (intercept only)
+treat.num <- parglm(I(exp_bin_treat == 1) ~ 1,
+                    family = binomial(link = 'logit'),
+                    data = data_processed)
+
+coef_summary <- summary(treat.num)$coefficients
+if (anyNA(coef_summary[, "Estimate"])) {
+  warning("Some coefficient estimates from treat.num are NA!")
+}
+
+data_processed$treat_num <- predict(treat.num, data_processed, type = "response")
+
+## Calculate the stabilized weight
+data_processed <- data_processed %>%
+  mutate(
+    w_treat_stab = ifelse(
+      exp_bin_treat == 1, 
+      treat_num / treat_denom,
+      (1 - treat_num) / (1 - treat_denom)
+    )
+  )
+
+## Truncate stabilized weight at the 1st and 99th percentile
+# data_processed <- fn_truncate_by_percentile(df = data_processed, col_name = "w_treat_stab")
+
+## Min, 25th percentile, median, mean, SD, 75th percentile, and max
+summary(data_processed$w_treat_stab)
+# summary(data_processed$w_treat_stab_trunc)
+
+# Drop splines to be able to save df
+data_processed <- data_processed %>%
+  select(-starts_with("cov_num_age_spline"))
+
+
+# (13) ----
 
 # Save aggregate output and restricted processed dataset -------------------
 print('Save aggregate output and restricted processed dataset')
