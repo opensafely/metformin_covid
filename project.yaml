@@ -521,6 +521,44 @@ actions:
       moderately_sensitive:
         model_output: output/make_output/results_cox.csv
         model_output_midpoint6: output/make_output/results_cox_midpoint6.csv
+  
+  PPA_01_add_intervals:
+    run: r:latest analysis/PPA_01_add_intervals.R
+    needs:
+    - data_process
+    outputs:
+      highly_sensitive:
+        dataset: output/data/df_months.arrow
+
+  PPA_02_add_events:
+    run: r:latest analysis/PPA_02_add_events.R
+    needs:
+    - PPA_01_add_intervals
+    - data_process_ppa
+    outputs:
+      highly_sensitive:
+        dataset1: output/data/df_months_severecovid.arrow
+        # dataset2: output/data/df_months_covid_event.arrow
+        # dataset3: output/data/df_months_longcovid.arrow
+
+  # default R: R=5 on local data, and R=100 on real data - but overwrite R=100 on real data with args below
+  PPA_03_pooled_log_reg_with_interaction:
+    run: r:latest analysis/PPA_03_pooled_log_reg.R R=50
+    needs:
+    - PPA_02_add_events
+    outputs:
+      moderately_sensitive:
+        csv: output/te/pooled_log_reg/*.csv
+        plots: output/te/pooled_log_reg/*.png
+
+  PPA_03_pooled_log_reg_no_interaction:
+    run: r:latest analysis/PPA_03_pooled_log_reg.R no_interaction R=50
+    needs:
+    - PPA_02_add_events
+    outputs:
+      moderately_sensitive:
+        csv: output/te/pooled_log_reg/*_no_interaction.csv
+        plots: output/te/pooled_log_reg/*_no_interaction.png
 
   km_primary_weighted:
     run: kaplan-meier-function:v0.0.18 

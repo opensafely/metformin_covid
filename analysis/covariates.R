@@ -35,4 +35,4 @@ covariates_tv_names <- c("cov_cat_sex", "cov_num_age_spline", "strat_cat_region"
                          "cov_bin_depression", "cov_bin_copd", "cov_bin_liver_disease", "cov_bin_chronic_kidney_disease",
                          "cov_bin_pcos", "cov_bin_prediabetes", "cov_bin_diabetescomp", 
                          "cov_num_counthba1c",
-                         "cov_cat_bmi", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c", "cov_num_period_month") 
+                         "cov_cat_bmi", "cov_cat_tc_hdl_ratio", "cov_cat_hba1c", "cov_num_period_month")
