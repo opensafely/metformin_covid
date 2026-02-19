@@ -172,9 +172,9 @@ summary(df_months_severecovid$w_treat_stab_trunc)
 ## Fit the outcome model -------
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Fit the outcome model')
 outcome_formula <- if (include_interaction) {
-  outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+  as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
 } else {
-  outcome ~ exp_bin_treat + month + monthsqr
+  as.formula("outcome ~ exp_bin_treat + month + monthsqr")
 }
 treat.severecovid <- parglm(outcome_formula,
                             family = binomial(link = 'logit'),
@@ -375,9 +375,9 @@ print('Adjust additionally for time-varying LTFU: Fit the outcome model')
 # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW (both for PPA and LTFU)
 # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
 outcome_formula <- if (include_interaction) {
-  outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+  as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
 } else {
-  outcome ~ exp_bin_treat + month + monthsqr
+  as.formula("outcome ~ exp_bin_treat + month + monthsqr")
 }
 severecovid.treat.ltfu.comp <- parglm(outcome_formula, 
                                 family = binomial(link = 'logit'),
@@ -569,9 +569,9 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
     # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it mirrors the cox model
     outcome_formula <- if (include_interaction) {
-      outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)
+      as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
     } else {
-      outcome ~ exp_bin_treat + month + monthsqr
+      as.formula("outcome ~ exp_bin_treat + month + monthsqr")
     }
     
     severecovid.treat.ltfu.comp <- parglm(outcome_formula,
