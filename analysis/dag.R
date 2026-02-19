@@ -3,25 +3,25 @@
 # # # # # # # # # # # # # # # # # # # # #
 
 # Import libraries ----
-# install.packages("ggdag")
 library(dagitty)
+library(V8)
 library(ggdag)
 library(ggplot2)
 library(tidyverse)
 
-
+options(dagitty.use.v8 = FALSE)
 # Create the DAG ----
-dag <- dagify(covidoutcome ~ metformin + agesexsmoking + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
-              metformin ~ agesexsmoking + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
-              DMseverity ~ agesexsmoking,
-              cvdcomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
-              othercomorb ~ ethnicity + rural_urban + imd + agesexsmoking + hsb,
+dag <- dagify(covidoutcome ~ metformin + agesexsmokingbmi + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
+              metformin ~ agesexsmokingbmi + ethnicity + rural_urban + imd + cvdcomorb + othercomorb + DMseverity + hsb,
+              DMseverity ~ agesexsmokingbmi,
+              cvdcomorb ~ ethnicity + rural_urban + imd + agesexsmokingbmi + hsb,
+              othercomorb ~ ethnicity + rural_urban + imd + agesexsmokingbmi + hsb,
               rural_urban ~ imd,
               ethnicity ~ imd,
-              hsb ~ ethnicity + rural_urban + imd + agesexsmoking,
+              hsb ~ ethnicity + rural_urban + imd + agesexsmokingbmi,
               labels = c("covidoutcome" = "COVID outcomes",
                          "metformin" = "Metformin",
-                         "agesexsmoking" = "Age, Sex, Smoking",
+                         "agesexsmokingbmi" = "Age, Sex, Smoking, BMI",
                          "rural_urban" = "Rural/urban",
                          "ethnicity" = "Ethnicity",
                          "cvdcomorb" = "CVDs other\n than T2DM*",
