@@ -543,7 +543,7 @@ actions:
 
   # default R: R=5 on local data, and R=100 on real data - but overwrite R=100 on real data with args below
   PPA_03_pooled_log_reg_with_interaction:
-    run: r:latest analysis/PPA_03_pooled_log_reg.R R=10
+    run: r:latest analysis/PPA_03_pooled_log_reg.R R=200
     needs:
     - PPA_02_add_events
     outputs:
