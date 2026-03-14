@@ -1,5 +1,5 @@
 ###
-# Custom-made function to perform standardization/marginalization
+# Custom-made function to perform disclosure-safe standardization/marginalization
 ###
 
 # Args:
@@ -9,15 +9,22 @@
 #   group_col: A string specifying the name of the group name
 #   time_col: A string specifying the name of the time column | CAVE: We model time as time and time_sqr. Needs to be double-checked if in line with analysis approach.
 #   patient_id_col: The name of the patient ID column to group by. -> esp. important for use in bootstrap!
+#   min_count: disclosure threshold, current OpenSAFELY default is 6
+#   apply_rounding: Logical. If TRUE (default), applies fn_roundmid_any disclosure control to cumulative numerators and denominator before computing cumulative incidence.
+#                   Set to FALSE (e.g. inside bootstrap to avoid adding artificial rounding noise to each replicate, which would inflate CI variance). In that case, rounding should only be applied to the point estimate from the original sample.
+
 # Returns:
 #   A list containing the final standardized risk data frame and the final
 #   risk difference (rd) and risk ratio (rr) estimates.
 # After binding:
-# Row 1: month = 0 (zero row, time_0 = 0)
-# Row 2: month = 0 (from risk_summary where time_0 = 1)
-# Row 3: month = 1 (from risk_summary where time_0 = 2)
+# Row 1: month = 0 (zero row, time_0 = 1; from zero_row, see fn_standardize_risks)
+# Row 2: month = 0 (time_0 = 1; from risk_summary, see fn_standardize_risks)
+# Row 3: month = 1 (time_0 = 2)
 
-fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time_col = "month", patient_id_col = "patient_id") {
+# get fn_roundmid_any
+source(here::here("analysis", "functions", "utility.R"))
+
+fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time_col = "month", patient_id_col = "patient_id", min_count = 6, apply_rounding = TRUE) {
   # Create a dataset with all time points for each individual under each treatment level
   # This sets up a "prediction" dataset where we can estimate outcomes for every patient at every time point under each treatment scenario.
   df_pred <- df %>%
@@ -66,27 +73,48 @@ fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time
     ) %>%
     dplyr::ungroup()
   
+  # DISCLOSURE CONTROL
   # Get the mean risk in each treatment group at each time point
   # This aggregates the individual risks to get the standardized population-level risk.
+  
+  # N is fixed (same patients at every time point in g-computation)
+  N <- dplyr::n_distinct(df_pred[[patient_id_col]])
+  
   risk_summary <- df_pred %>%
     dplyr::group_by(!!rlang::sym(time_col)) %>%
     dplyr::summarise(
-      risk0 = mean(risk0),
-      risk1 = mean(risk1),
+      # Sum of individual predicted risks = "expected event" numerator
+      cml.event0 = sum(risk0),
+      cml.event1 = sum(risk1),
       .groups = "drop"
     ) %>%
-    # Edit data frame to reflect that risks are estimated at the END of each interval
-    dplyr::mutate(time_0 = .data[[time_col]] + 1)
+    dplyr::mutate(
+      # Apply midpoint rounding when producing the point estimate for release.
+      # When apply_rounding = FALSE (i.e. inside bootstrap), pass through raw values, to avoid adding artificial rounding noise to each replicate.
+      cml.event0.rounded = if (apply_rounding) fn_roundmid_any(cml.event0, to = min_count) else cml.event0,
+      cml.event1.rounded = if (apply_rounding) fn_roundmid_any(cml.event1, to = min_count) else cml.event1,
+      # Denominator: total N, rounded once (only meaningful for release output)
+      denom = if (apply_rounding) fn_roundmid_any(N, to = min_count) else N,
+      # Back-calculate cumulative incidence from (rounded) counts
+      risk0 = cml.event0.rounded / denom,
+      risk1 = cml.event1.rounded / denom,
+      # Edit data frame to reflect that risks are estimated at the END of each interval
+      time_0 = .data[[time_col]] + 1
+    )
   
   # add the initial zero row
   zero_row <- tibble::tibble(
     !!time_col := 0,
+    cml.event0.rounded = 0,
+    cml.event1.rounded = 0,
+    denom = if (apply_rounding) fn_roundmid_any(N, to = min_count) else N,
     risk0 = 0,
     risk1 = 0,
     time_0 = 1
   )
   
   # build the graph and calculate risk difference and risk ratio
+  # graph_data serves as both the release output (disclosure-safe when apply_rounding = TRUE) and the source for plotting. It contains rounded numerators and denominator so that OpenSAFELY output checkers can verify no percentage masks a small underlying count.
   graph <- dplyr::bind_rows(zero_row, risk_summary) %>%
     dplyr::mutate(
       rd = risk1 - risk0,
@@ -97,7 +125,7 @@ fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time
   final_row <- graph %>% dplyr::filter(.data[[time_col]] == K - 1)
   
   return(list(
-    graph_data = graph,
+    graph_data = graph, # disclosure-safe output for graph building and release
     final_risk0 = final_row$risk0,
     final_risk1 = final_row$risk1,
     final_rd = final_row$rd,

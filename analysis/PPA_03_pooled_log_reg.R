@@ -84,6 +84,8 @@ source(here::here("analysis", "metadates.R"))
 study_dates <- lapply(study_dates, function(x) as.Date(x))
 studyend_date <- as.Date(study_dates$studyend_date, format = "%Y-%m-%d")
 
+# Define redaction threshold ----------------------------------------------
+threshold <- 6
 
 # Add splines -------------------------------------------------------------
 print('Add splines')
@@ -195,7 +197,9 @@ cum_risk_treat_severecovid <- fn_standardize_risks(
   model = treat.severecovid,
   group_col = "exp_bin_treat",
   time_col = "month",
-  patient_id_col = "patient_id"
+  patient_id_col = "patient_id",
+  min_count = threshold,
+  apply_rounding = TRUE
 )
 
 
@@ -396,12 +400,14 @@ cum_risk_treat_ltfu_comp_severecovid <- fn_standardize_risks(
   model = severecovid.treat.ltfu.comp,
   group_col = "exp_bin_treat",
   time_col = "month",
-  patient_id_col = "patient_id"
+  patient_id_col = "patient_id",
+  min_count = threshold,
+  apply_rounding = TRUE
 )
 
 ## Construct marginal parametric cumulative incidence (risk) curves (without CIs) -------
 print('Adjust additionally for time-varying LTFU and competing risk: Plot')
-plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_comp_severecovid$graph_data,
+plot_cum_risk_treat_ltfu_comp_severecovid <- ggplot(cum_risk_treat_ltfu_comp_severecovid$graph_data,
                                                    aes(x=time_0, y=risk)) + 
   geom_line(aes(y = risk1, 
                 color = "Metformin"), linewidth = 1.5) +
@@ -591,7 +597,9 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       model = severecovid.treat.ltfu.comp,
       group_col = "exp_bin_treat",
       time_col = "month",
-      patient_id_col = "boot_patient_id"
+      patient_id_col = "boot_patient_id",
+      min_count = threshold,
+      apply_rounding = FALSE
     )
     
     return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))
@@ -605,7 +613,8 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       return(rep(NA, length(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))))
     } else {
       # If not, return NA values of a default length
-      return(rep(NA, 4 * K)) # 4 metrics (risk0, risk1, rd, rr) for K time points
+      # return 4 * (K + 1), not 4 * K, see explanation below re bootstrap object format
+      return(rep(NA, 4 * (K + 1))) # 4 metrics (risk0, risk1, rd, rr) for K time points
     }
   })
 }
@@ -629,24 +638,31 @@ cat("Number of failed bootstrap samples:", boot_failures, "\n")
 ### My bootstrap object contains:
 cat(sprintf("   Number of statistics per sample (risk0, risk1, RR, RD): %d\n", 
             ncol(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t)))
-# 100 values per bootstrap sample
-# Indices: risk0 (1-25), risk1 (26-50), rd (51-75), rr (76-100)
-# the final month (23) is at position 24 in the vectors
-# Row 1: month = 0 (zero row, time_0 = 0)
-# Row 2: month = 0 (time_0 = 1)
+# 100 values per bootstrap sample, i.e., 4 * (K + 1) values per bootstrap sample = 100 for K = 24
+# Indices: risk0 (1-25), risk1 (26-50), rd (51-75), rr (76-100), i.e., risk0 (1 to K+1), risk1 (K+2 to 2*(K+1)), rd (2*(K+1)+1 to 3*(K+1)), rr (3*(K+1)+1 to 4*(K+1))
+# Row 1: month = 0 (zero row, time_0 = 1; from zero_row, see fn_standardize_risks)
+# Row 2: month = 0 (time_0 = 1; from risk_summary, see fn_standardize_risks)
 # Row 3: month = 1 (time_0 = 2)
+# Row 25: month = 23 (time_0 = 24)
+# So there are K+1 = 25 rows (1 zero_row + 24 monthly rows for months 0 to 23). The final month of interest is K-1 = 23, which sits at row index K+1 = 25 within each block.
 
 ### Extract the final time point only
-# Indices
+# Indices: K+1 is the last row of each block (zero row at index 1, month K-1 at index K+1)
 indices <- c(
-  K, # risk0 at month 23 (index 24)
-  K + (K + 1), # risk1 at month 23 (index 49)
-  K + 2 * (K + 1), # rd at month 23 (index 74)
-  K + 3 * (K + 1) # rr at month 23 (index 99)
+  K + 1, # risk0 at month K-1
+  (K + 1) + (K + 1), # risk1 at month K-1
+  (K + 1) + 2 * (K + 1), # rd at month K-1
+  (K + 1) + 3 * (K + 1)  # rr at month K-1
 )
 te_plr_iptw_ipcw_severecovid_boot_tbl <- data.frame(
   Measure = c("Risk Control", "Risk Treatment", "Risk Difference", "Risk Ratio"),
-  Estimate_original = te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t0[indices],
+  # Pull from rounded point estimate, not t0 (which is unrounded)
+  Estimate_original = c(
+    cum_risk_treat_ltfu_comp_severecovid$final_risk0,
+    cum_risk_treat_ltfu_comp_severecovid$final_risk1,
+    cum_risk_treat_ltfu_comp_severecovid$final_rd,
+    cum_risk_treat_ltfu_comp_severecovid$final_rr
+  ),
   Estimate_boot = colMeans(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, indices], na.rm = TRUE),
   Lower_CI = sapply(indices, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[1]),
   Upper_CI = sapply(indices, function(i) fn_extract_ci_boot(te_iptw_ipcw_rd_rr_withCI_severecovid_boot, i)[2])
@@ -664,14 +680,14 @@ risk_graph <- data.frame(
 )
 
 # Calculate the mean and confidence intervals
-mean_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, mean) # Mean for control group (first half contains risk0) 1:25 correctly extracts all 25 values (months 0-23) for control
-mean_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, mean) # Mean for treatment group (second half contains risk1) 26:50 correctly extracts all 25 values (months 0-23) for intervention
+mean_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, mean, na.rm = TRUE) # Mean for control group (first half contains risk0) 1:25 correctly extracts all 25 values (months 0-23) for control
+mean_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, mean, na.rm = TRUE) # Mean for treatment group (second half contains risk1) 26:50 correctly extracts all 25 values (months 0-23) for intervention
 
-ll_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025))
-ul_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975))
+ll_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
 
-ll_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025))
-ul_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975))
+ll_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_risk1 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (K+2):(2*(K+1))], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
 
 risk_graph$mean.0 <- mean_risk0
 risk_graph$ll.0 <- ll_risk0
@@ -722,11 +738,16 @@ ggsave(filename = here::here("output", "te", "pooled_log_reg",
                              paste0("plot_cum_risk_treat_severecovid", output_suffix, ".png")), 
        plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", 
-                             paste0("plot_cum_risk_treat_ltfu_severecovid", output_suffix, ".png")), 
-       plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
+                             paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")), 
+       plot_cum_risk_treat_ltfu_comp_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", 
                              paste0("plot_cum_risk_treat_ltfu_comp_ci_severecovid", output_suffix, ".png")), 
        plot_cum_risk_treat_ltfu_comp_ci_severecovid, width = 20, height = 20, units = "cm")
+# Save disclosure-safe graph_data for OpenSAFELY output checkers
+write.csv(cum_risk_treat_ltfu_comp_severecovid$graph_data,
+          file = here::here("output", "te", "pooled_log_reg",
+                            paste0("cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".csv")),
+          row.names = FALSE)
 # Censoring plots and underlying data
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_ltfu.png"), plot_censoring_ltfu, width = 20, height = 20, units = "cm")
 write.csv(censoring_ltfu_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
