@@ -110,7 +110,9 @@ fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time
     denom = if (apply_rounding) fn_roundmid_any(N, to = min_count) else N,
     risk0 = 0,
     risk1 = 0,
-    time_0 = 1
+    time_0 = 1,
+    cml.event0 = 0,
+    cml.event1 = 0
   )
   
   # build the graph and calculate risk difference and risk ratio
@@ -119,7 +121,12 @@ fn_standardize_risks <- function(df, K, model, group_col = "exp_bin_treat", time
     dplyr::mutate(
       rd = risk1 - risk0,
       rr = risk1 / risk0
-    )
+    ) 
+  
+  # Drop raw numerators if rounding is applied. When apply_rounding = FALSE, cml.event0/1 are already equal to cml.event0/1.rounded so this step is not 100% needed, but we keep them for internal consistency
+  if (apply_rounding) {
+    graph <- graph %>% dplyr::select(-cml.event0, -cml.event1)
+  }
   
   # extract final values at end of follow-up
   final_row <- graph %>% dplyr::filter(.data[[time_col]] == K - 1)

@@ -13,3 +13,6 @@ fn_roundmid_any <- function(x, to=6){ # default is midpoint rounding to 6
   # centers on (integer) midpoint of the rounding points
   ceiling(x/to)*to - (floor(to/2)*(x!=0))
 }
+
+# Prop rounding function for redaction -----------------------------------------
+fn_round_prop <- function(x) fn_roundmid_any(x * denom_rounded, to = threshold) / denom_rounded
