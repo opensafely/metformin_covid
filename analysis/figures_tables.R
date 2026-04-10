@@ -18,31 +18,47 @@ library(forestplot)
 
 
 # Import the data -------------------------------------------------
-df_elig <- read_csv(here("output", "data_release_20251215", "data_description", "n_elig_excluded_midpoint6.csv"))
-df_qa <- read_csv(here("output", "data_release_20251215", "data_description", "n_qa_excluded_midpoint6.csv"))
-df_comp <- read_csv(here("output", "data_release_20251215", "data_description", "n_completeness_excluded_midpoint6.csv"))
-df_elig_landmark <- read_csv(here("output", "data_release_20251215", "data_description", "n_restricted_midpoint6.csv"))
+df_comp <- read_csv(here("output", "data_release_20260331", "data_description", "n_completeness_excluded_midpoint6.csv"))
+df_qa <- read_csv(here("output", "data_release_20260331", "data_description", "n_qa_excluded_midpoint6.csv"))
+df_elig <- read_csv(here("output", "data_release_20260331", "data_description", "n_elig_excluded_midpoint6.csv"))
+df_elig_landmark <- read_csv(here("output", "data_release_20260331", "data_description", "n_restricted_midpoint6.csv"))
 
-df_main <- read_csv(here("output", "data_release_20251215", "data_description", "table1_main_midpoint6.csv"))
-df_ps <- read_csv(here("output", "data_release_20251215", "ps", "density_plot_untrimmed.csv"))
-df_ps_HbA1c59orabove <- read_csv(here("output", "data_release_20251215", "ps", "ps_density_data_untrimmed_HbA1c59orabove.csv"))
-df_ps_HbA1c42to58 <- read_csv(here("output", "data_release_20251215", "ps", "ps_density_data_untrimmed_HbA1c42to58.csv"))
-df_ps_HbA1cbelow42 <- read_csv(here("output", "data_release_20251215", "ps", "ps_density_data_untrimmed_HbA1cbelow42.csv"))
-df_results_cox <- read_csv(here("output", "data_release_20251215", "make_output", "results_cox_midpoint6.csv"))
-df_results_km_primary <- read_csv(here("output", "data_release_20251215", "te", "km_primary", "estimates.csv"))
-df_results_km_covid_event <- read_csv(here("output", "data_release_20251215", "te", "km_covid_event", "estimates.csv"))
-df_results_km_longvirfat <- read_csv(here("output", "data_release_20251215", "te", "km_longvirfat", "estimates.csv"))
+df_main <- read_csv(here("output", "data_release_20260331", "data_description", "table1_main_midpoint6.csv"))
+df_death_ltfu1 <- read_csv(here("output", "data_release_20260331", "data_description", "table1_death_ltfu1_midpoint6.csv"))
+df_death_ltfu2 <- read_csv(here("output", "data_release_20260331", "data_description", "table1_death_ltfu2_midpoint6.csv"))
 
+df_ps <- read_csv(here("output", "data_release_20260331", "ps", "density_plot_untrimmed.csv"))
+df_ps_HbA1c59orabove <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1c59orabove.csv"))
+df_ps_HbA1c42to58 <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1c42to58.csv"))
+df_ps_HbA1cbelow42 <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1cbelow42.csv"))
+
+df_results_cox <- read_csv(here("output", "data_release_20260331", "make_output", "results_cox_midpoint6.csv"))
+
+df_results_km_primary <- read_csv(here("output", "data_release_20260331", "te", "km_primary", "estimates.csv"))
+df_results_km_covid_event <- read_csv(here("output", "data_release_20260331", "te", "km_covid_event", "estimates.csv"))
+df_results_km_longvirfat <- read_csv(here("output", "data_release_20260331", "te", "km_longvirfat", "estimates.csv"))
+df_results_km_primary_weighted <- read_csv(here("output", "data_release_20260331", "te", "km_primary_weighted", "estimates.csv"))
+
+df_results_ppa_interaction <- read_csv(here("output", "data_release_20260331", "te", "pooled_log_reg", "cum_risk_treat_ltfu_comp_ci_severecovid.csv"))
+df_results_ppa_no_interaction <- read_csv(here("output", "data_release_20260331", "te", "pooled_log_reg", "cum_risk_treat_ltfu_comp_ci_severecovid_no_interaction.csv"))
 
 # Baseline table, based on output from table1.R ----------------------
 
 # Hide NAs where not needed
 hide_NA <- function(df) {
   df %>%
-    mutate(`metformin` = replace_na(as.character(`metformin`), "")) %>% 
+    mutate(metformin = replace_na(as.character(metformin), "")) %>% 
     mutate(control = replace_na(as.character(control), ""))
 }
-df_main <- hide_NA(df_main)
+df_main <- df_main %>% 
+  mutate(metformin = replace_na(as.character(metformin), "")) %>% 
+  mutate(control = replace_na(as.character(control), ""))
+df_death_ltfu1 <- df_death_ltfu1 %>% 
+  mutate(`Alive and in care at landmark` = replace_na(as.character(`Alive and in care at landmark`), "")) %>% 
+  mutate(`Died or LTFU until landmark` = replace_na(as.character(`Died or LTFU until landmark`), ""))
+df_death_ltfu2 <- df_death_ltfu2 %>% 
+  mutate(`Alive and in care at pandemic start` = replace_na(as.character(`Alive and in care at pandemic start`), "")) %>% 
+  mutate(`Died or LTFU between landmark and pandemic start` = replace_na(as.character(`Died or LTFU between landmark and pandemic start`), ""))
 
 # Reduce to main variables
 # df_main <- df_main %>% 
@@ -66,9 +82,40 @@ tbl_gt_main <- df_main %>%
     table.font.size = px(12)
   )
 print(tbl_gt_main)
-
 # Save as RTF (Word-readable)
 gtsave(tbl_gt_main, "baseline_characteristics_main.rtf")
+
+tbl_gt_death_ltfu1 <- df_death_ltfu1 %>%
+  select(label, `Alive and in care at landmark`, `Died or LTFU until landmark`) %>%
+  gt() %>%
+  tab_header(title = "Baseline Characteristics") %>%
+  cols_label(
+    label = "Characteristic",
+    `Alive and in care at landmark` = "Alive and in care at landmark",
+    `Died or LTFU until landmark` = "Died or LTFU until landmark"
+  ) %>%
+  tab_options(
+    table.font.size = px(12)
+  )
+print(tbl_gt_death_ltfu1)
+# Save as RTF (Word-readable)
+gtsave(tbl_gt_death_ltfu1, "baseline_characteristics_death_ltfu1.rtf")
+
+tbl_gt_death_ltfu2 <- df_death_ltfu2 %>%
+  select(label, `Alive and in care at pandemic start`, `Died or LTFU between landmark and pandemic start`) %>%
+  gt() %>%
+  tab_header(title = "Baseline Characteristics") %>%
+  cols_label(
+    label = "Characteristic",
+    `Alive and in care at pandemic start` = "Alive and in care at pandemic start",
+    `Died or LTFU between landmark and pandemic start` = "Died or LTFU between landmark and pandemic start"
+  ) %>%
+  tab_options(
+    table.font.size = px(12)
+  )
+print(tbl_gt_death_ltfu2)
+# Save as RTF (Word-readable)
+gtsave(tbl_gt_death_ltfu2, "baseline_characteristics_death_ltfu2.rtf")
 
 
 # PS figures ----------------------
@@ -194,14 +241,14 @@ df_results_main <- df_results_main %>%
 
 df_results_main$name <- recode(df_results_main$name,
                                "primary" = "Primary: COVID-19-related hospitalization or death",
-                               "covid_event" = "Secondary: Any COVID-19-related event",
+                               "covid_event" = "Secondary: Any COVID-19 diagnosis",
                                "longvirfat" = "Secondary: Long COVID",
                                "neg_control_pandemic" = "Negative control outcome (bone fracture)",
                                "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
-  "Secondary: Any COVID-19-related event",
+  "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
   "Negative control outcome (bone fracture)",
   "Positive control outcome (diabetes-related death)"
@@ -312,14 +359,14 @@ df_results_min <- df_results_min %>%
 
 df_results_min$name <- recode(df_results_min$name,
                               "primary" = "Primary: COVID-19-related hospitalization or death",
-                              "covid_event" = "Secondary: Any COVID-19-related event",
+                              "covid_event" = "Secondary: Any COVID-19 diagnosis",
                               "longvirfat" = "Secondary: Long COVID",
                               "neg_control_pandemic" = "Negative control outcome (bone fracture)",
                               "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
-  "Secondary: Any COVID-19-related event",
+  "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
   "Negative control outcome (bone fracture)",
   "Positive control outcome (diabetes-related death)"
@@ -503,16 +550,10 @@ fp %>%
     ),
     graph.pos = 4, 
     hrzl_lines = list("2" = gpar(lty = 2),
-                      "3" = gpar(lty = 2),
                       "4" = gpar(lty = 2),
-                      "5" = gpar(lty = 2),
                       "6" = gpar(lty = 2),
-                      "7" = gpar(lty = 2),
                       "8" = gpar(lty = 2),
-                      "9" = gpar(lty = 2),
                       "10" = gpar(lty = 2),
-                      "11" = gpar(lty = 2),
-                      "12" = gpar(lty = 2),
                       "13" = gpar(lty = 2)),
     xlog = TRUE,
     # xticks = log(c(0.80, 1, 1.25)),
