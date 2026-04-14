@@ -134,7 +134,7 @@ var_labels_death_ltfu1 <- list(
 )
 
 var_labels_death_ltfu2 <- list(
-  N  = "Total N; without deaths/LTFU until landmark",
+  N  = "Total N",
   death_ltfu_pandemic_without_landmark = "Died/LTFU between landmark and pandemic start",
   exp_bin_treat = "Metformin treatment",
   

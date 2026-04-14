@@ -568,7 +568,7 @@ actions:
       --origin_date=landmark_date
       --event_date=out_date_severecovid_afterlandmark
       --censor_date=cox_date_severecovid
-      --weight=w_treat_stab
+      --weight=w_treat_stab_trunc
       --max_fup=730
       --plot=TRUE
     needs:

@@ -31,11 +31,13 @@ library('skimr')
 library('splines')
 library('ggplot2')
 library('parglm')
+library('pROC')
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "utility.R"))
 source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_completeness_criteria_midpoint6.R"))
 source(here::here("analysis", "functions", "fn_elig_criteria_midpoint6.R"))
+source(here::here("analysis", "functions", "fn_truncate_by_percentile.R"))
 source(here::here("analysis", "covariates.R"))
 
 
@@ -672,6 +674,9 @@ if (anyNA(coef_summary[, "Estimate"])) {
 
 data_processed$treat_denom <- predict(treat.denom, data_processed, type = "response")
 
+## Check overfitting
+roc(data_processed$exp_bin_treat, data_processed$treat_denom)$auc
+
 ## Numerator model: marginal probability of treatment (intercept only)
 treat.num <- parglm(I(exp_bin_treat == 1) ~ 1,
                     family = binomial(link = 'logit'),
@@ -695,11 +700,34 @@ data_processed <- data_processed %>%
   )
 
 ## Truncate stabilized weight at the 1st and 99th percentile
-# data_processed <- fn_truncate_by_percentile(df = data_processed, col_name = "w_treat_stab")
+data_processed <- fn_truncate_by_percentile(df = data_processed, col_name = "w_treat_stab")
 
-## Min, 25th percentile, median, mean, SD, 75th percentile, and max
+## Investigate untrimmed weights
+print('Investigate untrimmed weights')
 summary(data_processed$w_treat_stab)
-# summary(data_processed$w_treat_stab_trunc)
+data_processed %>%
+  group_by(exp_bin_treat) %>%
+  summarise(
+    n = n(),
+    mean_w = mean(w_treat_stab, na.rm = TRUE),
+    sum_w = sum(w_treat_stab, na.rm = TRUE),
+    min_w = min(w_treat_stab, na.rm = TRUE),
+    max_w = max(w_treat_stab, na.rm = TRUE),
+    n_na = sum(is.na(w_treat_stab))
+  )
+## Investigate trimmed weights
+print('Investigate trimmed weights')
+summary(data_processed$w_treat_stab_trunc)
+data_processed %>%
+  group_by(exp_bin_treat) %>%
+  summarise(
+    n = n(),
+    mean_w = mean(w_treat_stab_trunc, na.rm = TRUE),
+    sum_w = sum(w_treat_stab_trunc, na.rm = TRUE),
+    min_w = min(w_treat_stab_trunc, na.rm = TRUE),
+    max_w = max(w_treat_stab_trunc, na.rm = TRUE),
+    n_na = sum(is.na(w_treat_stab_trunc))
+  )
 
 # Drop splines to be able to save df
 data_processed <- data_processed %>%
