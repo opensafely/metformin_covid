@@ -393,6 +393,16 @@ if (anyNA(coef_summary[, "Estimate"])) {
   warning("Some severecovid.treat.ltfu.comp (incl. PPA and LTFU censoring and Comp censoring) coefficient estimates are NA!")
 }
 
+## Point estimate of HR at K months -------
+hr_point <- if (include_interaction) {
+  exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"] +
+      coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * month)"] * K +
+      coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * monthsqr)"] * K^2)
+} else {
+  exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"])
+}
+cat(sprintf("Point estimate HR at %d months: %.4f\n", K, hr_point))
+
 ## Standardization -------
 print('Adjust additionally for time-varying LTFU: Standardization')
 cum_risk_treat_ltfu_comp_severecovid <- fn_standardize_risks(
@@ -603,7 +613,15 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       apply_rounding = FALSE
     )
     
-    return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))
+    hr_at_K <- if (include_interaction) {
+      exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"] +
+          coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * month)"] * K +
+          coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * monthsqr)"] * K^2)
+    } else {
+      exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"])
+    }
+
+    return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr, hr_at_K))
 
   }, error = function(e) {
     # If any error occurs, count as a failed bootstrap
@@ -611,11 +629,11 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     boot_failures <<- boot_failures + 1
     # Check if results_std$graph_data is available before attempting to get its length
     if(exists("results_std") && !is.null(results_std$graph_data)) {
-      return(rep(NA, length(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr))))
+      return(rep(NA, length(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr)) + 1))
     } else {
       # If not, return NA values of a default length
-      # return 4 * (K + 1), not 4 * K, see explanation below
-      return(rep(NA, 4 * (K + 1))) # 4 metrics (risk0, risk1, rd, rr) for K time points
+      # return 4 * (K + 1) + 1, not 4 * K, see explanation below
+      return(rep(NA, 4 * (K + 1) + 1)) # 4 metrics (risk0, risk1, rd, rr) for K time points + 1 HR at K
     }
   })
 }
@@ -637,10 +655,10 @@ te_iptw_ipcw_rd_rr_withCI_severecovid_boot <- boot(
 cat("Number of failed bootstrap samples:", boot_failures, "\n")
 
 ### My bootstrap object contains:
-cat(sprintf("Number of statistics per sample (risk0, risk1, RR, RD): %d\n", 
+cat(sprintf("Number of statistics per sample (risk0, risk1, RR, RD, HR): %d\n",
             ncol(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t)))
-# 100 values per bootstrap sample, i.e., 4 * (K + 1) values per bootstrap sample = 100 for K = 24
-# Indices: risk0 (1-25), risk1 (26-50), rd (51-75), rr (76-100), i.e., risk0 (1 to K+1), risk1 (K+2 to 2*(K+1)), rd (2*(K+1)+1 to 3*(K+1)), rr (3*(K+1)+1 to 4*(K+1))
+# 101 values per bootstrap sample, i.e., 4 * (K + 1) + 1 values per bootstrap sample = 101 for K = 24
+# Indices: risk0 (1-25), risk1 (26-50), rd (51-75), rr (76-100), hr_at_K (101), i.e., risk0 (1 to K+1), risk1 (K+2 to 2*(K+1)), rd (2*(K+1)+1 to 3*(K+1)), rr (3*(K+1)+1 to 4*(K+1)), hr (4*(K+1)+1)
 # Row 1: month = 0 (zero row, time_0 = 1; from zero_row, see fn_standardize_risks)
 # Row 2: month = 0 (time_0 = 1; from risk_summary, see fn_standardize_risks)
 # Row 3: month = 1 (time_0 = 2)
@@ -664,6 +682,12 @@ ul_rd <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (2*(K+1)+1):(3*(K+
 ll_rr <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (3*(K+1)+1):(4*(K+1))], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
 ul_rr <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (3*(K+1)+1):(4*(K+1))], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
 
+hr_col <- 4 * (K + 1) + 1
+mean_hr <- mean(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], na.rm = TRUE)
+ll_hr   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], 0.025, na.rm = TRUE)
+ul_hr   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], 0.975, na.rm = TRUE)
+cat(sprintf("Bootstrap HR at %d months: %.4f (95%% CI: %.4f - %.4f)\n", K, mean_hr, ll_hr, ul_hr))
+
 # Single unified output table
 # Risks (mean.0, mean.1) and their CIs are rounded via fn_round_prop so that reviewers can verify against denom that no proportion masks a small count.
 # fn_round_prop: Apply fn_roundmid_any, then divide again => consistent with the rounding approach applied to point estimate curves in fn_standardize_risks()
@@ -685,7 +709,12 @@ risk_graph <- data.frame(
   ll.rr = ll_rr,
   ul.rr = ul_rr,
   orig_risk.0_midpoint6 = cum_risk_treat_ltfu_comp_severecovid$graph_data$risk0,
-  orig_risk.1_midpoint6 = cum_risk_treat_ltfu_comp_severecovid$graph_data$risk1
+  orig_risk.1_midpoint6 = cum_risk_treat_ltfu_comp_severecovid$graph_data$risk1,
+  # HR at K months (model-based OR from PLR, approximating Cox HR): populated only at time == K, NA elsewhere
+  point_hr = ifelse(0:K == K, hr_point, NA_real_),
+  mean_hr  = ifelse(0:K == K, mean_hr, NA_real_),
+  ll_hr    = ifelse(0:K == K, ll_hr, NA_real_),
+  ul_hr    = ifelse(0:K == K, ul_hr, NA_real_)
 )
 
 # Create plot
