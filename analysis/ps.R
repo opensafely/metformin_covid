@@ -120,6 +120,18 @@ sd(df$sw)
 summary(df_trimmed$sw)
 sd(df_trimmed$sw)
 
+# Restrict to PS overlap region (0.1–0.8) for sensitivity analysis ---------
+print('Restrict to PS overlap region (0.1-0.8) for sensitivity analysis')
+df_ps_overlap <- df %>%
+  filter(ps >= 0.1 & ps <= 0.8) %>%
+  mutate(exp_bin_treat = ifelse(exp_bin_treat == "metformin", 1L, 0L)) %>%
+  select(-ps, -sw, -starts_with("cov_num_age_spline"))
+cat(sprintf("PS overlap restriction (0.1-0.8): %d -> %d patients (%d excluded)\n",
+            nrow(df), nrow(df_ps_overlap), nrow(df) - nrow(df_ps_overlap)))
+cat(sprintf("  Metformin: %d -> %d | Control: %d -> %d\n",
+            sum(df$exp_bin_treat == "metformin"), sum(df_ps_overlap$exp_bin_treat == 1L),
+            sum(df$exp_bin_treat == "nothing"),   sum(df_ps_overlap$exp_bin_treat == 0L)))
+
 # Density plot ------------------------------------------------------------
 print('Density plot')
 ## Untrimmed
@@ -346,6 +358,58 @@ density_plot_untrimmed_HbA1cbelow42 <- ggplot(ps_density_data_untrimmed_HbA1cbel
 #   )
 
 
+# Love plot for covariate balance ------------------------------------------
+print('Love plot for covariate balance')
+# Use raw age instead of spline terms for one interpretable row per covariate
+covariates_for_smd <- c(setdiff(covariates_names, "cov_num_age_spline"), "cov_num_age")
+
+tbl_unweighted_smd <- bal.tab(df[covariates_for_smd],
+                               treat = df$exp_bin_treat,
+                               binary = "std",
+                               s.d.denom = "pooled")
+tbl_weighted_smd <- bal.tab(df[covariates_for_smd],
+                             treat = df$exp_bin_treat,
+                             weights = df$sw,
+                             binary = "std",
+                             s.d.denom = "pooled")
+
+smd_combined <- data.frame(
+  Covariate      = rownames(tbl_unweighted_smd$Balance),
+  SMD_Unweighted = tbl_unweighted_smd$Balance$Diff.Un,
+  SMD_Weighted   = tbl_weighted_smd$Balance$Diff.Adj
+)
+
+# Check: flag any |SMD| > 0.1 after weighting
+smd_above_threshold <- smd_combined[abs(smd_combined$SMD_Weighted) > 0.1, ]
+if (nrow(smd_above_threshold) > 0) {
+  warning(sprintf("%d covariate(s) have |SMD| > 0.1 after IPW:", nrow(smd_above_threshold)))
+  print(smd_above_threshold)
+} else {
+  cat("All covariates have |SMD| <= 0.1 after IPW weighting.\n")
+}
+
+# Build Love plot (sorted by unweighted |SMD|)
+smd_plot_data <- smd_combined %>%
+  arrange(abs(SMD_Unweighted)) %>%
+  mutate(Covariate = factor(Covariate, levels = Covariate))
+
+love_plot <- ggplot(smd_plot_data, aes(y = Covariate)) +
+  geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+  geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+  geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+  scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+  labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+       title = "Covariate Balance Before and After IPW") +
+  theme_minimal() +
+  theme(
+    axis.line.x = element_line(colour = "black"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+
+
 # Save output -------------------------------------------------------------
 print('Save output')
 # PS model summary
@@ -355,6 +419,11 @@ write.csv(ps_summary, file = here::here("output", "ps", "ps_summary.csv"))
 # Standardized mean differences, unweighted and weighted (unstablized and stabilized)
 write.csv(smd_unweighted, file = here::here("output", "ps", "smd_unweighted.csv"))
 write.csv(smd_sw, file = here::here("output", "ps", "smd_weighted_stabilized.csv"))
+# Combined SMD table (raw age, for Love plot) and Love plot
+write.csv(smd_combined, file = here::here("output", "ps", "smd_combined.csv"), row.names = FALSE)
+ggsave(filename = here::here("output", "ps", "love_plot.png"), love_plot, width = 20, height = 35, units = "cm")
+# PS overlap-restricted dataset for cox_primary_ps_overlap sensitivity analysis
+arrow::write_feather(df_ps_overlap, here::here("output", "data", "data_processed_ps_overlap.arrow"))
 # Density plot and underlying data
 write.csv(ps_density_data_untrimmed, file = here::here("output", "ps", "density_plot_untrimmed.csv"))
 write.csv(ps_density_data_trimmed, file = here::here("output", "ps", "density_plot_trimmed.csv"))
