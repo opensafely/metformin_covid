@@ -262,9 +262,15 @@ df_months_severecovid <- df_months_severecovid %>%
   mutate(
     w_ltfu_stab = cumprod(ltfu_num/ltfu_denom),
     w_ltfu_stab = ifelse(cummax(censor_LTFU) == 1, 0, w_ltfu_stab)
-  ) %>% 
+  ) %>%
   ungroup()
 summary(df_months_severecovid$w_ltfu_stab)
+
+## Product of treatment and LTFU weights only (no competing event)
+df_months_severecovid$w_treat_ltfu_stab <- df_months_severecovid$w_treat_stab * df_months_severecovid$w_ltfu_stab
+df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_ltfu_stab")
+summary(df_months_severecovid$w_treat_ltfu_stab)
+summary(df_months_severecovid$w_treat_ltfu_stab_trunc)
 
 ## Investigate the censoring-for-LTFU a bit more
 censoring_ltfu_rates <- df_months_severecovid %>%
@@ -291,6 +297,59 @@ censoring_ltfu_weights <- df_months_severecovid %>%
     sd_w = sd(w_ltfu_stab, na.rm = TRUE),
     max_w = max(w_ltfu_stab, na.rm = TRUE)
   )
+
+## Outcome model: treatment + LTFU weights only (no competing event adjustment) -------
+print('Fit outcome model: treatment + LTFU weights, no competing event adjustment')
+severecovid.treat.ltfu <- parglm(outcome_formula,
+                                  family = binomial(link = 'logit'),
+                                  data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
+                                  weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_stab_trunc)
+coef_summary <- summary(severecovid.treat.ltfu)$coefficients
+if (anyNA(coef_summary[, "Estimate"])) {
+  warning("Some severecovid.treat.ltfu coefficient estimates are NA!")
+}
+hr_point_no_comp <- if (include_interaction) {
+  exp(coef(severecovid.treat.ltfu)["exp_bin_treat"] +
+      coef(severecovid.treat.ltfu)["I(exp_bin_treat * month)"] * K +
+      coef(severecovid.treat.ltfu)["I(exp_bin_treat * monthsqr)"] * K^2)
+} else {
+  exp(coef(severecovid.treat.ltfu)["exp_bin_treat"])
+}
+cat(sprintf("Point estimate HR at %d months (LTFU-adjusted, no competing event): %.4f\n", K, hr_point_no_comp))
+
+## Standardization -------
+print('Fit outcome model with LTFU weights (no competing event): Standardization')
+cum_risk_treat_ltfu_severecovid <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = severecovid.treat.ltfu,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id",
+  min_count = threshold,
+  apply_rounding = TRUE
+)
+
+## Construct marginal parametric cumulative incidence (risk) curves (without CIs) -------
+print('Fit outcome model with LTFU weights (no competing event): Plot')
+plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_severecovid$graph_data,
+                                               aes(x=time_0, y=risk)) +
+  geom_line(aes(y = risk1,
+                color = "Metformin"), linewidth = 1.5) +
+  geom_line(aes(y = risk0,
+                color = "No Metformin"), linewidth = 1.5) +
+  xlab("Months") +
+  ylab("Cumulative Incidence (%)") +
+  theme_minimal() +
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(values=c("#E7B800","#2E9FDF"),
+                     breaks=c('No Metformin', 'Metformin'))
 
 
 # Adjust additionally for time-varying competing risk (non-covid deaths) ----------
@@ -751,11 +810,14 @@ plot_cum_risk_treat_ltfu_comp_ci_severecovid <- ggplot(risk_graph,
 # Save output -------------------------------------------------------------
 print('Save output')
 # Marginal parametric cumulative incidence (risk) curves from plr models, first two only with point estimates, last one including 95% CI (from bootstrap)
-ggsave(filename = here::here("output", "te", "pooled_log_reg", 
-                             paste0("plot_cum_risk_treat_severecovid", output_suffix, ".png")), 
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "te", "pooled_log_reg", 
-                             paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")), 
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_ltfu_severecovid", output_suffix, ".png")),
+       plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_ltfu_comp_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", 
                              paste0("plot_cum_risk_treat_ltfu_comp_ci_severecovid", output_suffix, ".png")), 

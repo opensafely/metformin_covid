@@ -410,6 +410,51 @@ love_plot <- ggplot(smd_plot_data, aes(y = Covariate)) +
   )
 
 
+# Love plots by HbA1c subgroup and PS overlap region ----------------------
+print('Love plots by HbA1c subgroup and PS overlap region')
+
+build_love_plot <- function(df_sub, title_suffix) {
+  tbl_un <- bal.tab(df_sub[covariates_for_smd],
+                    treat = df_sub$exp_bin_treat,
+                    binary = "std",
+                    s.d.denom = "pooled")
+  tbl_wt <- bal.tab(df_sub[covariates_for_smd],
+                    treat = df_sub$exp_bin_treat,
+                    weights = df_sub$sw,
+                    binary = "std",
+                    s.d.denom = "pooled")
+  smd <- data.frame(
+    Covariate      = rownames(tbl_un$Balance),
+    SMD_Unweighted = tbl_un$Balance$Diff.Un,
+    SMD_Weighted   = tbl_wt$Balance$Diff.Adj
+  )
+  plot_data <- smd %>%
+    arrange(abs(SMD_Unweighted)) %>%
+    mutate(Covariate = factor(Covariate, levels = Covariate))
+  p <- ggplot(plot_data, aes(y = Covariate)) +
+    geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+    geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+    geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+    geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+    scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+    labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+         title = paste("Covariate Balance Before and After IPW;", title_suffix)) +
+    theme_minimal() +
+    theme(
+      axis.line.x = element_line(colour = "black"),
+      legend.position = "bottom",
+      panel.grid.major.y = element_line(colour = "gray90"),
+      panel.grid.minor = element_blank()
+    )
+  list(plot = p, smd = smd)
+}
+
+lp_HbA1c59orabove <- build_love_plot(df %>% filter(cov_cat_hba1c_b == "59-75"),    "HbA1c 59-75")
+lp_HbA1c42to58    <- build_love_plot(df %>% filter(cov_cat_hba1c_b == "42-58"),    "HbA1c 42-58")
+lp_HbA1cbelow42   <- build_love_plot(df %>% filter(cov_cat_hba1c_b == "below 42"), "HbA1c <42")
+lp_ps_overlap     <- build_love_plot(df %>% filter(ps >= 0.1 & ps <= 0.8),          "PS overlap (0.1-0.8)")
+
+
 # Save output -------------------------------------------------------------
 print('Save output')
 # PS model summary
@@ -440,3 +485,12 @@ ggsave(filename = here::here("output", "ps", "density_plot_untrimmed_HbA1cbelow4
 # Histograms
 ggsave(filename = here::here("output", "ps", "histogram_untrimmed.png"), histogram_untrimmed, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "ps", "histogram_trimmed.png"), histogram_trimmed, width = 20, height = 20, units = "cm")
+# Love plots by HbA1c subgroup and PS overlap
+write.csv(lp_HbA1c59orabove$smd, file = here::here("output", "ps", "smd_combined_HbA1c59orabove.csv"), row.names = FALSE)
+ggsave(filename = here::here("output", "ps", "love_plot_HbA1c59orabove.png"), lp_HbA1c59orabove$plot, width = 20, height = 35, units = "cm")
+write.csv(lp_HbA1c42to58$smd,    file = here::here("output", "ps", "smd_combined_HbA1c42to58.csv"), row.names = FALSE)
+ggsave(filename = here::here("output", "ps", "love_plot_HbA1c42to58.png"), lp_HbA1c42to58$plot, width = 20, height = 35, units = "cm")
+write.csv(lp_HbA1cbelow42$smd,   file = here::here("output", "ps", "smd_combined_HbA1cbelow42.csv"), row.names = FALSE)
+ggsave(filename = here::here("output", "ps", "love_plot_HbA1cbelow42.png"), lp_HbA1cbelow42$plot, width = 20, height = 35, units = "cm")
+write.csv(lp_ps_overlap$smd,     file = here::here("output", "ps", "smd_combined_ps_overlap.csv"), row.names = FALSE)
+ggsave(filename = here::here("output", "ps", "love_plot_ps_overlap.png"), lp_ps_overlap$plot, width = 20, height = 35, units = "cm")
