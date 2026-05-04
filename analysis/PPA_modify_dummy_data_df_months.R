@@ -1,14 +1,14 @@
 #### 
 ## This script modifies dummy data of df_months to: 
 ## - randomly select 50% of cov_date_ami 
-## - change them to be very close to the treatment information change, i.e., cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
+## - change them to be very close to the treatment information change, i.e., cens_date_antidiab_start_cont (within 5 days before/after cens_date_antidiab_start_cont)
 ## - this will test edge cases for fn_assign_time_fixed_cov
 ####
 
 # Identify eligible persons (both dates non-NA)
 eligible_persons <- df_months %>%
-  distinct(patient_id, cov_date_ami, cens_date_metfin_start_cont) %>%
-  filter(!is.na(cov_date_ami) & !is.na(cens_date_metfin_start_cont)) %>%
+  distinct(patient_id, cov_date_ami, cens_date_antidiab_start_cont) %>%
+  filter(!is.na(cov_date_ami) & !is.na(cens_date_antidiab_start_cont)) %>%
   pull(patient_id)
 
 # Randomly select ~50% of them
@@ -17,10 +17,10 @@ persons_to_change <- sample(eligible_persons, n_change)
 
 # Compute new cov_date_ami for selected persons
 new_dates <- df_months %>%
-  distinct(patient_id, cov_date_ami, cens_date_metfin_start_cont) %>%
+  distinct(patient_id, cov_date_ami, cens_date_antidiab_start_cont) %>%
   filter(patient_id %in% persons_to_change) %>%
   mutate(
-    new_cov_date_ami = cens_date_metfin_start_cont + sample(c(-5:-1, 1:5), n(), replace=TRUE)
+    new_cov_date_ami = cens_date_antidiab_start_cont + sample(c(-5:-1, 1:5), n(), replace=TRUE)
   ) %>%
   select(patient_id, new_cov_date_ami)
 

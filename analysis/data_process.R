@@ -387,7 +387,29 @@ data_processed <- data_processed %>%
     # In CONTROL: Identify all who started metformin mono after landmark
     cens_bin_metfin_start_cont = exp_bin_treat_nothing == TRUE & !is.na(exp_date_metfin_mono_first) & exp_date_metfin_mono_first > landmark_date,
     cens_date_metfin_start_cont = case_when(cens_bin_metfin_start_cont == TRUE ~ exp_date_metfin_mono_first, 
-                                               TRUE ~ as.Date(NA))
+                                               TRUE ~ as.Date(NA)),
+    # In CONTROL: Identify all who started metformin or any other antidiabetic after landmark
+    cens_bin_antidiab_start_cont = exp_bin_treat_nothing == TRUE & (
+      (!is.na(exp_date_metfin_first) & exp_date_metfin_first > landmark_date) |
+      (!is.na(exp_date_dpp4_first) & exp_date_dpp4_first > landmark_date) |
+      (!is.na(exp_date_tzd_first) & exp_date_tzd_first > landmark_date) |
+      (!is.na(exp_date_sglt2_first) & exp_date_sglt2_first > landmark_date) |
+      (!is.na(exp_date_sulfo_first) & exp_date_sulfo_first > landmark_date) |
+      (!is.na(exp_date_glp1_first) & exp_date_glp1_first > landmark_date) |
+      (!is.na(exp_date_megli_first) & exp_date_megli_first > landmark_date) |
+      (!is.na(exp_date_agi_first) & exp_date_agi_first > landmark_date) |
+      (!is.na(exp_date_insulin_first) & exp_date_insulin_first > landmark_date)),
+    cens_date_antidiab_start_cont = case_when(cens_bin_antidiab_start_cont == TRUE ~ pmin(exp_date_metfin_first,
+                                                                                          exp_date_dpp4_first,
+                                                                                          exp_date_tzd_first,
+                                                                                          exp_date_sglt2_first,
+                                                                                          exp_date_sulfo_first,
+                                                                                          exp_date_glp1_first,
+                                                                                          exp_date_megli_first,
+                                                                                          exp_date_agi_first,
+                                                                                          exp_date_insulin_first,
+                                                                                          na.rm = TRUE), 
+                                              TRUE ~ as.Date(NA))
     )
 
 # HbA1c covariate and HbA1c & lipids plot --------------------------------

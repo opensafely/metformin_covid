@@ -60,7 +60,7 @@ print('Expand the dataset')
 ## b. out_date_noncoviddeath_afterlandmark: Competing event. In primary analysis, we simply treat it as censoring event ("controlled direct effect")
 #### Side note re competing event: We may - at a later stage - consider targeting a "total effect" (by assigning outcome == 0 for everyone who had a non-covid death and including their follow-up time after non-covid deaths, i.e. not censoring them)
 ## c. cens_date_ltfu_afterlandmark: Censoring event. We may want to upweigh those who were not censored using a hypothetical treatment strategy for this intercurrent event ("assume no-one is LTFU") 
-## d. cens_date_metfin_start_cont: Censoring event for the per-protocol analysis ONLY. We will upweigh those who did not start metformin in control group, using a hypothetical treatment strategy for this intercurrent event ("assume no-one started metformin in control")
+## d. cens_date_antidiab_start_cont: Censoring event for the per-protocol analysis ONLY. We will upweigh those who did not start metformin (or any other antidiabetic) in control group, using a hypothetical treatment strategy for this intercurrent event ("assume no-one started metformin/any other antidiabetic in control")
 ## e. out_date_covid_afterlandmark: Secondary outcome (includes covid tests, diagnoses, hosp & deaths). All other competing/censoring events same as above.
 ## f. out_date_longcovid_virfat_afterlandmark: Secondary outcome (includes viral fatigue and long covid codes). All other competing/censoring events same as above, except we use all-cause death as competing event: 
 ## g. out_date_death_afterlandmark: All-cause mortality, the competing event variable only for analysis of the secondary endpoint Long covid.

@@ -53,13 +53,13 @@ print('Assign treatment to df_months')
 ## Rationale: Treatment is the focal point of each interval; no lagging or leading is necessary for its definition.
 
 ### Moreover, we assume someone stays on treatment once is initiated, i.e., first-ever, time-fixed event 
-### Moreover, here, we have defined treatment at baseline already (exp_bin_treat), we only assign treatment in control to flag those who initiate during follow-up (cens_date_metfin_start_cont)
+### Moreover, here, we have defined treatment at baseline already (exp_bin_treat), we only assign treatment in control to flag those who initiate during follow-up (cens_date_antidiab_start_cont)
 ### I can use my preexisting function, which works perfectly for this, based on these rules:
 # a) if event date is not NA and happened before the minimum start date of all intervals of a person, then assign 1 (in corresponding flag variable) to all person-intervals
 # b) if event date is not NA and happened after the maximum end date of all intervals of a person, then assign 0 (in corresponding flag variable) to all person-intervals
 # c) if no event date is recorded (date variable == NA), then assign 0 (in corresponding flag variable) to all person-intervals (assuming no documentation = no event)
 # d) if event date happened during follow-up, then assign 1 (in corresponding flag variable) to corresponding person-interval, and 0 to all person-intervals before, and 1 to all person-intervals after (stable/time-fixed event)
-date_treat_vars <- c("cens_date_metfin_start_cont")
+date_treat_vars <- c("cens_date_antidiab_start_cont")
 df_months <- fn_assign_treatment(df_months, 
                                  date_treat_vars,
                                  start_var = "start_date_month", 
@@ -75,7 +75,7 @@ df_months <- df_months %>%
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
-#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont, treat,
+#                 exp_bin_treat, cens_date_antidiab_start_cont, cens_bin_metfin_start_cont, treat,
 #                 out_date_severecovid_afterlandmark, out_date_death_afterlandmark,
 #                 cens_date_ltfu_afterlandmark,
 #                 cov_cat_sex, cov_num_age
@@ -110,7 +110,7 @@ df_months <- df_months %>%
 # Modify dummy data
 ## This script modifies dummy data of df_months to: 
 ## - randomly select 50% of cov_date_ami 
-## - change them to be very close to the treatment information change, i.e., cens_date_metfin_start_cont (within 5 days before/after cens_date_metfin_start_cont)
+## - change them to be very close to the treatment information change, i.e., cens_date_antidiab_start_cont (within 5 days before/after cens_date_antidiab_start_cont)
 ## - this will test edge cases for fn_assign_time_fixed_cov
 print('Modify dummy data')
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
@@ -134,8 +134,8 @@ print('Assign the stable time-updated (first-ever, constant) covariates')
 # d) if covariate date is a date that happened during follow-up, then assign 1 (in flag variable) to next person-interval (using lag), 0 to all person-intervals before (incl. the current person-interval), and 1 to all person-intervals after (stable/time-fixed event)
 ## CAVE: This will now overwrite the preexisting cov_bin_ variables from the main dataset, which is fine (see comment above), but just to be aware of
 # Second step:
-# e) if covariate date is a date that happened during follow-up, check if this date is in same interval as the censoring event (cens_date_metfin_start_cont, i.e. started treatment in control group) and 
-# if it happened on or before cens_date_metfin_start_cont, then assign 1 (in cov flag variable) to the current (not only next) person-interval. Otherwise, keep all as it is.
+# e) if covariate date is a date that happened during follow-up, check if this date is in same interval as the censoring event (cens_date_antidiab_start_cont, i.e. started treatment in control group) and 
+# if it happened on or before cens_date_antidiab_start_cont, then assign 1 (in cov flag variable) to the current (not only next) person-interval. Otherwise, keep all as it is.
 
 date_stable_tu_vars <- c("cov_date_ami",
                       "cov_date_hypertension",
@@ -149,19 +149,19 @@ df_months <- fn_assign_stable_tu_cov(df_months,
                                      date_stable_tu_vars,
                                      start_var = "start_date_month", 
                                      end_var = "end_date_month",
-                                     cens_date_var = "cens_date_metfin_start_cont")
+                                     cens_date_var = "cens_date_antidiab_start_cont")
 
 # To double-check
 # df_months %>%
 #   dplyr::select(patient_id, elig_date_t2dm, landmark_date, month, start_date_month, end_date_month,
-#                 exp_bin_treat, cens_date_metfin_start_cont, cens_bin_metfin_start_cont, treat,
+#                 exp_bin_treat, cens_date_antidiab_start_cont, cens_bin_metfin_start_cont, treat,
 #                 cov_date_ami, cov_bin_ami,
 #                 cov_date_hypertension, cov_bin_hypertension,
 #                 cov_date_all_stroke, cov_bin_all_stroke,
 #                 # cov_date, min_start, max_end, event_here, cov_flag_temp
 #   ) %>%
 #   dplyr::filter(!is.na(cov_date_ami)) %>%
-#   dplyr::filter(!is.na(cens_date_metfin_start_cont)) %>%
+#   dplyr::filter(!is.na(cens_date_antidiab_start_cont)) %>%
 #   View()
 
 
@@ -175,15 +175,15 @@ df_ppa <- df_ppa %>%
   select(patient_id, matches("_bmi_|_hba1c_|_chol_|_hdl_chol_"))
 df_treat <- df_months %>% 
   filter(month == 0) %>% 
-  select(patient_id, cens_date_metfin_start_cont)
-# merge the cens_date_metfin_start_cont from df_months to adjust the dummy dates
+  select(patient_id, cens_date_antidiab_start_cont)
+# merge the cens_date_antidiab_start_cont from df_months to adjust the dummy dates
 # if there are patient_id that are in df_ppa but not in df_month (df_treat), then ignore these. Should not be the case in the real data, but is the case in the dummy data due to how the @table_from_file function works
-df_ppa <- right_join(df_ppa, df_treat[, c("cens_date_metfin_start_cont", "patient_id")], by = "patient_id")
+df_ppa <- right_join(df_ppa, df_treat[, c("cens_date_antidiab_start_cont", "patient_id")], by = "patient_id")
 
 # Reshape to long format, easier to work with
 df_ppa_long <- df_ppa %>%
   pivot_longer(
-    cols = c(-patient_id, -cens_date_metfin_start_cont),
+    cols = c(-patient_id, -cens_date_antidiab_start_cont),
     names_to = c(".value", "variable", "instance"),
     names_pattern = "cov_(date|num)_([a-z0-9_]+)_(\\d+)",
     values_drop_na = TRUE
@@ -194,7 +194,7 @@ df_ppa_long <- df_ppa_long %>% arrange(patient_id, variable, date)
 # Modify dummy data
 ## This script modifies dummy data of df_ppa_long to: 
 ## - randomly select 5% of "date" (which is the date variable for all measurements in df_ppa_long)
-## - change them to be very close to cens_date_metfin_start_cont (within 3 days before/after cens_date_metfin_start_cont)
+## - change them to be very close to cens_date_antidiab_start_cont (within 3 days before/after cens_date_antidiab_start_cont)
 ## - this will test edge cases
 print('Modify dummy data')
 if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
@@ -203,7 +203,7 @@ if (Sys.getenv("OPENSAFELY_BACKEND") %in% c("", "expectations")) {
   message("Dummy data successfully modified")
 }
 df_ppa_long <- df_ppa_long %>%
-  select(!cens_date_metfin_start_cont)
+  select(!cens_date_antidiab_start_cont)
 
 # Remove illogical values, see protocol (and data_process.R, same rules/code applied there for baseline)
 df_ppa_long <- df_ppa_long %>%
@@ -232,16 +232,16 @@ df_ppa_long <- df_ppa_long %>%
     variable,
     date,
     num,
-    cens_date_metfin_start_cont
+    cens_date_antidiab_start_cont
   )
 df_ppa_long <- df_ppa_long %>% arrange(patient_id, variable, date)
 
 # Now, if there are several of the same dynamic time-updated covariate events happening in the same interval/month (e.g. HbA1c several times recorded/measured in same month):
-## => carefully choose the relevant one, according to the following rules, taking our treatment information change/update variable (cens_date_metfin_start_cont) into account: 
-### a) If cov_date is in same interval as cens_date_metfin_start_cont and cov_date > cens_date_metfin_start_cont, then flag the one closest to end_date_month to be moved to the next month (and discard the others that are in same interval as cens_date_metfin_start_cont & with cov_date > cens_date_metfin_start_cont)
-### b) If cov_date is in same interval as cens_date_metfin_start_cont and cov_date <= cens_date_metfin_start_cont, then flag the one on or closest to cens_date_metfin_start_cont to keep (and discard the others that are also in same interval as cens_date_metfin_start_cont & cov_date <= cens_date_metfin_start_cont)
-#### If at the same time, there were also cov_date > cens_date_metfin_start_cont in same interval, they will have been dealt with in rule (a) already
-### c) If cov_date is not in same interval as cens_date_metfin_start_cont, then flag the one closest to end_date_month to be moved to the next month (and discard all others)
+## => carefully choose the relevant one, according to the following rules, taking our treatment information change/update variable (cens_date_antidiab_start_cont) into account: 
+### a) If cov_date is in same interval as cens_date_antidiab_start_cont and cov_date > cens_date_antidiab_start_cont, then flag the one closest to end_date_month to be moved to the next month (and discard the others that are in same interval as cens_date_antidiab_start_cont & with cov_date > cens_date_antidiab_start_cont)
+### b) If cov_date is in same interval as cens_date_antidiab_start_cont and cov_date <= cens_date_antidiab_start_cont, then flag the one on or closest to cens_date_antidiab_start_cont to keep (and discard the others that are also in same interval as cens_date_antidiab_start_cont & cov_date <= cens_date_antidiab_start_cont)
+#### If at the same time, there were also cov_date > cens_date_antidiab_start_cont in same interval, they will have been dealt with in rule (a) already
+### c) If cov_date is not in same interval as cens_date_antidiab_start_cont, then flag the one closest to end_date_month to be moved to the next month (and discard all others)
 ### d) Then, shift all covariate info flagged as "move" to the next month, while keeping all flagged as "keep" in the original month
 
 ##### Then, deal with edge cases: 
@@ -257,7 +257,7 @@ df_ppa_long <- fn_assign_dynamic_tu_cov(data = df_ppa_long,
                                          patient_id_col = patient_id,
                                          variable_col = variable,
                                          date_col = date,
-                                         treat_date_col = cens_date_metfin_start_cont,
+                                         treat_date_col = cens_date_antidiab_start_cont,
                                          month_col = month,
                                          start_date_col = start_date_month,
                                          end_date_col = end_date_month)
@@ -282,7 +282,7 @@ df_ppa_wide <- df_ppa_long %>%
   # The instance column ensures that each measurement gets its own row (i.e. if there are several measurements of the same measure in the same month)
   # We need to remove start_date_month, end_date_month, otherwise it creates two rows (because the dates can now be different, we rely solely on new_month!)
   pivot_wider(
-    id_cols = c(patient_id, new_month, cens_date_metfin_start_cont, instance),
+    id_cols = c(patient_id, new_month, cens_date_antidiab_start_cont, instance),
     names_from = variable,
     values_from = c(date, num),
     names_glue = "cov_{.value}_{variable}"
@@ -307,7 +307,7 @@ print('Merge and assign the dynamic time-updated covariates covariates from df_p
 df_ppa_wide <- df_ppa_wide %>%
   rename(month = new_month)
 df_ppa_wide <- df_ppa_wide %>%
-  select(!cens_date_metfin_start_cont) # take out the cens_date (otherwise, duplicate variables)
+  select(!cens_date_antidiab_start_cont) # take out the cens_date (otherwise, duplicate variables)
 
 # CAVE: due to new_month, it could be that we reach beyond max follow-up => ignore such rows for merging
 df_months <- df_months %>%
@@ -484,7 +484,7 @@ df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
 #                 cens_date_ltfu_afterlandmark,
 #                 out_date_death_afterlandmark,
 #                 out_date_covid_afterlandmark,
-#                 cens_date_metfin_start_cont,
+#                 cens_date_antidiab_start_cont,
 #                 out_date_longcovid_virfat_afterlandmark,
 #                 cov_num_tc_hdl_ratio, cov_cat_tc_hdl_ratio,
 #                 cov_num_chol, cov_num_hdl_chol,
@@ -496,7 +496,7 @@ df_months_severecovid <- fn_add_and_shift_out_comp_cens_events(df_months,
 #   # dplyr::filter(!is.na(out_date_severecovid_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(out_date_noncoviddeath_afterlandmark)) %>%
 #   # dplyr::filter(!is.na(cens_date_ltfu_afterlandmark)) %>%
-#   # dplyr::filter(!is.na(cens_date_metfin_start_cont)) %>%
+#   # dplyr::filter(!is.na(cens_date_antidiab_start_cont)) %>%
 #   # dplyr::filter(is.na(censor_LTFU)) %>% # should be empty
 #   View()
 
