@@ -138,7 +138,7 @@ if (anyNA(coef_summary[, "Estimate"])) {
 df_months_severecovid$treat_denom <- predict(treat.denom, df_months_severecovid, type = "response")
 
 ## Numerator model: probability of treatment given past treatment history only (and time modelling element)
-treat_num_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr"))
+treat_num_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr + cov_cat_hba1c"))
 treat.num <- parglm(treat_num_formula,
                      family = binomial(link = 'logit'),
                      data = df_months_severecovid)
@@ -175,9 +175,9 @@ summary(df_months_severecovid$w_treat_stab_trunc)
 ## Fit the outcome model -------
 print('Adjust for baseline confounding and time-varying protocol deviation using one time-varying IPTW model: Fit the outcome model')
 outcome_formula <- if (include_interaction) {
-  as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
+  as.formula("outcome ~ exp_bin_treat + cov_cat_hba1c + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
 } else {
-  as.formula("outcome ~ exp_bin_treat + month + monthsqr")
+  as.formula("outcome ~ exp_bin_treat + cov_cat_hba1c + month + monthsqr")
 }
 treat.severecovid <- parglm(outcome_formula,
                             family = binomial(link = 'logit'),
@@ -222,6 +222,44 @@ plot_cum_risk_treat_severecovid <- ggplot(cum_risk_treat_severecovid$graph_data,
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank())+
+  scale_color_manual(values=c("#E7B800","#2E9FDF"),
+                     breaks=c('No Metformin', 'Metformin'))
+
+## Fit the outcome model: treatment weights only, UNTRUNCATED -------
+treat.severecovid_untrunc <- parglm(outcome_formula,
+                                    family = binomial(link = 'logit'),
+                                    data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
+                                    weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_stab)
+coef_summary <- summary(treat.severecovid_untrunc)$coefficients
+if (anyNA(coef_summary[, "Estimate"])) {
+  warning("Some coefficient estimates from treat.severecovid_untrunc are NA!")
+}
+
+cum_risk_treat_severecovid_untrunc <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = treat.severecovid_untrunc,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id",
+  min_count = threshold,
+  apply_rounding = TRUE
+)
+
+plot_cum_risk_treat_severecovid_untrunc <- ggplot(cum_risk_treat_severecovid_untrunc$graph_data,
+                                                   aes(x=time_0, y=risk)) +
+  geom_line(aes(y = risk1, color = "Metformin"), linewidth = 1.5) +
+  geom_line(aes(y = risk0, color = "No Metformin"), linewidth = 1.5) +
+  xlab("Months") +
+  ylab("Cumulative Incidence (%)") +
+  theme_minimal() +
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
   scale_color_manual(values=c("#E7B800","#2E9FDF"),
                      breaks=c('No Metformin', 'Metformin'))
 
@@ -342,6 +380,55 @@ plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_severecovid$g
                 color = "Metformin"), linewidth = 1.5) +
   geom_line(aes(y = risk0,
                 color = "No Metformin"), linewidth = 1.5) +
+  xlab("Months") +
+  ylab("Cumulative Incidence (%)") +
+  theme_minimal() +
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(values=c("#E7B800","#2E9FDF"),
+                     breaks=c('No Metformin', 'Metformin'))
+
+
+## Fit the outcome model: treatment + LTFU weights, UNTRUNCATED -------
+print('Fit outcome model: treatment + LTFU weights, untruncated')
+severecovid.treat.ltfu_untrunc <- parglm(outcome_formula,
+                                          family = binomial(link = 'logit'),
+                                          data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
+                                          weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_stab)
+coef_summary <- summary(severecovid.treat.ltfu_untrunc)$coefficients
+if (anyNA(coef_summary[, "Estimate"])) {
+  warning("Some severecovid.treat.ltfu_untrunc coefficient estimates are NA!")
+}
+
+hr_point_no_comp_untrunc <- if (include_interaction) {
+  exp(coef(severecovid.treat.ltfu_untrunc)["exp_bin_treat"] +
+      coef(severecovid.treat.ltfu_untrunc)["I(exp_bin_treat * month)"] * K +
+      coef(severecovid.treat.ltfu_untrunc)["I(exp_bin_treat * monthsqr)"] * K^2)
+} else {
+  exp(coef(severecovid.treat.ltfu_untrunc)["exp_bin_treat"])
+}
+cat(sprintf("Point estimate HR at %d months (LTFU-adjusted, untruncated): %.4f\n", K, hr_point_no_comp_untrunc))
+
+cum_risk_treat_ltfu_severecovid_untrunc <- fn_standardize_risks(
+  df = df_months_severecovid,
+  K = K,
+  model = severecovid.treat.ltfu_untrunc,
+  group_col = "exp_bin_treat",
+  time_col = "month",
+  patient_id_col = "patient_id",
+  min_count = threshold,
+  apply_rounding = TRUE
+)
+
+plot_cum_risk_treat_ltfu_severecovid_untrunc <- ggplot(cum_risk_treat_ltfu_severecovid_untrunc$graph_data,
+                                                        aes(x=time_0, y=risk)) +
+  geom_line(aes(y = risk1, color = "Metformin"), linewidth = 1.5) +
+  geom_line(aes(y = risk0, color = "No Metformin"), linewidth = 1.5) +
   xlab("Months") +
   ylab("Cumulative Incidence (%)") +
   theme_minimal() +
@@ -531,7 +618,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     d$treat_denom <- predict(treat.denom, d, type = "response")
     
     # Numerator model
-    treat_num_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr"))
+    treat_num_formula <- as.formula(paste("I(treat == 1) ~ treat_lag + month + monthsqr + cov_cat_hba1c"))
     treat.num <- parglm(treat_num_formula,
                         family = binomial(link = 'logit'),
                         data = d)
@@ -648,11 +735,11 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
     # If "I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)" is excluded, then it mirrors the cox model
     outcome_formula <- if (include_interaction) {
-      as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
+      as.formula("outcome ~ exp_bin_treat + cov_cat_hba1c + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
     } else {
-      as.formula("outcome ~ exp_bin_treat + month + monthsqr")
+      as.formula("outcome ~ exp_bin_treat + cov_cat_hba1c + month + monthsqr")
     }
-    
+
     severecovid.treat.ltfu <- parglm(outcome_formula,
                                           family = binomial(link = 'logit'),
                                           data = d[d$censor_LTFU==0 & d$comp_event == 0,],
@@ -663,7 +750,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     }
     
     
-    ### (7) Standardization/Marginalization
+    ### (7) Standardization/Marginalization — truncated
     results_std <- fn_standardize_risks(
       df = d,
       K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, i.e., start at month == 0, initial zero row added => Final estimate in K-1
@@ -674,7 +761,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       min_count = threshold,
       apply_rounding = FALSE
     )
-    
+
     hr_at_K <- if (include_interaction) {
       exp(coef(severecovid.treat.ltfu)["exp_bin_treat"] +
           coef(severecovid.treat.ltfu)["I(exp_bin_treat * month)"] * K +
@@ -683,20 +770,45 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       exp(coef(severecovid.treat.ltfu)["exp_bin_treat"])
     }
 
-    return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr, hr_at_K))
+    ### (8) Outcome model and standardization — untruncated
+    severecovid.treat.ltfu_untrunc <- parglm(outcome_formula,
+                                              family = binomial(link = 'logit'),
+                                              data = d[d$censor_LTFU==0 & d$comp_event == 0,],
+                                              weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_stab)
+    coef_summary <- summary(severecovid.treat.ltfu_untrunc)$coefficients
+    if (anyNA(coef_summary[, "Estimate"])) {
+      warning("Some severecovid.treat.ltfu_untrunc coefficient estimates are NA!")
+    }
+
+    results_std_untrunc <- fn_standardize_risks(
+      df = d,
+      K = K,
+      model = severecovid.treat.ltfu_untrunc,
+      group_col = "exp_bin_treat",
+      time_col = "month",
+      patient_id_col = "boot_patient_id",
+      min_count = threshold,
+      apply_rounding = FALSE
+    )
+
+    hr_at_K_untrunc <- if (include_interaction) {
+      exp(coef(severecovid.treat.ltfu_untrunc)["exp_bin_treat"] +
+          coef(severecovid.treat.ltfu_untrunc)["I(exp_bin_treat * month)"] * K +
+          coef(severecovid.treat.ltfu_untrunc)["I(exp_bin_treat * monthsqr)"] * K^2)
+    } else {
+      exp(coef(severecovid.treat.ltfu_untrunc)["exp_bin_treat"])
+    }
+
+    # Return truncated block followed by untruncated block (each: risk0, risk1, rd, rr, hr = 4*(K+1)+1 values)
+    return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr, hr_at_K,
+             results_std_untrunc$graph_data$risk0, results_std_untrunc$graph_data$risk1, results_std_untrunc$graph_data$rd, results_std_untrunc$graph_data$rr, hr_at_K_untrunc))
 
   }, error = function(e) {
     # If any error occurs, count as a failed bootstrap
     cat("Bootstrap sample failed due to:", conditionMessage(e), "\n")
     boot_failures <<- boot_failures + 1
-    # Check if results_std$graph_data is available before attempting to get its length
-    if(exists("results_std") && !is.null(results_std$graph_data)) {
-      return(rep(NA, length(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr)) + 1))
-    } else {
-      # If not, return NA values of a default length
-      # return 4 * (K + 1) + 1, not 4 * K, see explanation below
-      return(rep(NA, 4 * (K + 1) + 1)) # 4 metrics (risk0, risk1, rd, rr) for K time points + 1 HR at K
-    }
+    # 2 blocks (truncated + untruncated), each with 4*(K+1)+1 values
+    return(rep(NA, 2 * (4 * (K + 1) + 1)))
   })
 }
 
@@ -717,15 +829,13 @@ te_iptw_ipcw_rd_rr_withCI_severecovid_boot <- boot(
 cat("Number of failed bootstrap samples:", boot_failures, "\n")
 
 ### My bootstrap object contains:
-cat(sprintf("Number of statistics per sample (risk0, risk1, RR, RD, HR): %d\n",
+cat(sprintf("Number of statistics per sample (truncated + untruncated): %d\n",
             ncol(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t)))
-# 101 values per bootstrap sample, i.e., 4 * (K + 1) + 1 values per bootstrap sample = 101 for K = 24
-# Indices: risk0 (1-25), risk1 (26-50), rd (51-75), rr (76-100), hr_at_K (101), i.e., risk0 (1 to K+1), risk1 (K+2 to 2*(K+1)), rd (2*(K+1)+1 to 3*(K+1)), rr (3*(K+1)+1 to 4*(K+1)), hr (4*(K+1)+1)
-# Row 1: month = 0 (zero row, time_0 = 1; from zero_row, see fn_standardize_risks)
-# Row 2: month = 0 (time_0 = 1; from risk_summary, see fn_standardize_risks)
-# Row 3: month = 1 (time_0 = 2)
-# Row 25: month = 23 (time_0 = 24)
-# So there are K+1 = 25 rows (1 zero_row + 24 monthly rows for months 0 to 23). The final month of interest is K-1 = 23, which sits at row index K+1 = 25 within each block.
+# 202 values per bootstrap sample = 2 * (4*(K+1)+1) for K = 24 (two blocks: truncated then untruncated)
+# Block size blk = 4*(K+1)+1 = 101 for K = 24
+# Truncated block (cols 1:blk):   risk0 (1:K+1), risk1 (K+2:2*(K+1)), rd (2*(K+1)+1:3*(K+1)), rr (3*(K+1)+1:4*(K+1)), hr (4*(K+1)+1)
+# Untruncated block (cols blk+1:2*blk): same layout offset by blk
+# Within each block: row 1 = month 0 zero-row, row 2 = month 0, row K+1 = month K-1 = 23
 
 ### Extract the risks and RR and RD for all time points
 mean_risk0 <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, 1:(K+1)], 2, mean, na.rm = TRUE) # Mean for control group (first half contains risk0) 1:25 correctly extracts all 25 values (months 0-23) for control
@@ -748,7 +858,27 @@ hr_col <- 4 * (K + 1) + 1
 mean_hr <- mean(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], na.rm = TRUE)
 ll_hr   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], 0.025, na.rm = TRUE)
 ul_hr   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col], 0.975, na.rm = TRUE)
-cat(sprintf("Bootstrap HR at %d months: %.4f (95%% CI: %.4f - %.4f)\n", K, mean_hr, ll_hr, ul_hr))
+cat(sprintf("Bootstrap HR at %d months (truncated): %.4f (95%% CI: %.4f - %.4f)\n", K, mean_hr, ll_hr, ul_hr))
+
+### Extract untruncated results (second block, offset by blk)
+blk <- 4 * (K + 1) + 1
+mean_risk0_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+1):(blk+K+1)], 2, mean, na.rm = TRUE)
+mean_risk1_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+K+2):(blk+2*(K+1))], 2, mean, na.rm = TRUE)
+ll_risk0_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+1):(blk+K+1)], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_risk0_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+1):(blk+K+1)], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
+ll_risk1_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+K+2):(blk+2*(K+1))], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_risk1_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+K+2):(blk+2*(K+1))], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
+mean_rd_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+2*(K+1)+1):(blk+3*(K+1))], 2, mean, na.rm = TRUE)
+mean_rr_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+3*(K+1)+1):(blk+4*(K+1))], 2, mean, na.rm = TRUE)
+ll_rd_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+2*(K+1)+1):(blk+3*(K+1))], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_rd_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+2*(K+1)+1):(blk+3*(K+1))], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
+ll_rr_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+3*(K+1)+1):(blk+4*(K+1))], 2, function(x) quantile(x, 0.025, na.rm = TRUE))
+ul_rr_untrunc <- apply(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, (blk+3*(K+1)+1):(blk+4*(K+1))], 2, function(x) quantile(x, 0.975, na.rm = TRUE))
+hr_col_untrunc <- 2 * blk
+mean_hr_untrunc <- mean(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col_untrunc], na.rm = TRUE)
+ll_hr_untrunc   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col_untrunc], 0.025, na.rm = TRUE)
+ul_hr_untrunc   <- quantile(te_iptw_ipcw_rd_rr_withCI_severecovid_boot$t[, hr_col_untrunc], 0.975, na.rm = TRUE)
+cat(sprintf("Bootstrap HR at %d months (untruncated): %.4f (95%% CI: %.4f - %.4f)\n", K, mean_hr_untrunc, ll_hr_untrunc, ul_hr_untrunc))
 
 # Single unified output table
 # Risks (mean.0, mean.1) and their CIs are rounded via fn_round_prop so that reviewers can verify against denom that no proportion masks a small count.
@@ -758,6 +888,7 @@ denom_rounded <- fn_roundmid_any(length(unique(df_months_severecovid$patient_id)
 risk_graph <- data.frame(
   time = 0:K,
   denom_midpoint6 = denom_rounded,
+  # Truncated weights
   mean.0_midpoint6 = fn_round_prop(mean_risk0),
   ll.0_midpoint6 = fn_round_prop(ll_risk0),
   ul.0_midpoint6 = fn_round_prop(ul_risk0),
@@ -772,11 +903,29 @@ risk_graph <- data.frame(
   ul.rr = ul_rr,
   orig_risk.0_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk0,
   orig_risk.1_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk1,
-  # HR at K months (model-based OR from PLR, approximating Cox HR): populated only at time == K, NA elsewhere
   point_hr = ifelse(0:K == K, hr_point_no_comp, NA_real_),
   mean_hr  = ifelse(0:K == K, mean_hr, NA_real_),
   ll_hr    = ifelse(0:K == K, ll_hr, NA_real_),
-  ul_hr    = ifelse(0:K == K, ul_hr, NA_real_)
+  ul_hr    = ifelse(0:K == K, ul_hr, NA_real_),
+  # Untruncated weights
+  untrunc_mean.0_midpoint6 = fn_round_prop(mean_risk0_untrunc),
+  untrunc_ll.0_midpoint6 = fn_round_prop(ll_risk0_untrunc),
+  untrunc_ul.0_midpoint6 = fn_round_prop(ul_risk0_untrunc),
+  untrunc_mean.1_midpoint6 = fn_round_prop(mean_risk1_untrunc),
+  untrunc_ll.1_midpoint6 = fn_round_prop(ll_risk1_untrunc),
+  untrunc_ul.1_midpoint6 = fn_round_prop(ul_risk1_untrunc),
+  untrunc_mean.rd = mean_rd_untrunc,
+  untrunc_ll.rd = ll_rd_untrunc,
+  untrunc_ul.rd = ul_rd_untrunc,
+  untrunc_mean.rr = mean_rr_untrunc,
+  untrunc_ll.rr = ll_rr_untrunc,
+  untrunc_ul.rr = ul_rr_untrunc,
+  untrunc_orig_risk.0_midpoint6 = cum_risk_treat_ltfu_severecovid_untrunc$graph_data$risk0,
+  untrunc_orig_risk.1_midpoint6 = cum_risk_treat_ltfu_severecovid_untrunc$graph_data$risk1,
+  untrunc_point_hr = ifelse(0:K == K, hr_point_no_comp_untrunc, NA_real_),
+  untrunc_mean_hr  = ifelse(0:K == K, mean_hr_untrunc, NA_real_),
+  untrunc_ll_hr    = ifelse(0:K == K, ll_hr_untrunc, NA_real_),
+  untrunc_ul_hr    = ifelse(0:K == K, ul_hr_untrunc, NA_real_)
 )
 
 # Create plot
@@ -809,6 +958,25 @@ plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(risk_graph,
                "Metformin" = "#2E9FDF")
   )
 
+# Untruncated CI plot
+plot_cum_risk_treat_ltfu_ci_severecovid_untrunc <- ggplot(risk_graph, aes(x=time)) +
+  geom_line(aes(y = untrunc_mean.1_midpoint6, color = "Metformin"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = untrunc_ll.1_midpoint6, ymax = untrunc_ul.1_midpoint6, fill = "Metformin"), alpha = 0.4) +
+  geom_line(aes(y = untrunc_mean.0_midpoint6, color = "No Metformin"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = untrunc_ll.0_midpoint6, ymax = untrunc_ul.0_midpoint6, fill = "No Metformin"), alpha = 0.4) +
+  xlab("Months") +
+  ylab("Cumulative Incidence (%)") +
+  theme_minimal() +
+  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(name = "", values = c("No Metformin" = "#E7B800", "Metformin" = "#2E9FDF")) +
+  scale_fill_manual(name = "", values = c("No Metformin" = "#E7B800", "Metformin" = "#2E9FDF"))
+
 
 # Save output -------------------------------------------------------------
 print('Save output')
@@ -817,15 +985,24 @@ ggsave(filename = here::here("output", "te", "pooled_log_reg",
                              paste0("plot_cum_risk_treat_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_severecovid_untrunc", output_suffix, ".png")),
+       plot_cum_risk_treat_severecovid_untrunc, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
                              paste0("plot_cum_risk_treat_ltfu_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_ltfu_severecovid_untrunc", output_suffix, ".png")),
+       plot_cum_risk_treat_ltfu_severecovid_untrunc, width = 20, height = 20, units = "cm")
 # ggsave(filename = here::here("output", "te", "pooled_log_reg",
 #                              paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")),
 #        plot_cum_risk_treat_ltfu_comp_severecovid, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "te", "pooled_log_reg", 
-                             paste0("plot_cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".png")), 
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_ltfu_ci_severecovid, width = 20, height = 20, units = "cm")
-# Disclosure-safe dataset, from which we can read out the final 24-month results, too
+ggsave(filename = here::here("output", "te", "pooled_log_reg",
+                             paste0("plot_cum_risk_treat_ltfu_ci_severecovid_untrunc", output_suffix, ".png")),
+       plot_cum_risk_treat_ltfu_ci_severecovid_untrunc, width = 20, height = 20, units = "cm")
+# Disclosure-safe dataset with both truncated and untruncated results
 write.csv(risk_graph,
           file = here::here("output", "te", "pooled_log_reg",
                             paste0("cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".csv")),
