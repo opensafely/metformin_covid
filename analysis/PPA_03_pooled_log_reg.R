@@ -773,7 +773,7 @@ risk_graph <- data.frame(
   orig_risk.0_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk0,
   orig_risk.1_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk1,
   # HR at K months (model-based OR from PLR, approximating Cox HR): populated only at time == K, NA elsewhere
-  point_hr = ifelse(0:K == K, hr_point, NA_real_),
+  point_hr = ifelse(0:K == K, hr_point_no_comp, NA_real_),
   mean_hr  = ifelse(0:K == K, mean_hr, NA_real_),
   ll_hr    = ifelse(0:K == K, ll_hr, NA_real_),
   ul_hr    = ifelse(0:K == K, ul_hr, NA_real_)
