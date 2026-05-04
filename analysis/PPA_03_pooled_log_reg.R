@@ -266,8 +266,10 @@ df_months_severecovid <- df_months_severecovid %>%
   ungroup()
 summary(df_months_severecovid$w_ltfu_stab)
 
-## Product of treatment and LTFU weights only (no competing event)
+## Take the product of the two (untruncated) weights -----------
 df_months_severecovid$w_treat_ltfu_stab <- df_months_severecovid$w_treat_stab * df_months_severecovid$w_ltfu_stab
+
+## Truncate the final stabilized weight at the 1st and 99th percentile ------
 df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_ltfu_stab")
 summary(df_months_severecovid$w_treat_ltfu_stab)
 summary(df_months_severecovid$w_treat_ltfu_stab_trunc)
@@ -298,7 +300,7 @@ censoring_ltfu_weights <- df_months_severecovid %>%
     max_w = max(w_ltfu_stab, na.rm = TRUE)
   )
 
-## Outcome model: treatment + LTFU weights only (no competing event adjustment) -------
+## Fit the outcome model: treatment + LTFU weights only (no competing event adjustment) -------
 print('Fit outcome model: treatment + LTFU weights, no competing event adjustment')
 severecovid.treat.ltfu <- parglm(outcome_formula,
                                   family = binomial(link = 'logit'),
@@ -308,6 +310,8 @@ coef_summary <- summary(severecovid.treat.ltfu)$coefficients
 if (anyNA(coef_summary[, "Estimate"])) {
   warning("Some severecovid.treat.ltfu coefficient estimates are NA!")
 }
+
+## Point estimate of HR at K months -------
 hr_point_no_comp <- if (include_interaction) {
   exp(coef(severecovid.treat.ltfu)["exp_bin_treat"] +
       coef(severecovid.treat.ltfu)["I(exp_bin_treat * month)"] * K +
@@ -352,149 +356,147 @@ plot_cum_risk_treat_ltfu_severecovid <- ggplot(cum_risk_treat_ltfu_severecovid$g
                      breaks=c('No Metformin', 'Metformin'))
 
 
-# Adjust additionally for time-varying competing risk (non-covid deaths) ----------
-
-## Build the weights -------
-print('Adjust additionally for time-varying competing risk (non-covid deaths)')
-## We want to use IPW also for the competing risk non-covid deaths, i.e. "the effect had no one died to other causes than covid-19"
-## Informally, an uncensored individuals' inverse probability of censoring weight is the inverse of their probability of remaining uncensored given their treatment and covariate history. 
-## Once an individual is censored, they receive a censoring weight of 0 from that point onward. 
-comp_denom_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr +", paste(covariates_tv_names, collapse = " + ")))
-comp.denom <- parglm(comp_denom_formula, 
-                     family = binomial(link = 'logit'),
-                     data = df_months_severecovid) 
-coef_summary <- summary(comp.denom)$coefficients
-if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some comp.denom coefficient estimates are NA!")
-}
-df_months_severecovid$comp_denom <- predict(comp.denom, df_months_severecovid, type="response")
-
-## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any covariates
-comp_num_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr"))
-comp.num <- parglm(comp_num_formula, 
-                   family = binomial(link = 'logit'),
-                   data = df_months_severecovid) 
-coef_summary <- summary(comp.num)$coefficients
-if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some comp.num coefficient estimates are NA!")
-}
-df_months_severecovid$comp_num <- predict(comp.num, df_months_severecovid, type="response")
-
-## Estimate stabilized inverse probability weights for censoring
-## Take cumulative products starting at baseline
-df_months_severecovid <- df_months_severecovid %>%
-  group_by(patient_id) %>%
-  arrange(month, .by_group = TRUE) %>%
-  mutate(
-    w_comp_stab = cumprod(comp_num/comp_denom),
-    w_comp_stab = ifelse(cummax(comp_event) == 1, 0, w_comp_stab)
-  ) %>% 
-  ungroup()
-summary(df_months_severecovid$w_comp_stab)
-
-## Investigate the censoring-for-competing risk a bit more
-censoring_comp_rates <- df_months_severecovid %>%
-  group_by(month) %>%
-  summarise(censor_comp_rate = mean(comp_event, na.rm = TRUE), .groups="drop") %>%
-  mutate(
-    censor_comp_rate_pct = round(censor_comp_rate * 100, 2),
-    cum_censor_comp_rate = cumsum(censor_comp_rate),
-    cum_censor_comp_rate_pct = round(cum_censor_comp_rate * 100, 2)
-  )
-plot_censoring_comp <- ggplot(censoring_comp_rates, aes(x = month)) +
-  geom_line(aes(y = censor_comp_rate_pct), color = "blue") +
-  geom_point(aes(y = censor_comp_rate_pct), color = "blue") +
-  geom_line(aes(y = cum_censor_comp_rate_pct), color = "red") +
-  geom_point(aes(y = cum_censor_comp_rate_pct), color = "red") +
-  ylab("Censoring for competing risk (%)") +
-  xlab("Month") +
-  theme_minimal() +
-  ggtitle("Monthly (blue) and cumulative (red) competing risk censoring rate")
-censoring_comp_weights <- df_months_severecovid %>%
-  group_by(month) %>%
-  summarise(
-    mean_w = mean(w_comp_stab, na.rm = TRUE),
-    sd_w = sd(w_comp_stab, na.rm = TRUE),
-    max_w = max(w_comp_stab, na.rm = TRUE)
-  )
-
-
-
-# Take the product of all 3 (untruncated) weights -----------
-print('Take the product of all (untruncated) weights')
-df_months_severecovid$w_treat_ltfu_comp_stab <- df_months_severecovid$w_treat_stab * df_months_severecovid$w_ltfu_stab * df_months_severecovid$w_comp_stab
-
-## Truncate the final stabilized weight at the 1st and 99th percentile ------
-print('Truncate the final stabilized weight at the 1st and 99th percentile')
-df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_ltfu_comp_stab")
-
-## Min, 25th percentile, median, mean, SD, 75th percentile, and max
-summary(df_months_severecovid$w_treat_ltfu_comp_stab)
-summary(df_months_severecovid$w_treat_ltfu_comp_stab_trunc)
-
-
-
-# Fit the outcome model -----------
-print('Adjust additionally for time-varying LTFU: Fit the outcome model')
-# Fit pooled logistic regression, with stabilized weights for IPTW and IPCW (both for PPA and LTFU)
-# Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
-outcome_formula <- if (include_interaction) {
-  as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
-} else {
-  as.formula("outcome ~ exp_bin_treat + month + monthsqr")
-}
-severecovid.treat.ltfu.comp <- parglm(outcome_formula, 
-                                family = binomial(link = 'logit'),
-                                data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
-                                weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
-coef_summary <- summary(severecovid.treat.ltfu.comp)$coefficients
-if (anyNA(coef_summary[, "Estimate"])) {
-  warning("Some severecovid.treat.ltfu.comp (incl. PPA and LTFU censoring and Comp censoring) coefficient estimates are NA!")
-}
-
-## Point estimate of HR at K months -------
-hr_point <- if (include_interaction) {
-  exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"] +
-      coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * month)"] * K +
-      coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * monthsqr)"] * K^2)
-} else {
-  exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"])
-}
-cat(sprintf("Point estimate HR at %d months: %.4f\n", K, hr_point))
-
-## Standardization -------
-print('Adjust additionally for time-varying LTFU: Standardization')
-cum_risk_treat_ltfu_comp_severecovid <- fn_standardize_risks(
-  df = df_months_severecovid,
-  K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, initial zero row added => Final estimate in K-1
-  model = severecovid.treat.ltfu.comp,
-  group_col = "exp_bin_treat",
-  time_col = "month",
-  patient_id_col = "patient_id",
-  min_count = threshold,
-  apply_rounding = TRUE
-)
-
-## Construct marginal parametric cumulative incidence (risk) curves (without CIs) -------
-print('Adjust additionally for time-varying LTFU and competing risk: Plot')
-plot_cum_risk_treat_ltfu_comp_severecovid <- ggplot(cum_risk_treat_ltfu_comp_severecovid$graph_data,
-                                                   aes(x=time_0, y=risk)) + 
-  geom_line(aes(y = risk1, 
-                color = "Metformin"), linewidth = 1.5) +
-  geom_line(aes(y = risk0,
-                color = "No Metformin"), linewidth = 1.5) +
-  xlab("Months") +
-  ylab("Cumulative Incidence (%)") + 
-  theme_minimal()+ # set plot theme elements
-  theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
-        axis.line = element_line(colour = "black"),
-        legend.title = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid.major.y = element_blank())+
-  scale_color_manual(values=c("#E7B800","#2E9FDF"),
-                     breaks=c('No Metformin', 'Metformin'))
+# # Adjust additionally for time-varying competing risk (non-covid deaths) ----------
+# 
+### Build the weights -------
+# print('Adjust additionally for time-varying competing risk (non-covid deaths)')
+# ## We want to use IPW also for the competing risk non-covid deaths, i.e. "the effect had no one died to other causes than covid-19"
+# ## Informally, an uncensored individuals' inverse probability of censoring weight is the inverse of their probability of remaining uncensored given their treatment and covariate history. 
+# ## Once an individual is censored, they receive a censoring weight of 0 from that point onward. 
+# comp_denom_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr +", paste(covariates_tv_names, collapse = " + ")))
+# comp.denom <- parglm(comp_denom_formula, 
+#                      family = binomial(link = 'logit'),
+#                      data = df_months_severecovid) 
+# coef_summary <- summary(comp.denom)$coefficients
+# if (anyNA(coef_summary[, "Estimate"])) {
+#   warning("Some comp.denom coefficient estimates are NA!")
+# }
+# df_months_severecovid$comp_denom <- predict(comp.denom, df_months_severecovid, type="response")
+# 
+# ## For the numerator we now fit a model to include the time-varying aspect of the weights - but without any covariates
+# comp_num_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr"))
+# comp.num <- parglm(comp_num_formula, 
+#                    family = binomial(link = 'logit'),
+#                    data = df_months_severecovid) 
+# coef_summary <- summary(comp.num)$coefficients
+# if (anyNA(coef_summary[, "Estimate"])) {
+#   warning("Some comp.num coefficient estimates are NA!")
+# }
+# df_months_severecovid$comp_num <- predict(comp.num, df_months_severecovid, type="response")
+# 
+# ## Estimate stabilized inverse probability weights for censoring
+# ## Take cumulative products starting at baseline
+# df_months_severecovid <- df_months_severecovid %>%
+#   group_by(patient_id) %>%
+#   arrange(month, .by_group = TRUE) %>%
+#   mutate(
+#     w_comp_stab = cumprod(comp_num/comp_denom),
+#     w_comp_stab = ifelse(cummax(comp_event) == 1, 0, w_comp_stab)
+#   ) %>% 
+#   ungroup()
+# summary(df_months_severecovid$w_comp_stab)
+# 
+# ## Investigate the censoring-for-competing risk a bit more
+# censoring_comp_rates <- df_months_severecovid %>%
+#   group_by(month) %>%
+#   summarise(censor_comp_rate = mean(comp_event, na.rm = TRUE), .groups="drop") %>%
+#   mutate(
+#     censor_comp_rate_pct = round(censor_comp_rate * 100, 2),
+#     cum_censor_comp_rate = cumsum(censor_comp_rate),
+#     cum_censor_comp_rate_pct = round(cum_censor_comp_rate * 100, 2)
+#   )
+# plot_censoring_comp <- ggplot(censoring_comp_rates, aes(x = month)) +
+#   geom_line(aes(y = censor_comp_rate_pct), color = "blue") +
+#   geom_point(aes(y = censor_comp_rate_pct), color = "blue") +
+#   geom_line(aes(y = cum_censor_comp_rate_pct), color = "red") +
+#   geom_point(aes(y = cum_censor_comp_rate_pct), color = "red") +
+#   ylab("Censoring for competing risk (%)") +
+#   xlab("Month") +
+#   theme_minimal() +
+#   ggtitle("Monthly (blue) and cumulative (red) competing risk censoring rate")
+# censoring_comp_weights <- df_months_severecovid %>%
+#   group_by(month) %>%
+#   summarise(
+#     mean_w = mean(w_comp_stab, na.rm = TRUE),
+#     sd_w = sd(w_comp_stab, na.rm = TRUE),
+#     max_w = max(w_comp_stab, na.rm = TRUE)
+#   )
+# 
+# 
+# ## Take the product of all 3 (untruncated) weights -----------
+# print('Take the product of all (untruncated) weights')
+# df_months_severecovid$w_treat_ltfu_comp_stab <- df_months_severecovid$w_treat_stab * df_months_severecovid$w_ltfu_stab * df_months_severecovid$w_comp_stab
+# 
+# ## Truncate the final stabilized weight at the 1st and 99th percentile ------
+# print('Truncate the final stabilized weight at the 1st and 99th percentile')
+# df_months_severecovid <- fn_truncate_by_percentile(df = df_months_severecovid, col_name = "w_treat_ltfu_comp_stab")
+# 
+# ## Min, 25th percentile, median, mean, SD, 75th percentile, and max
+# summary(df_months_severecovid$w_treat_ltfu_comp_stab)
+# summary(df_months_severecovid$w_treat_ltfu_comp_stab_trunc)
+# 
+# 
+# ## Fit the outcome model -----------
+# print('Adjust additionally for time-varying LTFU: Fit the outcome model')
+# # Fit pooled logistic regression, with stabilized weights for IPTW and IPCW (both for PPA and LTFU)
+# # Train the model only on individuals who were still at risk of the outcome, i.e. only include individuals who are uncensored and alive
+# outcome_formula <- if (include_interaction) {
+#   as.formula("outcome ~ exp_bin_treat + month + monthsqr + I(exp_bin_treat*month) + I(exp_bin_treat*monthsqr)")
+# } else {
+#   as.formula("outcome ~ exp_bin_treat + month + monthsqr")
+# }
+# severecovid.treat.ltfu.comp <- parglm(outcome_formula, 
+#                                 family = binomial(link = 'logit'),
+#                                 data = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,],
+#                                 weights = df_months_severecovid[df_months_severecovid$censor_LTFU==0 & df_months_severecovid$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
+# coef_summary <- summary(severecovid.treat.ltfu.comp)$coefficients
+# if (anyNA(coef_summary[, "Estimate"])) {
+#   warning("Some severecovid.treat.ltfu.comp (incl. PPA and LTFU censoring and Comp censoring) coefficient estimates are NA!")
+# }
+# 
+# ## Point estimate of HR at K months -------
+# hr_point <- if (include_interaction) {
+#   exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"] +
+#       coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * month)"] * K +
+#       coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * monthsqr)"] * K^2)
+# } else {
+#   exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"])
+# }
+# cat(sprintf("Point estimate HR at %d months: %.4f\n", K, hr_point))
+# 
+# ## Standardization -------
+# print('Adjust additionally for time-varying LTFU: Standardization')
+# cum_risk_treat_ltfu_comp_severecovid <- fn_standardize_risks(
+#   df = df_months_severecovid,
+#   K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, initial zero row added => Final estimate in K-1
+#   model = severecovid.treat.ltfu.comp,
+#   group_col = "exp_bin_treat",
+#   time_col = "month",
+#   patient_id_col = "patient_id",
+#   min_count = threshold,
+#   apply_rounding = TRUE
+# )
+# 
+# ## Construct marginal parametric cumulative incidence (risk) curves (without CIs) -------
+# print('Adjust additionally for time-varying LTFU and competing risk: Plot')
+# plot_cum_risk_treat_ltfu_comp_severecovid <- ggplot(cum_risk_treat_ltfu_comp_severecovid$graph_data,
+#                                                    aes(x=time_0, y=risk)) + 
+#   geom_line(aes(y = risk1, 
+#                 color = "Metformin"), linewidth = 1.5) +
+#   geom_line(aes(y = risk0,
+#                 color = "No Metformin"), linewidth = 1.5) +
+#   xlab("Months") +
+#   ylab("Cumulative Incidence (%)") + 
+#   theme_minimal()+ # set plot theme elements
+#   theme(axis.text = element_text(size=14), legend.position = c(0.2, 0.8),
+#         axis.line = element_line(colour = "black"),
+#         legend.title = element_blank(),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         panel.grid.major.y = element_blank())+
+#   scale_color_manual(values=c("#E7B800","#2E9FDF"),
+#                      breaks=c('No Metformin', 'Metformin'))
 
 
 
@@ -592,51 +594,52 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       ungroup()
     
     
-    ### (3) Calculate IPCW for the competing risk (non-covid death)
-    # Denominator model
-    comp_denom_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr +", paste(covariates_tv_names, collapse = " + ")))
-    comp.denom <- parglm(comp_denom_formula,
-                         family = binomial(link = 'logit'),
-                         data = d)
-    coef_summary <- summary(comp.denom)$coefficients
-    if (anyNA(coef_summary[, "Estimate"])) {
-      warning("Some comp.denom coefficient estimates are NA!")
-    }
-    d$comp_denom <- predict(comp.denom, d, type="response")
-    
-    # Numerator model
-    comp_num_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr"))
-    comp.num <- parglm(comp_num_formula,
-                       family = binomial(link = 'logit'),
-                       data = d)
-    coef_summary <- summary(comp.num)$coefficients
-    if (anyNA(coef_summary[, "Estimate"])) {
-      warning("Some comp.num coefficient estimates are NA!")
-    }
-    d$comp_num <- predict(comp.num, d, type="response")
-    
-    # Cumulative product and ensure correct inverse and censoring behaviour
-    d <- d %>%
-      group_by(boot_patient_id) %>%
-      arrange(month, .by_group = TRUE) %>%
-      mutate(
-        w_comp_stab = cumprod(comp_num/comp_denom),
-        w_comp_stab = ifelse(cummax(comp_event) == 1, 0, w_comp_stab)
-      ) %>% 
-      ungroup()
+    # ### (3) Calculate IPCW for the competing risk (non-covid death)
+    # # Denominator model
+    # comp_denom_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr +", paste(covariates_tv_names, collapse = " + ")))
+    # comp.denom <- parglm(comp_denom_formula,
+    #                      family = binomial(link = 'logit'),
+    #                      data = d)
+    # coef_summary <- summary(comp.denom)$coefficients
+    # if (anyNA(coef_summary[, "Estimate"])) {
+    #   warning("Some comp.denom coefficient estimates are NA!")
+    # }
+    # d$comp_denom <- predict(comp.denom, d, type="response")
+    # 
+    # # Numerator model
+    # comp_num_formula <- as.formula(paste("I(comp_event == 0) ~ treat_lag + month + monthsqr"))
+    # comp.num <- parglm(comp_num_formula,
+    #                    family = binomial(link = 'logit'),
+    #                    data = d)
+    # coef_summary <- summary(comp.num)$coefficients
+    # if (anyNA(coef_summary[, "Estimate"])) {
+    #   warning("Some comp.num coefficient estimates are NA!")
+    # }
+    # d$comp_num <- predict(comp.num, d, type="response")
+    # 
+    # # Cumulative product and ensure correct inverse and censoring behaviour
+    # d <- d %>%
+    #   group_by(boot_patient_id) %>%
+    #   arrange(month, .by_group = TRUE) %>%
+    #   mutate(
+    #     w_comp_stab = cumprod(comp_num/comp_denom),
+    #     w_comp_stab = ifelse(cummax(comp_event) == 1, 0, w_comp_stab)
+    #   ) %>% 
+    #   ungroup()
     
     
     ### (4) Multiply the weights
-    d$w_treat_ltfu_comp_stab <- d$w_treat_stab * d$w_ltfu_stab * d$w_comp_stab
-    if (any(is.na(d$w_treat_ltfu_comp_stab))) {
-      cat("NA in final weight w_treat_ltfu_comp_stab:", sum(is.na(d$w_treat_ltfu_comp_stab)), "\n")
+    d$w_treat_ltfu_stab <- d$w_treat_stab * d$w_ltfu_stab 
+    # * d$w_comp_stab
+    if (any(is.na(d$w_treat_ltfu_stab))) {
+      cat("NA in final weight w_treat_ltfu_stab:", sum(is.na(d$w_treat_ltfu_stab)), "\n")
     }
     
     
     ### (5) Truncate final stabilized weight at the 1st and 99th percentile
     d <- fn_truncate_by_percentile(
       df = d,
-      col_name = "w_treat_ltfu_comp_stab"
+      col_name = "w_treat_ltfu_stab"
     )
     
     
@@ -650,13 +653,13 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
       as.formula("outcome ~ exp_bin_treat + month + monthsqr")
     }
     
-    severecovid.treat.ltfu.comp <- parglm(outcome_formula,
+    severecovid.treat.ltfu <- parglm(outcome_formula,
                                           family = binomial(link = 'logit'),
                                           data = d[d$censor_LTFU==0 & d$comp_event == 0,],
-                                          weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_comp_stab_trunc)
-    coef_summary <- summary(severecovid.treat.ltfu.comp)$coefficients
+                                          weights = d[d$censor_LTFU==0 & d$comp_event == 0,]$w_treat_ltfu_stab_trunc)
+    coef_summary <- summary(severecovid.treat.ltfu)$coefficients
     if (anyNA(coef_summary[, "Estimate"])) {
-      warning("Some severecovid.treat.ltfu.comp coefficient estimates are NA!")
+      warning("Some severecovid.treat.ltfu coefficient estimates are NA!")
     }
     
     
@@ -664,7 +667,7 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     results_std <- fn_standardize_risks(
       df = d,
       K = K, # CAVE: data frame is modified to reflect that risks are estimated at the END of each interval, i.e., start at month == 0, initial zero row added => Final estimate in K-1
-      model = severecovid.treat.ltfu.comp,
+      model = severecovid.treat.ltfu,
       group_col = "exp_bin_treat",
       time_col = "month",
       patient_id_col = "boot_patient_id",
@@ -673,11 +676,11 @@ te_iptw_ipcw_rd_rr_withCI <- function(data, indices, data_full, covariates_tv_na
     )
     
     hr_at_K <- if (include_interaction) {
-      exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"] +
-          coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * month)"] * K +
-          coef(severecovid.treat.ltfu.comp)["I(exp_bin_treat * monthsqr)"] * K^2)
+      exp(coef(severecovid.treat.ltfu)["exp_bin_treat"] +
+          coef(severecovid.treat.ltfu)["I(exp_bin_treat * month)"] * K +
+          coef(severecovid.treat.ltfu)["I(exp_bin_treat * monthsqr)"] * K^2)
     } else {
-      exp(coef(severecovid.treat.ltfu.comp)["exp_bin_treat"])
+      exp(coef(severecovid.treat.ltfu)["exp_bin_treat"])
     }
 
     return(c(results_std$graph_data$risk0, results_std$graph_data$risk1, results_std$graph_data$rd, results_std$graph_data$rr, hr_at_K))
@@ -767,8 +770,8 @@ risk_graph <- data.frame(
   mean.rr = mean_rr,
   ll.rr = ll_rr,
   ul.rr = ul_rr,
-  orig_risk.0_midpoint6 = cum_risk_treat_ltfu_comp_severecovid$graph_data$risk0,
-  orig_risk.1_midpoint6 = cum_risk_treat_ltfu_comp_severecovid$graph_data$risk1,
+  orig_risk.0_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk0,
+  orig_risk.1_midpoint6 = cum_risk_treat_ltfu_severecovid$graph_data$risk1,
   # HR at K months (model-based OR from PLR, approximating Cox HR): populated only at time == K, NA elsewhere
   point_hr = ifelse(0:K == K, hr_point, NA_real_),
   mean_hr  = ifelse(0:K == K, mean_hr, NA_real_),
@@ -777,7 +780,7 @@ risk_graph <- data.frame(
 )
 
 # Create plot
-plot_cum_risk_treat_ltfu_comp_ci_severecovid <- ggplot(risk_graph,
+plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(risk_graph,
                                                       aes(x=time)) +
   geom_line(aes(y = mean.1_midpoint6, # create line for intervention group
                 color = "Metformin"), linewidth = 1.5) +
@@ -816,21 +819,21 @@ ggsave(filename = here::here("output", "te", "pooled_log_reg",
 ggsave(filename = here::here("output", "te", "pooled_log_reg",
                              paste0("plot_cum_risk_treat_ltfu_severecovid", output_suffix, ".png")),
        plot_cum_risk_treat_ltfu_severecovid, width = 20, height = 20, units = "cm")
-ggsave(filename = here::here("output", "te", "pooled_log_reg",
-                             paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")),
-       plot_cum_risk_treat_ltfu_comp_severecovid, width = 20, height = 20, units = "cm")
+# ggsave(filename = here::here("output", "te", "pooled_log_reg",
+#                              paste0("plot_cum_risk_treat_ltfu_comp_severecovid", output_suffix, ".png")),
+#        plot_cum_risk_treat_ltfu_comp_severecovid, width = 20, height = 20, units = "cm")
 ggsave(filename = here::here("output", "te", "pooled_log_reg", 
-                             paste0("plot_cum_risk_treat_ltfu_comp_ci_severecovid", output_suffix, ".png")), 
-       plot_cum_risk_treat_ltfu_comp_ci_severecovid, width = 20, height = 20, units = "cm")
+                             paste0("plot_cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".png")), 
+       plot_cum_risk_treat_ltfu_ci_severecovid, width = 20, height = 20, units = "cm")
 # Disclosure-safe dataset, from which we can read out the final 24-month results, too
 write.csv(risk_graph,
           file = here::here("output", "te", "pooled_log_reg",
-                            paste0("cum_risk_treat_ltfu_comp_ci_severecovid", output_suffix, ".csv")),
+                            paste0("cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".csv")),
           row.names = FALSE)
 # Censoring plots and underlying data
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_ltfu.png"), plot_censoring_ltfu, width = 20, height = 20, units = "cm")
 write.csv(censoring_ltfu_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
 write.csv(censoring_ltfu_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_weights.csv"))
-ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_comp.png"), plot_censoring_comp, width = 20, height = 20, units = "cm")
-write.csv(censoring_comp_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
-write.csv(censoring_comp_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_weights.csv"))
+# ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_comp.png"), plot_censoring_comp, width = 20, height = 20, units = "cm")
+# write.csv(censoring_comp_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
+# write.csv(censoring_comp_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_weights.csv"))
