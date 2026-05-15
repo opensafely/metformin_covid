@@ -483,24 +483,25 @@ plot_cum_risk_treat_ltfu_severecovid_untrunc <- ggplot(cum_risk_treat_ltfu_sever
 #   ungroup()
 # summary(df_months_severecovid$w_comp_stab)
 # 
-# ## Investigate the censoring-for-competing risk a bit more
-# censoring_comp_rates <- df_months_severecovid %>%
-#   group_by(month) %>%
-#   summarise(censor_comp_rate = mean(comp_event, na.rm = TRUE), .groups="drop") %>%
-#   mutate(
-#     censor_comp_rate_pct = round(censor_comp_rate * 100, 2),
-#     cum_censor_comp_rate = cumsum(censor_comp_rate),
-#     cum_censor_comp_rate_pct = round(cum_censor_comp_rate * 100, 2)
-#   )
-# plot_censoring_comp <- ggplot(censoring_comp_rates, aes(x = month)) +
-#   geom_line(aes(y = censor_comp_rate_pct), color = "blue") +
-#   geom_point(aes(y = censor_comp_rate_pct), color = "blue") +
-#   geom_line(aes(y = cum_censor_comp_rate_pct), color = "red") +
-#   geom_point(aes(y = cum_censor_comp_rate_pct), color = "red") +
-#   ylab("Censoring for competing risk (%)") +
-#   xlab("Month") +
-#   theme_minimal() +
-#   ggtitle("Monthly (blue) and cumulative (red) competing risk censoring rate")
+## Investigate the censoring-for-competing risk (non-covid deaths) - even if nothing done with it
+censoring_comp_rates <- df_months_severecovid %>%
+  group_by(month) %>%
+  summarise(censor_comp_rate = mean(comp_event, na.rm = TRUE), .groups="drop") %>%
+  mutate(
+    censor_comp_rate_pct = round(censor_comp_rate * 100, 2),
+    cum_censor_comp_rate = cumsum(censor_comp_rate),
+    cum_censor_comp_rate_pct = round(cum_censor_comp_rate * 100, 2)
+  )
+plot_censoring_comp <- ggplot(censoring_comp_rates, aes(x = month)) +
+  geom_line(aes(y = censor_comp_rate_pct), color = "blue") +
+  geom_point(aes(y = censor_comp_rate_pct), color = "blue") +
+  geom_line(aes(y = cum_censor_comp_rate_pct), color = "red") +
+  geom_point(aes(y = cum_censor_comp_rate_pct), color = "red") +
+  ylab("Censoring for competing risk (%)") +
+  xlab("Month") +
+  theme_minimal() +
+  ggtitle("Monthly (blue) and cumulative (red) competing risk censoring rate")
+
 # censoring_comp_weights <- df_months_severecovid %>%
 #   group_by(month) %>%
 #   summarise(
@@ -1007,10 +1008,14 @@ write.csv(risk_graph,
           file = here::here("output", "te", "pooled_log_reg",
                             paste0("cum_risk_treat_ltfu_ci_severecovid", output_suffix, ".csv")),
           row.names = FALSE)
+write.csv(risk_graph,
+          file = here::here("output", "te", "pooled_log_reg",
+                            paste0("cum_risk_treat_ltfu_ci_severecovid_untrunc", output_suffix, ".csv")),
+          row.names = FALSE)
 # Censoring plots and underlying data
 ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_ltfu.png"), plot_censoring_ltfu, width = 20, height = 20, units = "cm")
 write.csv(censoring_ltfu_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
 write.csv(censoring_ltfu_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_ltfu_weights.csv"))
-# ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_comp.png"), plot_censoring_comp, width = 20, height = 20, units = "cm")
-# write.csv(censoring_comp_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
+ggsave(filename = here::here("output", "te", "pooled_log_reg", "plot_censoring_comp.png"), plot_censoring_comp, width = 20, height = 20, units = "cm")
+write.csv(censoring_comp_rates, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
 # write.csv(censoring_comp_weights, file = here::here("output", "te", "pooled_log_reg", "censoring_comp_weights.csv"))
