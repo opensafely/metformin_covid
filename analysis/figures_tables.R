@@ -25,22 +25,32 @@ df_elig_landmark <- read_csv(here("output", "data_release_20260331", "data_descr
 
 df_main <- read_csv(here("output", "data_release_20260331", "data_description", "table1_main_midpoint6.csv"))
 df_death_ltfu1 <- read_csv(here("output", "data_release_20260331", "data_description", "table1_death_ltfu1_midpoint6.csv"))
-df_death_ltfu2 <- read_csv(here("output", "data_release_20260331", "data_description", "table1_death_ltfu2_midpoint6.csv"))
+df_death_ltfu2 <- read_csv(here("output", "data_release_20260610", "data_description", "table1_death_ltfu2_midpoint6.csv"))
 
 df_ps <- read_csv(here("output", "data_release_20260331", "ps", "density_plot_untrimmed.csv"))
 df_ps_HbA1c59orabove <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1c59orabove.csv"))
 df_ps_HbA1c42to58 <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1c42to58.csv"))
 df_ps_HbA1cbelow42 <- read_csv(here("output", "data_release_20260331", "ps", "ps_density_data_untrimmed_HbA1cbelow42.csv"))
 
-df_results_cox <- read_csv(here("output", "data_release_20260331", "make_output", "results_cox_midpoint6.csv"))
+df_smd <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined.csv"))
+df_smd_ps_overlap <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_ps_overlap.csv"))
+df_smd_combined_HbA1cbelow42 <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_HbA1cbelow42.csv"))
+df_smd_combined_HbA1c42to58 <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_HbA1c42to58.csv"))
+df_smd_combined_HbA1c59orabove <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_HbA1c59orabove.csv"))
+
+df_results_cox <- read_csv(here("output", "data_release_20260610", "make_output", "results_cox_midpoint6.csv"))
 
 df_results_km_primary <- read_csv(here("output", "data_release_20260331", "te", "km_primary", "estimates.csv"))
 df_results_km_covid_event <- read_csv(here("output", "data_release_20260331", "te", "km_covid_event", "estimates.csv"))
 df_results_km_longvirfat <- read_csv(here("output", "data_release_20260331", "te", "km_longvirfat", "estimates.csv"))
-df_results_km_primary_weighted <- read_csv(here("output", "data_release_20260331", "te", "km_primary_weighted", "estimates.csv"))
+df_results_km_primary_weighted <- read_csv(here("output", "data_release_20260610", "te", "km_primary_weighted", "estimates.csv"))
 
-df_results_ppa_interaction <- read_csv(here("output", "data_release_20260331", "te", "pooled_log_reg", "cum_risk_treat_ltfu_comp_ci_severecovid.csv"))
-df_results_ppa_no_interaction <- read_csv(here("output", "data_release_20260331", "te", "pooled_log_reg", "cum_risk_treat_ltfu_comp_ci_severecovid_no_interaction.csv"))
+df_results_ppa_interaction <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid.csv"))
+df_results_ppa_no_interaction <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_no_interaction.csv"))
+df_results_ppa_interaction_untrunc <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_untrunc.csv"))
+
+df_results_ppa_cens_ltfu <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
+df_results_ppa_comp <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
 
 # Baseline table, based on output from table1.R ----------------------
 
@@ -61,14 +71,47 @@ df_death_ltfu2 <- df_death_ltfu2 %>%
   mutate(`Died or LTFU between landmark and pandemic start` = replace_na(as.character(`Died or LTFU between landmark and pandemic start`), ""))
 
 # Reduce to main variables
-# df_main <- df_main %>% 
-#   filter(!grepl("INT: Any", var_label)) %>% 
-#   filter(!grepl("Any LTFU", var_label)) %>% 
-#   filter(!grepl("Any death", var_label)) %>% 
-#   filter(!grepl("Any Viral Fatigue", var_label)) %>% 
-#   filter(!grepl("Any Long COVID diagnosis", var_label))
+df_main <- df_main %>%
+  filter(!grepl("INT: Any", var_label)) %>%
+  filter(!grepl("CONT: Any", var_label)) %>%
+  filter(!grepl("Diet", var_label)) %>%
+  filter(!grepl("Calendar", var_label)) %>%
+  filter(!grepl("COVID hosp or death", var_label)) %>%
+  filter(!grepl("COVID hosp", var_label)) %>%
+  filter(!grepl("COVID death", var_label)) %>%
+  filter(!grepl("Any covid diagnosis", var_label)) %>%
+  filter(!grepl("Any death", var_label)) %>%
+  filter(!grepl("Any Viral Fatigue", var_label)) %>%
+  filter(!grepl("Any LTFU", var_label)) %>%
+  filter(!grepl("Any Long COVID", var_label))
+df_death_ltfu1 <- df_death_ltfu1 %>%
+  filter(!grepl("INT: Any", var_label)) %>%
+  filter(!grepl("CONT: Any", var_label)) %>%
+  filter(!grepl("Diet", var_label)) %>%
+  filter(!grepl("Calendar", var_label)) %>%
+  filter(!grepl("COVID hosp or death", var_label)) %>%
+  filter(!grepl("COVID hosp", var_label)) %>%
+  filter(!grepl("COVID death", var_label)) %>%
+  filter(!grepl("Any covid diagnosis", var_label)) %>%
+  filter(!grepl("Any death", var_label)) %>%
+  filter(!grepl("Any Viral Fatigue", var_label)) %>%
+  filter(!grepl("Any LTFU", var_label)) %>%
+  filter(!grepl("Any Long COVID", var_label))
+df_death_ltfu2 <- df_death_ltfu2 %>%
+  filter(!grepl("INT: Any", var_label)) %>%
+  filter(!grepl("CONT: Any", var_label)) %>%
+  filter(!grepl("Diet", var_label)) %>%
+  filter(!grepl("Calendar", var_label)) %>%
+  filter(!grepl("COVID hosp or death", var_label)) %>%
+  filter(!grepl("COVID hosp", var_label)) %>%
+  filter(!grepl("COVID death", var_label)) %>%
+  filter(!grepl("Any covid diagnosis", var_label)) %>%
+  filter(!grepl("Any death", var_label)) %>%
+  filter(!grepl("Any Viral Fatigue", var_label)) %>%
+  filter(!grepl("Any LTFU", var_label)) %>%
+  filter(!grepl("Any Long COVID", var_label))
 
-# Create the gt table
+# Create the gt tables
 tbl_gt_main <- df_main %>%
   select(label, `metformin`, control) %>%
   gt() %>%
@@ -205,6 +248,85 @@ density_plot_HbA1cbelow42 <- ggplot(df_ps_HbA1cbelow42, aes(x = dens_x, y = dens
   )
 
 
+# Love plots by HbA1c subgroup and PS overlap region ----------------------
+print('Love plots by HbA1c subgroup and PS overlap region')
+
+ggplot(df_smd, aes(y = Covariate)) +
+    geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+    geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+    geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+    geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+    scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+    labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+         title = paste("Covariate Balance Before and After IPW")) +
+    theme_minimal() +
+    theme(
+      axis.line.x = element_line(colour = "black"),
+      legend.position = "bottom",
+      panel.grid.major.y = element_line(colour = "gray90"),
+      panel.grid.minor = element_blank()
+    )
+ggplot(df_smd_ps_overlap, aes(y = Covariate)) +
+  geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+  geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+  geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+  scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+  labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+       title = paste("Covariate Balance Before and After IPW; PS-overlap population")) +
+  theme_minimal() +
+  theme(
+    axis.line.x = element_line(colour = "black"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+ggplot(df_smd_combined_HbA1cbelow42, aes(y = Covariate)) +
+  geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+  geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+  geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+  scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+  labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+       title = paste("Covariate Balance Before and After IPW; HbA1c below 42 mmol/mol")) +
+  theme_minimal() +
+  theme(
+    axis.line.x = element_line(colour = "black"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+ggplot(df_smd_combined_HbA1c42to58, aes(y = Covariate)) +
+  geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+  geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+  geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+  scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+  labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+       title = paste("Covariate Balance Before and After IPW; HbA1c 42 to 58 mmol/mol")) +
+  theme_minimal() +
+  theme(
+    axis.line.x = element_line(colour = "black"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+ggplot(df_smd_combined_HbA1c59orabove, aes(y = Covariate)) +
+  geom_vline(xintercept = 0, colour = "black", linewidth = 0.5) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "red", linewidth = 0.5) +
+  geom_point(aes(x = SMD_Unweighted, colour = "Unweighted"), shape = 1, size = 2.5) +
+  geom_point(aes(x = SMD_Weighted,   colour = "Weighted (stabilized)"), shape = 16, size = 2.5) +
+  scale_colour_manual(values = c("Unweighted" = "grey50", "Weighted (stabilized)" = "#2E9FDF")) +
+  labs(x = "Standardized Mean Difference", y = NULL, colour = NULL,
+       title = paste("Covariate Balance Before and After IPW; HbA1c 59 mmol/mol or above")) +
+  theme_minimal() +
+  theme(
+    axis.line.x = element_line(colour = "black"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+
 # Results figures ----------------------
 ## Main results ----
 df_results <- df_results_cox %>% 
@@ -245,13 +367,15 @@ df_results_main$name <- recode(df_results_main$name,
                                "longvirfat" = "Secondary: Long COVID",
                                "neg_control_pandemic" = "Negative control outcome (bone fracture)",
                                "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
+                               "primary_ps_overlap" = "Propensity score overlap population"
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
   "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
   "Negative control outcome (bone fracture)",
-  "Positive control outcome (diabetes-related death)"
+  "Positive control outcome (diabetes-related death)",
+  "Propensity score overlap population"
 )
 df_results_main <- df_results_main %>%
   mutate(
@@ -302,7 +426,8 @@ fp %>%
                       "4" = gpar(lty = 2),
                       "5" = gpar(lty = 2),
                       "6" = gpar(lty = 2),
-                      "7" = gpar(lty = 2)),
+                      "7" = gpar(lty = 2),
+                      "8" = gpar(lty = 2)),
     xlog = TRUE,
     # xticks = log(c(0.80, 1, 1.25)),
     lty.ci = 1,
@@ -363,13 +488,15 @@ df_results_min$name <- recode(df_results_min$name,
                               "longvirfat" = "Secondary: Long COVID",
                               "neg_control_pandemic" = "Negative control outcome (bone fracture)",
                               "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
+                              "primary_ps_overlap" = "Propensity score overlap population"
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
   "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
   "Negative control outcome (bone fracture)",
-  "Positive control outcome (diabetes-related death)"
+  "Positive control outcome (diabetes-related death)",
+  "Propensity score overlap population"
 )
 df_results_min <- df_results_min %>%
   mutate(
@@ -420,7 +547,8 @@ fp %>%
                       "4" = gpar(lty = 2),
                       "5" = gpar(lty = 2),
                       "6" = gpar(lty = 2),
-                      "7" = gpar(lty = 2)),
+                      "7" = gpar(lty = 2),
+                      "8" = gpar(lty = 2)),
     xlog = TRUE,
     # xticks = log(c(0.80, 1, 1.25)),
     lty.ci = 1,
@@ -579,85 +707,264 @@ grid.text(
 dev.off()
 
 
-# Quality assurance flowchart -------------------------------------
+## KM curves (for those not provided through direct output) ----
+exposure  <- "exp_bin_treat" 
+subgroups <- character() # no subgroups
+exposure_syms  <- syms(exposure)
+subgroup_syms  <- syms(subgroups)
 
-# # Create node labels
-# node_labels <- paste(df_qa$Variable, '\n', df_qa$Value)
-# 
-# # Create flowchart
-# graph_qa <- grViz(
-#   sprintf(
-#     "digraph flowchart {
-#       graph [layout = dot, rankdir = TB]
-#       node [shape = box, style = filled, fontname = Arial, fontsize = 14]
-# 
-#       A [label = '%s', fillcolor = lightskyblue]
-#       B [label = 'Exclusions\n%s\n%s\n%s\n%s\n%s\n%s\n%s', fillcolor = lightyellow]
-#       C [label = '%s', fillcolor = lightskyblue]
-# 
-#       A -> B
-#       B -> C
-#     }",
-#     node_labels[1], node_labels[2],
-#     node_labels[3], node_labels[4], node_labels[5], node_labels[6], node_labels[7],
-#     node_labels[8], node_labels[9]
-#   )
-# )
+# time = 0 origin row is added once per curve.
+data_surv_rounded <-
+  df_results_km_primary_weighted |>
+  mutate(
+    # 0 = No Antidiabetic (reference), 1 = Metformin
+    exp_bin_treat = factor(exp_bin_treat,
+                           levels = c(0, 1),
+                           labels = c("No Antidiabetic", "Metformin"))
+  ) |>
+  group_by(!!!subgroup_syms, !!!exposure_syms)
 
-# Completeness criteria flowchart -----------------------------------
+km_plot <- function(.data) {
+  
+  data_with_time0 <-
+    if(length(exposure)>0L){
+      .data |>
+        mutate(
+          "{exposure}" := as.factor(!!!exposure_syms)
+        )
+    } else {
+      .data
+    }
+  
+  data_with_time0 <-
+    data_with_time0 |>
+    mutate(
+      lagtime = lag(time, 1, 0), # assumes the time-origin is zero
+    ) %>%
+    group_modify(
+      ~ add_row(
+        .x,
+        time = 0, # assumes time origin is zero
+        lagtime = 0,
+        cmlinc = 0,
+        cmlinc.low = 0,
+        cmlinc.high = 0,
+        .before = 0
+      )
+    )
+  
+  ggplot_init <- if(length(exposure)==0L){
+    ggplot(data_with_time0)
+  } else {
+    exposure_sym <- sym(exposure)
+    ggplot(data_with_time0, aes(group = !!exposure_sym, colour = !!exposure_sym, fill = !!exposure_sym))
+  }
+  ggplot_init +
+    geom_step(aes(x = time, y = cmlinc), direction = "vh") +
+    geom_step(aes(x = time, y = cmlinc), direction = "vh", linetype = "dashed", alpha = 0.5) +
+    geom_rect(aes(xmin = lagtime, xmax = time, ymin = cmlinc.low, ymax = cmlinc.high), alpha = 0.1, colour = "transparent") +
+    facet_grid(rows = vars(!!!subgroup_syms)) +
+    scale_color_brewer(type = "qual", palette = "Set1", na.value = "grey") +
+    scale_fill_brewer(type = "qual", palette = "Set1", guide = "none", na.value = "grey") +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
+    coord_cartesian(xlim = c(0, NA)) +
+    labs(
+      x = "Time",
+      y = "Cumulative Incidence",
+      colour = NULL,
+      title = NULL
+    ) +
+    theme_minimal() +
+    theme(
+      axis.line.x = element_line(colour = "black"),
+      panel.grid.minor.x = element_blank(),
+      legend.position = "inside",
+      legend.position.inside = c(.05, .95),
+      legend.justification = c(0, 1),
+    )
+}
 
-# # Create node labels
-# node_labels <- paste(df_comp$Variable, '\n', df_comp$Value)
-# 
-# # Create flowchart
-# graph_completeness <- grViz(
-#   sprintf(
-#     "digraph flowchart {
-#       graph [layout = dot, rankdir = TB]
-#       node [shape = box, style = filled, fontname = Arial, fontsize = 14]
-# 
-#       A [label = '%s', fillcolor = lightskyblue]
-#       B [label = 'Exclusions\n%s\n%s\n%s\n%s\n%s\n%s', fillcolor = lightyellow]
-#       C [label = '%s', fillcolor = lightskyblue]
-# 
-#       A -> B
-#       B -> C
-#     }",
-#     node_labels[1], node_labels[2],
-#     node_labels[3], node_labels[4], node_labels[5], node_labels[6], node_labels[7],
-#     node_labels[8], node_labels[9]
-#   )
-# )
+p <- km_plot(data_surv_rounded)
+ggsave(filename = "KM_curves_weighted.png", p, width = 20, height = 20, units = "cm")
 
 
-# Eligibility flowchart -----------------------------------
+## PPA curves ----
+# --- annotation text (end-of-follow-up results) ---
+annotation_text <- paste(
+  "At end of follow-up:",
+  "Cumulative risk, metformin: 2.12% (1.87 to 2.35)",
+  "Cumulative risk, no antidiabetic: 1.92% (1.73 to 2.10)",
+  "Adjusted risk ratio: 1.11 (0.95 to 1.27)",
+  "Adjusted risk difference: 0.21% (-0.11 to 0.49)",
+  sep = "\n"
+)
 
-# # Create node labels
-# node_labels <- paste(df_elig$Variable, '\n', df_elig$Value)
-# 
-# # Create flowchart
-# graph_elig <- grViz(
-#   sprintf(
-#     "digraph flowchart {
-#       graph [layout = dot, rankdir = TB]
-#       node [shape = box, style = filled, fontname = Arial, fontsize = 14]
-# 
-#       A [label = '%s', fillcolor = lightskyblue]
-#       B [label = '%s', fillcolor = lightyellow]
-#       C [label = 'Exclusions 1\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s', fillcolor = lightyellow]
-#       D [label = 'Exclusions 2: Events between baseline and landmark\n%s\n%s\n%s\n%s\n%s\n%s', fillcolor = lightyellow]
-#       E [label = '%s', fillcolor = lightskyblue]
-# 
-#       A -> B
-#       B -> C
-#       C -> D
-#       D -> E
-#     }",
-#     node_labels[1], node_labels[2], 
-#     node_labels[3], node_labels[4], node_labels[5], node_labels[6], node_labels[7],
-#     node_labels[8], node_labels[9], node_labels[10], node_labels[11], node_labels[12], 
-#     node_labels[13], node_labels[14], node_labels[15], 
-#     node_labels[16], node_labels[17], node_labels[18], node_labels[19], node_labels[20], node_labels[21],
-#     node_labels[22]
-#   )
-# )
+plot_cum_risk_treat_ltfu_ci_severecovid <- ggplot(df_results_ppa_interaction,
+                                                  aes(x = time)) +
+  geom_line(aes(y = mean.1_midpoint6, # create line for intervention group
+                color = "Metformin"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.1_midpoint6, ymax = ul.1_midpoint6, fill = "Metformin"), alpha = 0.4) +
+  geom_line(aes(y = mean.0_midpoint6, # create line for control group
+                color = "No Antidiabetic"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.0_midpoint6, ymax = ul.0_midpoint6, fill = "No Antidiabetic"), alpha = 0.4) +
+  # --- results annotation, anchored bottom-right ---
+  annotate("text",
+           x = max(df_results_ppa_interaction$time),
+           y = 0,
+           hjust = 1, vjust = 0,
+           size = 3.8,
+           label = annotation_text) +
+  xlab("Months") +
+  ylab("Cumulative Incidence") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  )
+
+plot_cum_risk_treat_ltfu_ci_severecovid_untrunc <- ggplot(df_results_ppa_interaction_untrunc,
+                                                  aes(x = time)) +
+  geom_line(aes(y = mean.1_midpoint6, # create line for intervention group
+                color = "Metformin"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.1_midpoint6, ymax = ul.1_midpoint6, fill = "Metformin"), alpha = 0.4) +
+  geom_line(aes(y = mean.0_midpoint6, # create line for control group
+                color = "No Antidiabetic"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.0_midpoint6, ymax = ul.0_midpoint6, fill = "No Antidiabetic"), alpha = 0.4) +
+  xlab("Months") +
+  ylab("Cumulative Incidence") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  )
+plot_cum_risk_treat_ltfu_ci_severecovid_no_interaction <- ggplot(df_results_ppa_no_interaction,
+                                                  aes(x = time)) +
+  geom_line(aes(y = mean.1_midpoint6, # create line for intervention group
+                color = "Metformin"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.1_midpoint6, ymax = ul.1_midpoint6, fill = "Metformin"), alpha = 0.4) +
+  geom_line(aes(y = mean.0_midpoint6, # create line for control group
+                color = "No Antidiabetic"), linewidth = 1.5) +
+  geom_ribbon(aes(ymin = ll.0_midpoint6, ymax = ul.0_midpoint6, fill = "No Antidiabetic"), alpha = 0.4) +
+  xlab("Months") +
+  ylab("Cumulative Incidence") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 14), legend.position = c(0.2, 0.8),
+        axis.line = element_line(colour = "black"),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  scale_color_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("No Antidiabetic" = "#E7B800",
+               "Metformin" = "#2E9FDF")
+  )
+
+# save
+ggsave(filename = "plot_cum_risk_treat_ltfu.png", plot_cum_risk_treat_ltfu_ci_severecovid,
+       width = 20, height = 20, units = "cm")
+ggsave(filename = "plot_cum_risk_treat_ltfu_untrunc.png", plot_cum_risk_treat_ltfu_ci_severecovid_untrunc,
+       width = 20, height = 20, units = "cm")
+ggsave(filename = "plot_cum_risk_treat_ltfu_no_interaction.png", plot_cum_risk_treat_ltfu_ci_severecovid_no_interaction,
+       width = 20, height = 20, units = "cm")
+
+
+# Extract numeric results from weighted KM risk estimates ----
+## exposure groups: 1 = metformin (exposed), 0 = no antidiabetic (reference)
+## end of follow-up = the last available time point
+fup_end <- max(df_results_km_primary_weighted$time)
+
+# reconstruct cmlinc.se per group (Greenwood, as in round_km reusable action)
+# the concise df_results_km_primary_weighted file drops the standard error, but it can be rebuilt
+# from the n.risk / n.event columns, identical to how the original script does it
+df_results_km_primary_weighted_se <-
+  df_results_km_primary_weighted |>
+  arrange(exp_bin_treat, time) |>
+  group_by(exp_bin_treat) |>
+  mutate(
+    summand   = (1 / (n.risk - n.event)) - (1 / n.risk), # greenwood term
+    surv      = cumprod(1 - n.event / n.risk),
+    surv.se   = surv * sqrt(cumsum(summand)),
+    cmlinc.se = surv.se # cmlinc.se = surv.se
+  ) |>
+  ungroup()
+
+# per-group cumulative risks at end of follow-up
+# CIs are taken straight from the file (complementary log-log limits)
+risk_end <-
+  df_results_km_primary_weighted_se |>
+  filter(time == fup_end) |>
+  select(exp_bin_treat, cmlinc, cmlinc.low, cmlinc.high, cmlinc.se)
+
+r0 <- risk_end |> filter(exp_bin_treat == 0) # no antidiabetic (reference)
+r1 <- risk_end |> filter(exp_bin_treat == 1) # metformin (exposed)
+
+# contrasts: risk ratio and risk difference (delta method)
+ci0 <- r0$cmlinc; se0 <- r0$cmlinc.se
+ci1 <- r1$cmlinc; se1 <- r1$cmlinc.se
+
+# risk ratio (log scale)
+rr       <- ci1 / ci0
+rr.ln.se <- sqrt((se1 / ci1)^2 + (se0 / ci0)^2)
+rr.ll    <- exp(log(rr) + qnorm(0.025) * rr.ln.se)
+rr.ul    <- exp(log(rr) + qnorm(0.975) * rr.ln.se)
+
+# risk difference (linear scale)
+rd    <- ci1 - ci0
+rd.se <- sqrt(se0^2 + se1^2)
+rd.ll <- rd + qnorm(0.025) * rd.se
+rd.ul <- rd + qnorm(0.975) * rd.se
+
+# format and print
+pct <- function(x) sprintf("%.2f%%", x * 100)
+
+results <- tibble(
+  measure = c(
+    "Cumulative risk, metformin (exp_bin_treat==1)",
+    "Cumulative risk, no antidiabetic (exp_bin_treat==0)",
+    "Risk ratio (metformin vs no antidiabetic)",
+    "Risk difference (metformin - no antidiabetic)"
+  ),
+  estimate = c(pct(ci1), pct(ci0), sprintf("%.2f", rr), pct(rd)),
+  ci_95 = c(
+    sprintf("%s to %s", pct(r1$cmlinc.low), pct(r1$cmlinc.high)),
+    sprintf("%s to %s", pct(r0$cmlinc.low), pct(r0$cmlinc.high)),
+    sprintf("%.2f to %.2f", rr.ll, rr.ul),
+    sprintf("%s to %s", pct(rd.ll), pct(rd.ul))
+  )
+)
+
+cat("=== End of follow-up: time =", fup_end, "===\n\n")
+print(results, n = Inf)
