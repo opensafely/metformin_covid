@@ -713,6 +713,16 @@ subgroups <- character() # no subgroups
 exposure_syms  <- syms(exposure)
 subgroup_syms  <- syms(subgroups)
 
+# --- annotation text (end-of-follow-up results) ---
+annotation_text <- paste(
+  "At end of follow-up:",
+  "Cumulative risk, metformin: 2.23% (2.02 to 2.45)",
+  "Cumulative risk, no antidiabetic: 1.87% (1.72 to 2.03)",
+  "Adjusted risk ratio: 1.19 (1.05 to 1.35)",
+  "Adjusted risk difference: 0.36% (0.09 to 0.62)",
+  sep = "\n"
+)
+
 # time = 0 origin row is added once per curve.
 data_surv_rounded <-
   df_results_km_primary_weighted |>
@@ -763,25 +773,38 @@ km_plot <- function(.data) {
     geom_step(aes(x = time, y = cmlinc), direction = "vh") +
     geom_step(aes(x = time, y = cmlinc), direction = "vh", linetype = "dashed", alpha = 0.5) +
     geom_rect(aes(xmin = lagtime, xmax = time, ymin = cmlinc.low, ymax = cmlinc.high), alpha = 0.1, colour = "transparent") +
+    # --- results annotation, anchored bottom-right (matches the other figure) ---
+    annotate("text",
+             x = max(df_results_km_primary_weighted$time),
+             y = max(df_results_km_primary_weighted$cmlinc.high, na.rm = TRUE) * 0.04,
+             hjust = 1, vjust = 0,
+             size = 3.8,
+             label = annotation_text) +
     facet_grid(rows = vars(!!!subgroup_syms)) +
-    scale_color_brewer(type = "qual", palette = "Set1", na.value = "grey") +
-    scale_fill_brewer(type = "qual", palette = "Set1", guide = "none", na.value = "grey") +
+    scale_color_manual(
+      name = NULL,
+      values = c("No Antidiabetic" = "#E7B800",
+                 "Metformin"       = "#2E9FDF"),
+      na.value = "grey"
+    ) +
+    scale_fill_manual(
+      values = c("No Antidiabetic" = "#E7B800",
+                 "Metformin"       = "#2E9FDF"),
+      na.value = "grey",
+      guide = "none"
+    ) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
     coord_cartesian(xlim = c(0, NA)) +
-    labs(
-      x = "Time",
-      y = "Cumulative Incidence",
-      colour = NULL,
-      title = NULL
-    ) +
+    xlab("Months") +
+    ylab("Cumulative Incidence") +
     theme_minimal() +
-    theme(
-      axis.line.x = element_line(colour = "black"),
-      panel.grid.minor.x = element_blank(),
-      legend.position = "inside",
-      legend.position.inside = c(.05, .95),
-      legend.justification = c(0, 1),
-    )
+    theme(axis.text = element_text(size = 14), legend.position = c(0.2, 0.8),
+          axis.line = element_line(colour = "black"),
+          legend.title = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.y = element_blank())
 }
 
 p <- km_plot(data_surv_rounded)
