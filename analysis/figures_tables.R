@@ -15,6 +15,7 @@ library('ggplot2')
 # library('RColorBrewer')
 library('gt')
 library(forestplot)
+library(purrr)
 
 
 # Import the data -------------------------------------------------
@@ -365,17 +366,17 @@ df_results_main$name <- recode(df_results_main$name,
                                "primary" = "Primary: COVID-19-related hospitalization or death",
                                "covid_event" = "Secondary: Any COVID-19 diagnosis",
                                "longvirfat" = "Secondary: Long COVID",
-                               "neg_control_pandemic" = "Negative control outcome (bone fracture)",
-                               "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
-                               "primary_ps_overlap" = "Propensity score overlap population"
+                               "neg_control_pandemic" = "Negative control outcome: Bone fracture",
+                               "pos_control_pandemic" = "Positive control outcome: Diabetes-related death",
+                               "primary_ps_overlap" = "Sensitivity: Propensity score overlap population"
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
   "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
-  "Negative control outcome (bone fracture)",
-  "Positive control outcome (diabetes-related death)",
-  "Propensity score overlap population"
+  "Negative control outcome: Bone fracture",
+  "Positive control outcome: Diabetes-related death",
+  "Sensitivity: Propensity score overlap population"
 )
 df_results_main <- df_results_main %>%
   mutate(
@@ -486,17 +487,17 @@ df_results_min$name <- recode(df_results_min$name,
                               "primary" = "Primary: COVID-19-related hospitalization or death",
                               "covid_event" = "Secondary: Any COVID-19 diagnosis",
                               "longvirfat" = "Secondary: Long COVID",
-                              "neg_control_pandemic" = "Negative control outcome (bone fracture)",
-                              "pos_control_pandemic" = "Positive control outcome (diabetes-related death)",
-                              "primary_ps_overlap" = "Propensity score overlap population"
+                              "neg_control_pandemic" = "Negative control outcome: Bone fracture",
+                              "pos_control_pandemic" = "Positive control outcome: Diabetes-related death",
+                              "primary_ps_overlap" = "Sensitivity: Propensity score overlap population"
 )
 desired_order <- c(
   "Primary: COVID-19-related hospitalization or death",
   "Secondary: Any COVID-19 diagnosis",
   "Secondary: Long COVID",
-  "Negative control outcome (bone fracture)",
-  "Positive control outcome (diabetes-related death)",
-  "Propensity score overlap population"
+  "Negative control outcome: Bone fracture",
+  "Positive control outcome: Diabetes-related death",
+  "Sensitivity: Propensity score overlap population"
 )
 df_results_min <- df_results_min %>%
   mutate(
@@ -574,9 +575,53 @@ dev.off()
 
 
 ## Subgroup analyses ----
-df_results_sg <- df_results %>% 
+### Run Qtest subgroups on main output
+cochran_Q <- function(lnhr, se_lnhr) {
+  w  <- 1 / se_lnhr^2
+  b  <- sum(w * lnhr) / sum(w)
+  Q  <- sum(w * (lnhr - b)^2)
+  df <- length(lnhr) - 1
+  tibble(Q = Q, df = df, p_heterogeneity = pchisq(Q, df, lower.tail = FALSE))
+}
+
+subgroup_map <- tribble(
+  ~name, ~subgroup_var,
+  "sg_60orabove", "age",
+  "sg_below60", "age",
+  "sg_female", "sex",
+  "sg_male", "sex",
+  "sg_nonwhite", "ethnicity",
+  "sg_white", "ethnicity", 
+  "sg_imd1", "deprivation",
+  "sg_nonimd1", "deprivation",
+  "sg_obese", "bmi",
+  "sg_overweight", "bmi",
+  "sg_normlowmissing", "bmi",
+  "sg_belowHbA1c59", "hba1c",
+  "sg_HbA1c59orabove", "hba1c"
+)
+
+het_results <- df_results |>
+  filter(term == "days0_730",        # the treatment/exposure effect
+         model == "mdl_max_adj") |>   # pick the adjustment level you want to report
+  inner_join(subgroup_map, by = "name") |>
+  group_by(subgroup_var) |>
+  group_modify(~ cochran_Q(.x$lnhr, .x$se_lnhr)) |>
+  ungroup()
+
+phet_lookup <- het_results %>%
+  transmute(
+    characteristic = recode(subgroup_var,
+                            age = "Age", sex = "Sex", ethnicity = "Ethnicity",
+                            deprivation = "Deprivation", bmi = "BMI", hba1c = "HbA1c"),
+    p_het = ifelse(p_heterogeneity < 0.001, "<0.001",
+                   formatC(p_heterogeneity, format = "f", digits = 3))
+  )
+
+## split the combined name into characteristic + level
+df_results_sg <- df_results %>%
   filter(grepl("sg_", name)) %>%
-  filter(!grepl("_pos_control", name)) %>% 
+  filter(!grepl("_pos_control", name)) %>%
   filter(grepl("mdl_max_adj", model))
 
 df_results_sg <- df_results_sg %>%
@@ -592,9 +637,9 @@ df_results_sg <- df_results_sg %>%
   rename(events_i = N_events_midpoint6)
 
 df_results_sg <- df_results_sg %>%
-  rename(tot_i = N_exposed_midpoint6) %>% 
-  mutate(tot_c = N_total_midpoint6-tot_i) %>% 
-  mutate(pct_i = round(100*(events_i/tot_i),2)) %>% 
+  rename(tot_i = N_exposed_midpoint6) %>%
+  mutate(tot_c = N_total_midpoint6-tot_i) %>%
+  mutate(pct_i = round(100*(events_i/tot_i),2)) %>%
   mutate(pct_c = round(100*(events_c/tot_c),2))
 
 df_results_sg <- df_results_sg %>%
@@ -639,52 +684,75 @@ df_results_sg <- df_results_sg %>%
   ) %>%
   arrange(name)
 
-# build forestplot
-base_data <- tibble(
-  mean = df_results_sg$hr,
-  lower = df_results_sg$conf_low,
-  upper = df_results_sg$conf_high,
-  name = as.character(df_results_sg$name),
-  events_i = as.character(df_results_sg$events_i),
-  events_c = as.character(df_results_sg$events_c),
-  estimates = paste0(formatC(df_results_sg$hr, format = "f", digits = 2), 
-                     " (", formatC(df_results_sg$conf_low, format = "f", digits = 2), 
-                     " - ", formatC(df_results_sg$conf_high, format = "f", digits = 2), ")"))
-header <- tibble(
-  name = "Subgroup on primary outcome",
-  events_i = "Events Metformin\n n (%)",
-  events_c = "Events No Antidiabetic\n n (%)",
-  estimates = "aHR (95% CI)",
-  mean = NA, lower = NA, upper = NA)
+df_results_sg <- df_results_sg %>%
+  mutate(name = as.character(name)) %>%
+  separate(name, into = c("characteristic", "level"), sep = ": ", remove = FALSE)
 
-fp <- bind_rows(header, base_data)
+## assemble grouped rows: bold header + levels + trailing spacer, per characteristic
+char_order <- c("Age", "Sex", "Ethnicity", "Deprivation", "BMI", "HbA1c")
+
+make_block <- function(chr) {
+  lv <- df_results_sg %>% filter(characteristic == chr)
+  ph <- phet_lookup %>% filter(characteristic == chr) %>% pull(p_het)
+  
+  header <- tibble(
+    characteristic = chr, level = "",
+    events_i = "", events_c = "", estimates = "", p_het = ph,
+    mean = NA_real_, lower = NA_real_, upper = NA_real_, is_summary = TRUE
+  )
+  rows <- tibble(
+    characteristic = "", level = lv$level,
+    events_i = lv$events_i, events_c = lv$events_c,
+    estimates = paste0(formatC(lv$hr, format = "f", digits = 2), " (",
+                       formatC(lv$conf_low,  format = "f", digits = 2), " - ",
+                       formatC(lv$conf_high, format = "f", digits = 2), ")"),
+    p_het = "",
+    mean = lv$hr, lower = lv$conf_low, upper = lv$conf_high, is_summary = FALSE
+  )
+  spacer <- tibble(
+    characteristic = "", level = "", events_i = "", events_c = "",
+    estimates = "", p_het = "", mean = NA_real_, lower = NA_real_,
+    upper = NA_real_, is_summary = FALSE
+  )
+  bind_rows(header, rows, spacer)
+}
+
+body <- map_dfr(char_order, make_block)
+body <- body %>% slice(1:(n() - 1))
+
+## column-title row
+title <- tibble(
+  characteristic = "Characteristic", level = "Group",
+  events_i  = "Events Metformin\n n (%)",
+  events_c  = "Events No Antidiabetic\n n (%)",
+  estimates = "aHR (95% CI)",
+  p_het     = "P-value for\nheterogeneity",
+  mean = NA_real_, lower = NA_real_, upper = NA_real_, is_summary = TRUE
+)
+
+fp <- bind_rows(title, body)
 font <- "sans"
 
-# Create the forest plot
-pdf(file = "Fp_results_sg.pdf",
-    width = 14,
-    height = 12)
+## --- forest plot ---
+pdf(file = "Fp_results_sg.pdf", width = 24, height = 18)
 
 fp %>%
   forestplot(
-    labeltext = c(name, 
-                  events_i, events_c, 
-                  estimates),
-    mean = mean, lower = lower, upper = upper, # Numeric columns for the plot
+    labeltext = c(characteristic, level, events_i, events_c, estimates, p_het),
+    mean = mean, lower = lower, upper = upper,
+    is.summary = fp$is_summary,                 # bolds header + title rows, no box where mean is NA
+    align = c("l", "l", "c", "c", "c", "c"),
     txt_gp = fpTxtGp(
-      label = gpar(fontfamily = font, cex = 1),
-      ticks = gpar(cex = 0.88),
-      xlab = gpar(cex = 0.88)
+      label   = gpar(fontfamily = font, cex = 1.4),   # row labels (was 1)
+      summary = gpar(fontfamily = font, cex = 1.5),   # bold header rows (title + characteristics)
+      ticks   = gpar(cex = 1.2),                      # x-axis numbers (was 0.88)
+      xlab    = gpar(cex = 1.2)                        # x-axis title (was 0.88)
     ),
-    graph.pos = 4, 
-    hrzl_lines = list("2" = gpar(lty = 2),
-                      "4" = gpar(lty = 2),
-                      "6" = gpar(lty = 2),
-                      "8" = gpar(lty = 2),
-                      "10" = gpar(lty = 2),
-                      "13" = gpar(lty = 2)),
+    graph.pos = 5,
+    graphwidth = unit(8, "cm"),
+    lineheight = unit(1.4, "cm"), # <- taller rows; fixes the 2-line header overlap
+    hrzl_lines = list("2" = gpar(lty = 1, col = "gray63")),
     xlog = TRUE,
-    # xticks = log(c(0.80, 1, 1.25)),
     lty.ci = 1,
     col = fpColors(
       box = "maroon4",
@@ -699,9 +767,9 @@ fp %>%
 
 grid.text(
   "Higher risk in No Antidiabetic group < > Higher risk in Metformin group",
-  x = unit(0.617, "npc"),
+  x = unit(0.635, "npc"),
   y = unit(0.008, "npc"),
-  gp = gpar(cex = 0.9)
+  gp = gpar(cex = 1.2) 
 )
 
 dev.off()
@@ -991,3 +1059,4 @@ results <- tibble(
 
 cat("=== End of follow-up: time =", fup_end, "===\n\n")
 print(results, n = Inf)
+
