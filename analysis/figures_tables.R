@@ -444,8 +444,8 @@ fp %>%
   )
 
 grid.text(
-  "Higher risk in No Antidiabetic group < > Higher risk in Metformin group",
-  x = unit(0.695, "npc"),
+  "Favours Metformin group < > Favours No Antidiabetic group",
+  x = unit(0.72, "npc"),
   y = unit(0.015, "npc"),
   gp = gpar(cex = 0.9)
 )
@@ -565,8 +565,8 @@ fp %>%
   )
 
 grid.text(
-  "Higher risk in No Antidiabetic group < > Higher risk in Metformin group",
-  x = unit(0.695, "npc"),
+  "Favours Metformin group < > Favours No Antidiabetic group",
+  x = unit(0.72, "npc"),
   y = unit(0.015, "npc"),
   gp = gpar(cex = 0.9)
 )
@@ -766,8 +766,8 @@ fp %>%
   )
 
 grid.text(
-  "Higher risk in No Antidiabetic group < > Higher risk in Metformin group",
-  x = unit(0.635, "npc"),
+  "Favours Metformin group < > Favours No Antidiabetic group",
+  x = unit(0.652, "npc"),
   y = unit(0.008, "npc"),
   gp = gpar(cex = 1.2) 
 )
