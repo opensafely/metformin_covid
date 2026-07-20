@@ -579,13 +579,3 @@ actions:
       moderately_sensitive:
         km_treat_estimates: output/te/km_primary_weighted/*.csv
         png: output/te/km_primary_weighted/*.png
-
-  # LOCAL/DUMMY-DATA ONLY
-  # Below is not part of the analysis pipeline. For local exploration/manuscript only.
-
-  figures_tables:
-    # Reads already-released, disclosure-safe data_release_* snapshots (gitignored, local only)
-    run: r:v2 analysis/figures_tables.R
-    outputs:
-      moderately_sensitive:
-        png: output/figures_tables/*.png

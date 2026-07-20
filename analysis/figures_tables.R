@@ -2,9 +2,9 @@
 ## This script does the following:
 # 1. Import released midpoint rounded disclosure-safe output data
 # 2. Create various tables and figures
-# Local/dummy-data run only, see the "figures_tables" action in project.yaml -
-# inputs are manually-curated, already-released data_release_* snapshots
-# (gitignored, local only), so this must never be requested as a real-data job.
+# Not a project.yaml action: inputs are manually-curated, already-released
+# data_release_* snapshots that only ever exist on a local machine (gitignored).
+# Run this directly with Rscript/RStudio on your own machine.
 ####
 
 # Import libraries and user functions -----------------------------

@@ -34,9 +34,11 @@ project.yaml                 OpenSAFELY pipeline - the data flow
 
 # Data flow
 
-The pipeline is defined by [project.yaml](project.yaml); each box below is a `project.yaml`
-action and arrows show `needs:` dependencies. Repetitive subgroup/outcome actions are
-grouped into a single box for readability.
+The pipeline is defined by [project.yaml](project.yaml).
+Each box below is a `project.yaml` action and arrows show `needs:` dependencies. 
+
+Repetitive subgroup/outcome actions are grouped into a single box for readability.
+
 
 ```mermaid
 flowchart TD
@@ -103,14 +105,11 @@ Stage summary:
    and `PPA_03_pooled_log_reg_*` fits the pooled logistic regression with and without
    treatment-time interaction.
 
-`figures_tables` is also defined as a `project.yaml` action but is
-**local/dummy-data only** - never requested as a real-data job. It builds manuscript
-figures/tables from already-released, disclosure-safe `output/data_release_*` snapshots
-that only ever exist on a local machine (gitignored, not produced by any action here).
-
-`analysis/dag.R` builds the study's conceptual DAG figure but is **not** a `project.yaml`
-action - it depends on `ggdag`, which isn't part of the OpenSAFELY `r:v2` image, so run
-it directly with `Rscript`/RStudio on your own machine.
+Two scripts are **not** `project.yaml` actions - they are only run directly with
+`Rscript`/RStudio on my local machine, never via `opensafely run`:
+- `analysis/figures_tables.R` builds manuscript figures/tables from already-released,
+  disclosure-safe `output/data_release_*` snapshots
+- `analysis/dag.R` builds the study's conceptual DAG figure
 
 # About the OpenSAFELY framework
 
