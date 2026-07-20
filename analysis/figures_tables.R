@@ -1,7 +1,10 @@
 ####
 ## This script does the following:
 # 1. Import released midpoint rounded disclosure-safe output data
-# 2. Create various tables and figures 
+# 2. Create various tables and figures
+# Local/dummy-data run only, see the "figures_tables" action in project.yaml -
+# inputs are manually-curated, already-released data_release_* snapshots
+# (gitignored, local only), so this must never be requested as a real-data job.
 ####
 
 # Import libraries and user functions -----------------------------
@@ -17,6 +20,8 @@ library('gt')
 library(forestplot)
 library(purrr)
 
+# Create output directory ----
+fs::dir_create(here::here("output", "figures_tables"))
 
 # Import the data -------------------------------------------------
 df_comp <- read_csv(here("output", "data_release_20260331", "data_description", "n_completeness_excluded_midpoint6.csv"))
@@ -127,7 +132,7 @@ tbl_gt_main <- df_main %>%
   )
 print(tbl_gt_main)
 # Save as RTF (Word-readable)
-gtsave(tbl_gt_main, "baseline_characteristics_main.rtf")
+gtsave(tbl_gt_main, here::here("output", "figures_tables", "baseline_characteristics_main.rtf"))
 
 tbl_gt_death_ltfu1 <- df_death_ltfu1 %>%
   select(label, `Alive and in care at landmark`, `Died or LTFU until landmark`) %>%
@@ -143,7 +148,7 @@ tbl_gt_death_ltfu1 <- df_death_ltfu1 %>%
   )
 print(tbl_gt_death_ltfu1)
 # Save as RTF (Word-readable)
-gtsave(tbl_gt_death_ltfu1, "baseline_characteristics_death_ltfu1.rtf")
+gtsave(tbl_gt_death_ltfu1, here::here("output", "figures_tables", "baseline_characteristics_death_ltfu1.rtf"))
 
 tbl_gt_death_ltfu2 <- df_death_ltfu2 %>%
   select(label, `Alive and in care at pandemic start`, `Died or LTFU between landmark and pandemic start`) %>%
@@ -159,7 +164,7 @@ tbl_gt_death_ltfu2 <- df_death_ltfu2 %>%
   )
 print(tbl_gt_death_ltfu2)
 # Save as RTF (Word-readable)
-gtsave(tbl_gt_death_ltfu2, "baseline_characteristics_death_ltfu2.rtf")
+gtsave(tbl_gt_death_ltfu2, here::here("output", "figures_tables", "baseline_characteristics_death_ltfu2.rtf"))
 
 
 # PS figures ----------------------
@@ -406,7 +411,7 @@ fp <- bind_rows(header, base_data)
 font <- "sans"
 
 # Create the forest plot
-pdf(file = "Fp_results_main.pdf",
+pdf(file = here::here("output", "figures_tables", "Fp_results_main.pdf"),
     width = 14,
     height = 7)
 
@@ -527,7 +532,7 @@ fp <- bind_rows(header, base_data)
 font <- "sans"
 
 # Create the forest plot
-pdf(file = "Fp_results_min.pdf",
+pdf(file = here::here("output", "figures_tables", "Fp_results_min.pdf"),
     width = 14,
     height = 7)
 
@@ -734,7 +739,7 @@ fp <- bind_rows(title, body)
 font <- "sans"
 
 ## --- forest plot ---
-pdf(file = "Fp_results_sg.pdf", width = 24, height = 18)
+pdf(file = here::here("output", "figures_tables", "Fp_results_sg.pdf"), width = 24, height = 18)
 
 fp %>%
   forestplot(
@@ -876,7 +881,7 @@ km_plot <- function(.data) {
 }
 
 p <- km_plot(data_surv_rounded)
-ggsave(filename = "KM_curves_weighted.png", p, width = 20, height = 20, units = "cm")
+ggsave(filename = here::here("output", "figures_tables", "KM_curves_weighted.png"), p, width = 20, height = 20, units = "cm")
 
 
 ## PPA curves ----
@@ -984,11 +989,11 @@ plot_cum_risk_treat_ltfu_ci_severecovid_no_interaction <- ggplot(df_results_ppa_
   )
 
 # save
-ggsave(filename = "plot_cum_risk_treat_ltfu.png", plot_cum_risk_treat_ltfu_ci_severecovid,
+ggsave(filename = here::here("output", "figures_tables", "plot_cum_risk_treat_ltfu.png"), plot_cum_risk_treat_ltfu_ci_severecovid,
        width = 20, height = 20, units = "cm")
-ggsave(filename = "plot_cum_risk_treat_ltfu_untrunc.png", plot_cum_risk_treat_ltfu_ci_severecovid_untrunc,
+ggsave(filename = here::here("output", "figures_tables", "plot_cum_risk_treat_ltfu_untrunc.png"), plot_cum_risk_treat_ltfu_ci_severecovid_untrunc,
        width = 20, height = 20, units = "cm")
-ggsave(filename = "plot_cum_risk_treat_ltfu_no_interaction.png", plot_cum_risk_treat_ltfu_ci_severecovid_no_interaction,
+ggsave(filename = here::here("output", "figures_tables", "plot_cum_risk_treat_ltfu_no_interaction.png"), plot_cum_risk_treat_ltfu_ci_severecovid_no_interaction,
        width = 20, height = 20, units = "cm")
 
 

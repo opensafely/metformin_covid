@@ -238,16 +238,6 @@ actions:
       moderately_sensitive:
         model_output: output/results_cox_longvirfat.csv
 
-  # baseline_tables:
-  #   run: r:v2 analysis/baseline_tables.R
-  #   needs:
-  #   - table1
-  #   outputs:
-  #     moderately_sensitive:
-  #       tbl1: output/data_description/tbl_csv_main.csv
-  #       tbl2: output/data_description/tbl_csv_death_ltfu1.csv
-  #       tbl3: output/data_description/tbl_csv_death_ltfu2.csv
-
   cox_neg_control_landmark:
     run: cox-ipw:v0.0.37 --df_input=data/data_processed.arrow
       --ipw=FALSE --exposure=cox_date_metfin_start_within6m --outcome=out_date_fracture_afterlandmark --strata=strat_cat_region
@@ -589,3 +579,13 @@ actions:
       moderately_sensitive:
         km_treat_estimates: output/te/km_primary_weighted/*.csv
         png: output/te/km_primary_weighted/*.png
+
+  # LOCAL/DUMMY-DATA ONLY
+  # Below is not part of the analysis pipeline. For local exploration/manuscript only.
+
+  figures_tables:
+    # Reads already-released, disclosure-safe data_release_* snapshots (gitignored, local only)
+    run: r:v2 analysis/figures_tables.R
+    outputs:
+      moderately_sensitive:
+        png: output/figures_tables/*.png
