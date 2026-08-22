@@ -239,7 +239,8 @@ diet_only_snomed = codelist_from_csv("codelists/user-alainamstutz-diabetes-diet-
 # covid_codes_incl_clin_diag = codelist_from_csv("codelists/opensafely-covid-identification.csv",column="icd10_code")
 
 # overwrite imported codelist to add 2 additional codes, see blog post here: https://github.com/opensafely/documentation/discussions/1480 
-covid_codes_incl_clin_diag = ["U071", "U072", "U109", "U099"]
+# 22.08.2026: Added "U074", "U075" since HES/APCS used 2016 ICD-10 edition, not 2019 ICD-10 edition (only affects covid-19-related hospitalizations, not deaths)
+covid_codes_incl_clin_diag = ["U071", "U072", "U109", "U099", "U074", "U075"]
 
 # covid_emergency = codelist_from_csv(
 #     "codelists-opensafely-covid-19-ae-diagnosis-codes.csv",
