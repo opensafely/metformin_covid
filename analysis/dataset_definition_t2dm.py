@@ -499,10 +499,12 @@ dataset.out_date_covid = minimum_of(tmp_covid19_primary_care_date, tmp_covid19_s
 ### LONG COVID
 ## First Long COVID code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 dataset.out_date_longcovid = first_matching_event_clinical_snomed_between(long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
+## First Long COVID code in secondary care, between elig_date_t2dm and studyend_date (incl. those dates)
+dataset.out_date_longcovid_sec_care = first_matching_event_apc_between(long_covid_diagnostic_icd10, dataset.elig_date_t2dm, studyend_date).admission_date
 ## First Viral fatigue code in primary care, between elig_date_t2dm and studyend_date (incl. those dates), based on https://github.com/opensafely/long-covid/blob/main/analysis/codelists.py
 dataset.out_date_virfat = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, dataset.elig_date_t2dm, studyend_date).date
-# combined: First Long COVID code or Viral Fatigue code after elig_date_t2dm = primary outcome
-dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_virfat)
+# combined: First Long COVID code or Viral Fatigue code after elig_date_t2dm
+dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_longcovid_sec_care, dataset.out_date_virfat)
 
 ## Long COVID signs and symptoms, first code in primary care, between elig_date_t2dm and studyend_date (incl. those dates)
 # dataset.out_date_breathlessness = first_matching_event_clinical_snomed_between(breathlessness_snomed, dataset.elig_date_t2dm, studyend_date).date

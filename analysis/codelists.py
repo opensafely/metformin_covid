@@ -94,6 +94,8 @@ long_covid_referral_snomed_clinical = codelist_from_csv("codelists/opensafely-re
 long_covid_assessment_snomed_clinical = codelist_from_csv("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv",column="code")
 
 post_viral_fatigue_snomed_clinical = codelist_from_csv("codelists/user-alex-walker-post-viral-syndrome.csv",column="code")
+long_covid_diagnostic_icd10 = ["U109", "U099", "U074", "U075", "U10X", "U09X"] # added based on OpenCodelist changes 09.09.2026
+
 palliative_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-palcare_cod.csv",column="code")
 
 #######################################################################################
@@ -240,7 +242,7 @@ diet_only_snomed = codelist_from_csv("codelists/user-alainamstutz-diabetes-diet-
 
 # overwrite imported codelist to add 2 additional codes, see blog post here: https://github.com/opensafely/documentation/discussions/1480 
 # 22.08.2026: Added "U074", "U075" since HES/APCS used 2016 ICD-10 edition, not 2019 ICD-10 edition (only affects covid-19-related hospitalizations, not deaths)
-covid_codes_incl_clin_diag = ["U071", "U072", "U109", "U099", "U074", "U075"]
+covid_codes_incl_clin_diag = ["U071", "U072", "U109", "U099", "U074", "U075", "U10X", "U09X"] # last two added based on OpenCodelist changes 09.09.2026
 
 # covid_emergency = codelist_from_csv(
 #     "codelists-opensafely-covid-19-ae-diagnosis-codes.csv",
