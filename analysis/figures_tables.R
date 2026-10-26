@@ -2,20 +2,15 @@
 ## This script does the following:
 # 1. Import released midpoint rounded disclosure-safe output data
 # 2. Create various tables and figures
-# Not a project.yaml action: inputs are manually-curated, already-released
-# data_release_* snapshots that only ever exist on a local machine (gitignored).
-# Run this directly with Rscript/RStudio on your own machine.
+# Not a project.yaml action: inputs are manually-curated, only for released output
 ####
 
 # Import libraries and user functions -----------------------------
 library('dplyr')
 library('tidyr')
 library('readr')
-# library('stringr')
 library('here')
-# library('DiagrammeR')
 library('ggplot2')
-# library('RColorBrewer')
 library('gt')
 library(forestplot)
 library(purrr)
@@ -44,19 +39,19 @@ df_smd_combined_HbA1cbelow42 <- read_csv(here("output", "data_release_20260610",
 df_smd_combined_HbA1c42to58 <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_HbA1c42to58.csv"))
 df_smd_combined_HbA1c59orabove <- read_csv(here("output", "data_release_20260610", "ps", "smd_combined_HbA1c59orabove.csv"))
 
-df_results_cox <- read_csv(here("output", "data_release_20260610", "make_output", "results_cox_midpoint6.csv"))
+df_results_cox <- read_csv(here("output", "data_release_20261022", "make_output", "results_cox_midpoint6.csv")) # revised results after OS codelist update
 
-df_results_km_primary <- read_csv(here("output", "data_release_20260331", "te", "km_primary", "estimates.csv"))
+df_results_km_primary <- read_csv(here("output", "data_release_20261022", "te", "km_primary", "estimates.csv")) # revised results after OS codelist update
 df_results_km_covid_event <- read_csv(here("output", "data_release_20260331", "te", "km_covid_event", "estimates.csv"))
 df_results_km_longvirfat <- read_csv(here("output", "data_release_20260331", "te", "km_longvirfat", "estimates.csv"))
-df_results_km_primary_weighted <- read_csv(here("output", "data_release_20260610", "te", "km_primary_weighted", "estimates.csv"))
+df_results_km_primary_weighted <- read_csv(here("output", "data_release_20261022", "te", "km_primary_weighted", "estimates.csv")) # revised results after OS codelist update
 
-df_results_ppa_interaction <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid.csv"))
-df_results_ppa_no_interaction <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_no_interaction.csv"))
-df_results_ppa_interaction_untrunc <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_untrunc.csv"))
+df_results_ppa_interaction <- read_csv(here("output", "data_release_20261022", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid.csv")) # revised results after OS codelist update
+df_results_ppa_no_interaction <- read_csv(here("output", "data_release_20261022", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_no_interaction.csv")) # revised results after OS codelist update
+df_results_ppa_interaction_untrunc <- read_csv(here("output", "data_release_20261022", "te", "pooled_log_reg", "cum_risk_treat_ltfu_ci_severecovid_untrunc.csv")) # revised results after OS codelist update
 
-df_results_ppa_cens_ltfu <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_ltfu_rates.csv"))
-df_results_ppa_comp <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_comp_rates.csv"))
+df_results_ppa_cens_ltfu <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_ltfu_rates.csv")) # n/a
+df_results_ppa_comp <- read_csv(here("output", "data_release_20260610", "te", "pooled_log_reg", "censoring_comp_rates.csv")) # n/a
 
 # Baseline table, based on output from table1.R ----------------------
 
@@ -888,10 +883,10 @@ ggsave(filename = here::here("output", "figures_tables", "KM_curves_weighted.png
 # --- annotation text (end-of-follow-up results) ---
 annotation_text <- paste(
   "At end of follow-up:",
-  "Cumulative risk, metformin: 2.12% (1.87 to 2.35)",
-  "Cumulative risk, no antidiabetic: 1.92% (1.73 to 2.10)",
-  "Adjusted risk ratio: 1.11 (0.95 to 1.27)",
-  "Adjusted risk difference: 0.21% (-0.11 to 0.49)",
+  "Cumulative risk, metformin: 2.14% (1.92 to 2.36)",
+  "Cumulative risk, no antidiabetic: 1.93% (1.72 to 2.14)",
+  "Adjusted risk ratio: 1.11 (0.96 to 1.29)",
+  "Adjusted risk difference: 0.21% (-0.08 to 0.51)",
   sep = "\n"
 )
 
