@@ -26,6 +26,17 @@ opensafely/insulin-medication/2020-04-26
 opensafely/antidiabetic-drugs/2020-07-16
 user/alainamstutz/non-metformin-oral-antidiabetic/0641be78
 
+nhsd-primary-care-domain-refsets/dmtype1_cod/2d672380
+bristol/type-1-diabetes-icd10/4c7d263c
+nhsd-primary-care-domain-refsets/dmtype2_cod/3ae4e34e
+bristol/type-2-diabetes-icd10/58a5f4da
+bristol/diabetes-of-other-specified-aetiology/7be94cb0
+bristol/diabetes-not-otherwise-specified/30baf311
+bristol/diabetes-not-otherwise-specified-icd10/658c9971
+nhsd-primary-care-domain-refsets/gestdiab_cod/247ec712
+bristol/gestational-diabetes-icd10/41831973
+bristol/non-metformin-oral-antidiabetic/683f5967
+
 opensafely/glycated-haemoglobin-hba1c-tests-numerical-value/5134e926
 opensafely/prediabetes-snomed/6bdbb7dd
 
