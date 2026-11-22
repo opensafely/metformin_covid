@@ -664,11 +664,20 @@ actions:
       highly_sensitive:
         csv.gz: output/seqtrials/data_processed_dm_algo.csv.gz
 
+  st_generate_dataset_t2dm_qa:
+    run: ehrql:v1 generate-dataset analysis/seqtrials/dataset_definition_t2dm_qa.py --output output/seqtrials/dataset_t2dm_qa.arrow
+    needs:
+    - st_study_dates
+    - st_diabetes_algo
+    outputs:
+      highly_sensitive:
+        dataset: output/seqtrials/dataset_t2dm_qa.arrow
+
   # Collector: runs the full seqtrials pipeline (add the final st_ actions to needs as they are created)
   st_run_all:
     run: r:v2 analysis/pipeline_done.R seqtrials
     needs:
-    - st_diabetes_algo
+    - st_generate_dataset_t2dm_qa
     outputs:
       moderately_sensitive:
         done: output/seqtrials/st_done.txt
