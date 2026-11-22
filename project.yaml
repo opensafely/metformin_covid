@@ -1,6 +1,17 @@
 version: '5.0'
 
+# This project.yaml contains two independent pipelines. Do NOT use run_all.
+# Run one pipeline via its collector action (dependencies run automatically):
+#   opensafely run run_landmark -> original landmark pipeline (actions without prefix, outputs in output/)
+#   opensafely run st_run_all -> sequential trials pipeline (actions prefixed st_, outputs in output/seqtrials/)
+# add -f to force everything upstream to run again
+
 actions:
+
+  ##############################################################################
+  # LANDMARK PIPELINE (original approach)
+  ##############################################################################
+
   study_dates:
     run: r:v2 analysis/metadates.R
     outputs:
@@ -579,3 +590,40 @@ actions:
       moderately_sensitive:
         km_treat_estimates: output/te/km_primary_weighted/*.csv
         png: output/te/km_primary_weighted/*.png
+
+  # Collector: runs the full landmark pipeline
+  run_landmark:
+    run: r:v2 analysis/pipeline_done.R landmark
+    needs:
+    - treat_strat_feasibility
+    - table1
+    - km_primary
+    - km_covid_event
+    - km_longvirfat
+    - cox_primary_scripted
+    - make_model_output
+    - PPA_03_pooled_log_reg_with_interaction
+    - PPA_03_pooled_log_reg_no_interaction
+    - km_primary_weighted
+    outputs:
+      moderately_sensitive:
+        done: output/landmark_done.txt
+
+  ##############################################################################
+  # SEQUENTIAL TRIALS PIPELINE (prefix st_, scripts in analysis/seqtrials/, outputs in output/seqtrials/)
+  ##############################################################################
+
+  st_study_dates:
+    run: r:v2 analysis/metadates.R seqtrials
+    outputs:
+      highly_sensitive:
+        study_dates_json: output/seqtrials/study_dates.json
+
+  # Collector: runs the full seqtrials pipeline (add the final st_ actions to needs as they are created)
+  st_run_all:
+    run: r:v2 analysis/pipeline_done.R seqtrials
+    needs:
+    - st_study_dates
+    outputs:
+      moderately_sensitive:
+        done: output/seqtrials/st_done.txt
