@@ -673,11 +673,23 @@ actions:
       highly_sensitive:
         dataset: output/seqtrials/dataset_t2dm_qa.arrow
 
+  st_data_process_qa:
+    run: r:v2 analysis/seqtrials/data_process_qa.R
+    needs:
+    - st_study_dates
+    - st_diabetes_algo
+    - st_generate_dataset_t2dm_qa
+    outputs:
+      highly_sensitive:
+        dataset: output/seqtrials/data/data_t2dm_qa.arrow
+      moderately_sensitive:
+        flowchart: output/seqtrials/data_description/flowchart_qa_midpoint6.csv
+
   # Collector: runs the full seqtrials pipeline (add the final st_ actions to needs as they are created)
   st_run_all:
     run: r:v2 analysis/pipeline_done.R seqtrials
     needs:
-    - st_generate_dataset_t2dm_qa
+    - st_data_process_qa
     outputs:
       moderately_sensitive:
         done: output/seqtrials/st_done.txt
