@@ -593,7 +593,7 @@ actions:
 
   # Collector: runs the full landmark pipeline
   run_landmark:
-    run: r:v2 analysis/.R landmark
+    run: r:v2 analysis/pipeline_done.R landmark
     needs:
     - treat_strat_feasibility
     - table1
