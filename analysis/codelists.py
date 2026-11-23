@@ -64,6 +64,30 @@ insulin_dmd = codelist_from_csv("codelists/opensafely-insulin-medication.csv",co
 antidiabetic_drugs_dmd = codelist_from_csv("codelists/opensafely-antidiabetic-drugs.csv",column="id")
 non_metformin_dmd = codelist_from_csv("codelists/user-alainamstutz-non-metformin-oral-antidiabetic.csv",column="code")
 
+## DIABETES ALGORITHM - updated codelists (diabetes-algo PR #31), used by the seqtrials pipeline
+## https://github.com/opensafely-actions/diabetes-algo/pull/31
+## Unchanged in the PR and reused from above: ethnicity_codes, diabetes_diagnostic_ctv3_clinical (non-diagnostic codes, still CTV3), hba1c_snomed, insulin_dmd, antidiabetic_drugs_dmd
+## ICD-10: 3-character codes are additionally padded with "X" (as in the PR)
+def _icd10_with_x_padding(path):
+    codes = codelist_from_csv(path, column="code")
+    return codes + [code + "X" for code in codes if len(code) == 3]
+# T1DM
+dmalgo_type1_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-dmtype1_cod.csv",column="code")
+dmalgo_type1_icd10 = _icd10_with_x_padding("codelists/bristol-type-1-diabetes-icd10.csv")
+# T2DM
+dmalgo_type2_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-dmtype2_cod.csv",column="code")
+dmalgo_type2_icd10 = _icd10_with_x_padding("codelists/bristol-type-2-diabetes-icd10.csv")
+# Diabetes of other specified aetiology (other DM)
+dmalgo_other_snomed = codelist_from_csv("codelists/bristol-diabetes-of-other-specified-aetiology.csv",column="code")
+# Diabetes not otherwise specified (NOS DM)
+dmalgo_nos_snomed = codelist_from_csv("codelists/bristol-diabetes-not-otherwise-specified.csv",column="code")
+dmalgo_nos_icd10 = _icd10_with_x_padding("codelists/bristol-diabetes-not-otherwise-specified-icd10.csv")
+# Gestational diabetes
+dmalgo_gestational_snomed = codelist_from_csv("codelists/nhsd-primary-care-domain-refsets-gestdiab_cod.csv",column="code")
+dmalgo_gestational_icd10 = _icd10_with_x_padding("codelists/bristol-gestational-diabetes-icd10.csv")
+# Antidiabetic drugs: all but insulin and metformin
+dmalgo_non_metformin_dmd = codelist_from_csv("codelists/bristol-non-metformin-oral-antidiabetic.csv",column="code")
+
 ## Prediabetes
 prediabetes_snomed = codelist_from_csv("codelists/opensafely-prediabetes-snomed.csv",column="code")
 

@@ -25,6 +25,7 @@ analysis/                    Python (ehrql) dataset definitions and R analysis s
   functions/                   Shared R helper functions, sourced by the scripts above
   make_output/                 Pools Cox model results across all outcomes and subgroups
   superseded/                  Archived dataset definitions/scripts, no longer run
+  seqtrials/                   Scripts of the sequential trials pipeline (see below)
 codelists/                   Clinical codelists used by the ehrql dataset definitions
 metadata/                    Auto-generated run logs, one per project.yaml action
 output/                      Action outputs (dummy-data outputs are committed here)
@@ -32,9 +33,32 @@ protocol/                    Versioned study protocol documents
 project.yaml                 OpenSAFELY pipeline - the data flow
 ```
 
-# Data flow
+# Pipelines
 
-The pipeline is defined by [project.yaml](project.yaml).
+[project.yaml](project.yaml) contains two independent pipelines:
+
+| | Landmark pipeline (original, preprint) | Sequential trials pipeline (in development) |
+|---|---|---|
+| Design | Landmark new-user design, T2DM diagnosed Aug 2018-Aug 2019 | Sequential target trial emulation, monthly trials Feb 2020-Mar 2022 |
+| Actions | no prefix | prefixed `st_` |
+| Scripts | `analysis/` | `analysis/seqtrials/` (shared code in `analysis/` reused where unchanged) |
+| Outputs | `output/` | `output/seqtrials/` |
+| Study dates | `output/study_dates.json` | `output/seqtrials/study_dates.json` |
+| Run with | `opensafely run run_landmark` | `opensafely run st_run_all` |
+
+Do **not** use `run_all`, which runs both pipelines. Each pipeline ends in a collector action
+(`run_landmark` / `st_run_all`) that `needs:` all its final actions, so running it runs any
+upstream action whose outputs are missing. Add `-f` to force all dependencies to re-run.
+Both collectors run `analysis/pipeline_done.R`, which only writes a marker file
+(`output/landmark_done.txt` / `output/seqtrials/st_done.txt`) because every OpenSAFELY action needs an output.
+On the job server, select only the collector action (or single actions) of one pipeline.
+When adding final `st_` actions, add them to the `needs:` of `st_run_all`.
+
+Shared scripts take the pipeline as an argument where only parameters differ, e.g.
+`analysis/metadates.R` (landmark, default) vs `analysis/metadates.R seqtrials`.
+
+# Data flow (landmark pipeline)
+
 Each box below is a `project.yaml` action and arrows show `needs:` dependencies. 
 
 Repetitive subgroup/outcome actions are grouped into a single box for readability.
