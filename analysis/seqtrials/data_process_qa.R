@@ -38,9 +38,10 @@ fs::dir_create(here::here("output", "seqtrials", "data_description"))
 study_dates <- read_json(here::here("output", "seqtrials", "study_dates.json"))
 studystart_date <- as.Date(study_dates$studystart_date)
 studyend_date <- as.Date(study_dates$studyend_date)
-# The first trial (T0) enrols people diagnosed within the previous 6 months
+# Trials start at diagnosis + 30*k days (k = 0, ..., 6), i.e. up to 180 days after
+# diagnosis, so the window starts 180 days before study start
 # (identical to the population definition in dataset_definition_t2dm_qa.py)
-t2dm_window_start <- studystart_date %m-% months(6)
+t2dm_window_start <- studystart_date - days(180)
 
 # Redaction threshold
 threshold <- 6
