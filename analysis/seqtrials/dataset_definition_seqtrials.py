@@ -72,13 +72,20 @@ import json
 import random
 random.seed(19283) # random seed
 
+## Input files from the previous actions. The assurance tests (test_dataset_definition_seqtrials.py) replace them with their own small test files,
+## since table_from_file always reads the file (not the test data); the environment variable is only set by the tests
+import os
+TEST_INPUT_DIR = os.environ.get("SEQTRIALS_ASSURE_INPUT_DIR")
+file_t2dm_qa = f"{TEST_INPUT_DIR}/data_t2dm_qa.csv" if TEST_INPUT_DIR else "output/seqtrials/data/data_t2dm_qa.arrow"
+file_dm_algo = f"{TEST_INPUT_DIR}/data_dm_algo.csv" if TEST_INPUT_DIR else "output/seqtrials/data_processed_dm_algo.csv.gz"
+
 ## import the people who passed the QA and completeness criteria (output of data_process_qa.R)
-@table_from_file("output/seqtrials/data/data_t2dm_qa.arrow")
+@table_from_file(file_t2dm_qa)
 class data_t2dm_qa(PatientFrame):
     elig_date_t2dm = Series(date)
 
 ## import ethnicity from the diabetes algorithm output (the same variable the algorithm used for the T2DM classification)
-@table_from_file("output/seqtrials/data_processed_dm_algo.csv.gz")
+@table_from_file(file_dm_algo)
 class data_dm_algo(PatientFrame):
     ethnicity_cat = Series(str)
 
