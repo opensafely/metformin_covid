@@ -34,8 +34,10 @@ from ehrql import (
 from ehrql.tables.tpp import (
     addresses,
     apcs,
+    appointments,
     clinical_events,
     medications,
+    occupation_on_covid_vaccine_record,
     ons_deaths,
     patients,
     practice_registrations
@@ -55,6 +57,9 @@ from codelists import *
 ## variable helper functions
 from variable_helper_functions import *
 
+## permissions for the restricted tables (appointments, occupation_on_covid_vaccine_record), as in landmark
+import project_permissions
+
 ## json (for the dates)
 import json
 
@@ -66,6 +71,11 @@ random.seed(19283) # random seed
 @table_from_file("output/seqtrials/data/data_t2dm_qa.arrow")
 class data_t2dm_qa(PatientFrame):
     elig_date_t2dm = Series(date)
+
+## import ethnicity from the diabetes algorithm output (the same variable the algorithm used for the T2DM classification)
+@table_from_file("output/seqtrials/data_processed_dm_algo.csv.gz")
+class data_dm_algo(PatientFrame):
+    ethnicity_cat = Series(str)
 
 #######################################################################################
 # DEFINE the dates and the trial grid
@@ -100,8 +110,24 @@ dataset.define_population(data_t2dm_qa.exists_for_patient())
 dataset.elig_date_t2dm = data_t2dm_qa.elig_date_t2dm
 
 #######################################################################################
-# B. FIRST-EVER DATES (up to study end) used for eligibility
+# A. FIXED VARIABLES
 #######################################################################################
+## Sex (only female/male left after the completeness criteria)
+dataset.cov_cat_sex = patients.sex
+
+## Ethnicity (5 groups + Unknown, from the diabetes algorithm output)
+dataset.cov_cat_ethnicity = data_dm_algo.ethnicity_cat
+
+## Healthcare worker, as recorded at any COVID-19 vaccination (recorded from Dec 2020 onwards, i.e. sometimes after the trial start; used as a proxy for the occupation)
+dataset.cov_bin_healthcare_worker = (
+    occupation_on_covid_vaccine_record.where(occupation_on_covid_vaccine_record.is_healthcare_worker == True)
+    .exists_for_patient()
+)
+
+#######################################################################################
+# B. FIRST-EVER DATES (up to study end)
+#######################################################################################
+#### B1. Used for eligibility
 ## Date of death (ONS): alive at trial start; later also the competing event
 dataset.out_date_death = ons_deaths.date
 
@@ -129,6 +155,96 @@ dataset.cov_date_ckd45_first = minimum_of(
 dataset.cov_date_liver_cirrhosis_first = minimum_of(
     first_matching_event_clinical_snomed_before(advanced_decompensated_cirrhosis_snomed_clinical + ascitic_drainage_snomed_clinical, studyend_date).date,
     first_matching_event_apc_before(advanced_decompensated_cirrhosis_icd10, studyend_date).admission_date
+)
+
+#### B2. Comorbidities (confounders): first-ever record in primary care or hospital (any diagnosis position); in R: present at trial k = date on or before the trial start
+## Obesity (codes; the BMI value itself is on the grid, see D)
+dataset.cov_date_obesity = minimum_of(
+    first_matching_event_clinical_snomed_before(bmi_obesity_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(bmi_obesity_icd10, studyend_date).admission_date
+)
+## Acute myocardial infarction
+dataset.cov_date_ami = minimum_of(
+    first_matching_event_clinical_snomed_before(ami_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(ami_prior_icd10 + ami_icd10, studyend_date).admission_date
+)
+## All stroke
+dataset.cov_date_all_stroke = minimum_of(
+    first_matching_event_clinical_snomed_before(stroke_isch_snomed_clinical + stroke_sah_hs_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(stroke_isch_icd10 + stroke_sah_hs_icd10, studyend_date).admission_date
+)
+## Other arterial embolism
+dataset.cov_date_other_arterial_embolism = minimum_of(
+    first_matching_event_clinical_snomed_before(other_arterial_embolism_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(other_arterial_embolism_icd10, studyend_date).admission_date
+)
+## Venous thromboembolism
+dataset.cov_date_vte = minimum_of(
+    first_matching_event_clinical_snomed_before(portal_vein_thrombosis_snomed_clinical + dvt_dvt_snomed_clinical + dvt_icvt_snomed_clinical + dvt_pregnancy_snomed_clinical + other_dvt_snomed_clinical + pe_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(portal_vein_thrombosis_icd10 + dvt_dvt_icd10 + dvt_icvt_icd10 + dvt_pregnancy_icd10 + other_dvt_icd10 + icvt_pregnancy_icd10 + pe_icd10, studyend_date).admission_date
+)
+## Heart failure
+dataset.cov_date_hf = minimum_of(
+    first_matching_event_clinical_snomed_before(hf_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(hf_icd10, studyend_date).admission_date
+)
+## Angina
+dataset.cov_date_angina = minimum_of(
+    first_matching_event_clinical_snomed_before(angina_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(angina_icd10, studyend_date).admission_date
+)
+## Dementia
+dataset.cov_date_dementia = minimum_of(
+    first_matching_event_clinical_snomed_before(dementia_snomed_clinical + dementia_vascular_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(dementia_icd10 + dementia_vascular_icd10, studyend_date).admission_date
+)
+## Cancer
+dataset.cov_date_cancer = minimum_of(
+    first_matching_event_clinical_snomed_before(cancer_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(cancer_icd10, studyend_date).admission_date
+)
+## Hypertension
+dataset.cov_date_hypertension = minimum_of(
+    first_matching_event_clinical_snomed_before(hypertension_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(hypertension_icd10, studyend_date).admission_date
+)
+## Depression
+dataset.cov_date_depression = minimum_of(
+    first_matching_event_clinical_snomed_before(depression_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(depression_icd10, studyend_date).admission_date
+)
+## Chronic obstructive pulmonary disease
+dataset.cov_date_copd = minimum_of(
+    first_matching_event_clinical_snomed_before(copd_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(copd_icd10, studyend_date).admission_date
+)
+## Liver disease
+dataset.cov_date_liver_disease = minimum_of(
+    first_matching_event_clinical_snomed_before(liver_disease_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(liver_disease_icd10, studyend_date).admission_date
+)
+## Chronic kidney disease (any stage)
+dataset.cov_date_chronic_kidney_disease = minimum_of(
+    first_matching_event_clinical_snomed_before(ckd_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(ckd_icd10, studyend_date).admission_date
+)
+## Polycystic ovary syndrome
+dataset.cov_date_pcos = minimum_of(
+    first_matching_event_clinical_snomed_before(pcos_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(pcos_icd10, studyend_date).admission_date
+)
+## Diabetes complications (foot, retino, neuro, nephro)
+dataset.cov_date_diabetescomp = minimum_of(
+    first_matching_event_clinical_snomed_before(diabetescomp_snomed_clinical, studyend_date).date,
+    first_matching_event_apc_before(diabetescomp_icd10, studyend_date).admission_date
+)
+## Prediabetes: first prediabetes code, or first HbA1c in the prediabetes range (42-47.9 mmol/mol, as in landmark), in primary care
+dataset.cov_date_prediabetes = minimum_of(
+    first_matching_event_clinical_snomed_before(prediabetes_snomed, studyend_date).date,
+    first_matching_event_clinical_snomed_before(
+        hba1c_snomed, studyend_date,
+        where=(clinical_events.numeric_value >= 42) & (clinical_events.numeric_value <= 47.9)
+    ).date
 )
 
 #######################################################################################
@@ -180,6 +296,72 @@ for k in range(N_TRIALS):
         last_matching_med_dmd_between(metformin_interaction_dmd, trial_start - days(14), trial_start).exists_for_patient()
     )
 
+    ## Index of Multiple Deprivation (IMD) on the trial start, in fifths (rank rounded to the nearest 100; 32844 LSOAs in England)
+    imd_rounded = addresses.for_patient_on(trial_start).imd_rounded
+    dataset.add_column(
+        f"cov_cat_deprivation_5_t{k}",
+        case(
+            when((imd_rounded >= 0) & (imd_rounded < int(32844 * 1 / 5))).then("1 (most deprived)"),
+            when(imd_rounded < int(32844 * 2 / 5)).then("2"),
+            when(imd_rounded < int(32844 * 3 / 5)).then("3"),
+            when(imd_rounded < int(32844 * 4 / 5)).then("4"),
+            when(imd_rounded <= 32844).then("5 (least deprived)"),
+            otherwise="Unknown"
+        )
+    )
+
+    ## Rural/urban classification of the address on the trial start
+    dataset.add_column(f"cov_cat_rural_urban_t{k}", addresses.for_patient_on(trial_start).rural_urban_classification)
+
+    ## STP and region of the practice registration on the trial start
+    registration = practice_registrations.for_patient_on(trial_start)
+    dataset.add_column(f"cov_cat_stp_t{k}", registration.practice_stp)
+    dataset.add_column(f"cov_cat_region_t{k}", registration.practice_nuts1_region_name)
+
+    ## Smoking status on the trial start (as in landmark): most recent smoking code (S, E, N, M); never/missing are reclassified as ex-smoker if any smoking code was ever recorded
+    most_recent_smoking_cat = last_matching_event_clinical_ctv3_before(smoking_clear, trial_start).ctv3_code.to_category(smoking_clear)
+    ever_smoked = last_matching_event_clinical_ctv3_before(ever_smoking, trial_start).exists_for_patient()
+    dataset.add_column(
+        f"cov_cat_smoking_status_t{k}",
+        case(
+            when(most_recent_smoking_cat == "S").then("S"),
+            when(most_recent_smoking_cat == "E").then("E"),
+            when((most_recent_smoking_cat == "N") & ever_smoked).then("E"),
+            when(most_recent_smoking_cat == "N").then("N"),
+            when((most_recent_smoking_cat == "M") & ever_smoked).then("E"),
+            otherwise="M"
+        )
+    )
+
+    ## Consultation rate: number of attended appointments in the year (366 days) before or on the trial start, capped at 365 (as in landmark); proxy for health-seeking behaviour
+    consultations = appointments.where(
+        appointments.status.is_in([
+            "Arrived",
+            "In Progress",
+            "Finished",
+            "Visit",
+            "Waiting",
+            "Patient Walked Out",
+        ])
+        & appointments.start_date.is_on_or_between(trial_start - days(366), trial_start)
+    ).count_for_patient()
+    dataset.add_column(
+        f"cov_num_consrate_t{k}",
+        case(when(consultations <= 365).then(consultations), otherwise=365)
+    )
+
+    ## Number of HbA1c tests (any HbA1c code, with or without a value) in the 2 years before or on the trial start
+    dataset.add_column(
+        f"cov_num_counthba1c_t{k}",
+        count_matching_event_clinical_snomed_between(hba1c_measurement_snomed, trial_start - days(2 * 366), trial_start)
+    )
+
+    ## Number of lifestyle advice codes in the 2 years before or on the trial start
+    dataset.add_column(
+        f"cov_num_countlifestyle_t{k}",
+        count_matching_event_clinical_snomed_between(lifestyle_advice_snomed, trial_start - days(2 * 366), trial_start)
+    )
+
 #######################################################################################
 # D. LAB VALUES ON THE 30-DAY GRID (suffix _g0 ... _g31)
 #######################################################################################
@@ -200,3 +382,26 @@ for i in range(N_GRID):
     )
     dataset.add_column(f"cov_num_hba1c_g{i}", hba1c_last.numeric_value)
     dataset.add_column(f"cov_date_hba1c_g{i}", hba1c_last.date)
+
+## BMI, total cholesterol and HDL cholesterol: most recent value (and its date) within 2 years before or on the grid point
+# Missing and non-positive values are skipped; the plausibility checks are done in R (e.g. BMI 12-70, as in landmark)
+for i in range(N_GRID):
+    grid_date = dataset.elig_date_t2dm + days(TRIAL_STEP * i)
+
+    ## BMI: recorded BMI (CTV3 22K..), measured at age 16 or older (helper from landmark)
+    bmi_last = most_recent_bmi(
+        where=clinical_events.date.is_on_or_between(grid_date - days(LOOKBACK_LAB), grid_date) & (clinical_events.numeric_value > 0),
+        minimum_age_at_measurement=16
+    )
+    dataset.add_column(f"cov_num_bmi_g{i}", bmi_last.numeric_value)
+    dataset.add_column(f"cov_date_bmi_g{i}", bmi_last.date)
+
+    ## Total cholesterol
+    chol_last = last_matching_event_clinical_snomed_between(cholesterol_snomed, grid_date - days(LOOKBACK_LAB), grid_date, where=clinical_events.numeric_value > 0)
+    dataset.add_column(f"cov_num_chol_g{i}", chol_last.numeric_value)
+    dataset.add_column(f"cov_date_chol_g{i}", chol_last.date)
+
+    ## HDL cholesterol
+    hdl_chol_last = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, grid_date - days(LOOKBACK_LAB), grid_date, where=clinical_events.numeric_value > 0)
+    dataset.add_column(f"cov_num_hdl_chol_g{i}", hdl_chol_last.numeric_value)
+    dataset.add_column(f"cov_date_hdl_chol_g{i}", hdl_chol_last.date)

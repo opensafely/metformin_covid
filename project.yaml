@@ -689,6 +689,7 @@ actions:
     run: ehrql:v1 generate-dataset analysis/seqtrials/dataset_definition_seqtrials.py --output output/seqtrials/dataset_seqtrials.arrow
     needs:
     - st_study_dates
+    - st_diabetes_algo
     - st_data_process_qa
     outputs:
       highly_sensitive:
