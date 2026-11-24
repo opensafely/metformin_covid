@@ -685,11 +685,21 @@ actions:
       moderately_sensitive:
         flowchart: output/seqtrials/data_description/flowchart_qa_midpoint6.csv
 
+  st_generate_dataset_seqtrials:
+    run: ehrql:v1 generate-dataset analysis/seqtrials/dataset_definition_seqtrials.py --output output/seqtrials/dataset_seqtrials.arrow
+    needs:
+    - st_study_dates
+    - st_diabetes_algo
+    - st_data_process_qa
+    outputs:
+      highly_sensitive:
+        dataset: output/seqtrials/dataset_seqtrials.arrow
+
   # Collector: runs the full seqtrials pipeline (add the final st_ actions to needs as they are created)
   st_run_all:
     run: r:v2 analysis/pipeline_done.R seqtrials
     needs:
-    - st_data_process_qa
+    - st_generate_dataset_seqtrials
     outputs:
       moderately_sensitive:
         done: output/seqtrials/st_done.txt

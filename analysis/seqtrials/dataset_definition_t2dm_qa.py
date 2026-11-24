@@ -3,12 +3,14 @@
 # data quality assurance (QA) and completeness criteria variables ONLY (no other
 # eligibility criteria, covariates, treatment or outcome variables; these follow in dataset 3)
 #
-# Population: T2DM diagnosis between 6 months before study start (the first trial, T0,
-# enrols people diagnosed within the previous 6 months) and study end.
+# Population: T2DM diagnosis between 180 days before study start and study end.
+# Trials start at the T2DM diagnosis date + 30*k days (k = 0, ..., 6), i.e. up to
+# 180 days after diagnosis; people diagnosed earlier can never start a trial during the
+# study period.
 #
 # Anchor date: T2DM diagnosis date (elig_date_t2dm), used only where a variable depends
-# on time (deprivation and STP). Since all diagnoses are recent, it is at most 6 months
-# before the baseline of any trial a person can enter. The QA variables are not anchored:
+# on time (deprivation and STP). It is at most 180 days before the start of any trial
+# a person can enter. The QA variables are not anchored:
 # they check the plausibility of the entire record. Sex is fixed in the patients table.
 #######################################################################################
 
@@ -46,7 +48,7 @@ from ehrql.query_language import (
     PatientFrame,
     Series
 )
-from datetime import date
+from datetime import date, timedelta
 
 ## All codelists from codelists.py
 from codelists import *
@@ -75,10 +77,9 @@ with open("output/seqtrials/study_dates.json") as f:
 studystart_date = study_dates["studystart_date"]
 studyend_date = study_dates["studyend_date"]
 
-## Start of the T2DM window: 6 calendar months before study start (2020-02-01 -> 2019-08-01)
-_start = date.fromisoformat(studystart_date)
-_month0 = _start.year * 12 + (_start.month - 1) - 6
-t2dm_window_start = date(_month0 // 12, _month0 % 12 + 1, _start.day).isoformat()
+## Start of the T2DM window: 180 days before study start (2020-02-01 -> 2019-08-05),
+## i.e. the last trial (diagnosis + 180 days) still starts on or after study start
+t2dm_window_start = (date.fromisoformat(studystart_date) - timedelta(days=180)).isoformat()
 
 #######################################################################################
 # INITIALISE the dataset and set the dummy dataset size
