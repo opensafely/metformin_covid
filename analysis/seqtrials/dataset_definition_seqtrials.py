@@ -4,12 +4,15 @@
 #
 # Design: trial k starts at the T2DM diagnosis date + 30*k days (k = 0, ..., 6)
 # Eligibility is re-assessed at each trial start. 
-# No event-level tables possible in this repo, therefore four kinds of variables:
+# No event-level tables possible in this repo, therefore the following kinds of variables:
 #   A. Fixed variables (no date needed)
 #   B. First-ever dates up to study end (compared with each trial start in R:
 #      e.g. "before the trial start" = exclusion, "within 30 days after" = treatment)
 #   C. Status at each trial start, suffix _t0 ... _t6
 #   D. Lab values on the 30-day grid, suffix _g0 ... _g31: the most recent value at T2DM diagnosis + 30*i days, from diagnosis to study end
+#   E. Outcomes: first date between study start and study end (any prior COVID-19 = ineligible)
+#   F. Loss to follow-up per trial (suffix _t0 ... _t6)
+#   G. Negative control outcome (fracture) per 30-day period (suffix _g0 ... _g31)
 #######################################################################################
 
 #######################################################################################
@@ -40,7 +43,9 @@ from ehrql.tables.tpp import (
     occupation_on_covid_vaccine_record,
     ons_deaths,
     patients,
-    practice_registrations
+    practice_registrations,
+    sgss_covid_all_tests,
+    vaccinations
 )
 
 ## for import of the eligible people from dataset 2
@@ -134,6 +139,10 @@ dataset.out_date_death = ons_deaths.date
 ## Metformin and other antidiabetic drugs: first-ever prescription (no lower date bound)
 # Eligibility: no prescription BEFORE the trial start (strictly before, i.e. starting on the trial start day counts as treatment, as in landmark). The same dates define the treatment (start within 30 days after the trial start) and deviations from it, hence exp_*
 dataset.exp_date_metfin_first = first_matching_med_dmd_before(metformin_dmd, studyend_date).date
+## Metformin monotherapy (without other antidiabetic drugs in the same product): only this counts as treatment start (as in landmark).
+# In R, per trial: metformin mono started within 30 days after the trial start = treated; no antidiabetic drug = control; metformin combo or another drug = excluded from that trial.
+# The class codelists below include the combination products with metformin, i.e. a combo prescription sets both exp_date_metfin_first and the date of the other class
+dataset.exp_date_metfin_mono_first = first_matching_med_dmd_before(metformin_mono_dmd, studyend_date).date
 dataset.exp_date_sulfo_first = first_matching_med_dmd_before(sulfonylurea_dmd, studyend_date).date
 dataset.exp_date_dpp4_first = first_matching_med_dmd_before(dpp4_dmd, studyend_date).date
 dataset.exp_date_tzd_first = first_matching_med_dmd_before(tzd_dmd, studyend_date).date
@@ -239,6 +248,7 @@ dataset.cov_date_diabetescomp = minimum_of(
     first_matching_event_apc_before(diabetescomp_icd10, studyend_date).admission_date
 )
 ## Prediabetes: first prediabetes code, or first HbA1c in the prediabetes range (42-47.9 mmol/mol, as in landmark), in primary care
+# In R: compare with the T2DM DIAGNOSIS date (as in landmark), not the trial start: an HbA1c of 42-47.9 after the diagnosis means well-controlled diabetes, not prediabetes
 dataset.cov_date_prediabetes = minimum_of(
     first_matching_event_clinical_snomed_before(prediabetes_snomed, studyend_date).date,
     first_matching_event_clinical_snomed_before(
@@ -246,6 +256,30 @@ dataset.cov_date_prediabetes = minimum_of(
         where=(clinical_events.numeric_value >= 42) & (clinical_events.numeric_value <= 47.9)
     ).date
 )
+
+#### B3. COVID-19 vaccination (confounder; time-updated in R: number of doses = dose dates on or before the trial start / grid date)
+# Based on https://github.com/opensafely/covid-vaccine-history: vaccinations table, target disease SARS-CoV-2, doses from the start of the vaccination programme (2020-12-07; earlier records = vaccine trials, excluded) up to study end.
+# Doses less than 14 days after the previous (kept) dose are not counted (duplicates/data quality), applied directly in the chain below: dose n = first record at least 14 days after dose n-1.
+# Up to study end (2022-03-01) at most ~4 doses (primary course, 3rd primary dose for the immunosuppressed, autumn 2021 booster); dose 6 should be (almost) empty (will be checked in R)
+VAX_PROGRAMME_START = "2020-12-07"
+VAX_MIN_GAP = 14
+N_VAX = 6
+covid_vaccinations = vaccinations.where(
+    (vaccinations.target_disease == "SARS-2 CORONAVIRUS")
+    & vaccinations.date.is_on_or_between(VAX_PROGRAMME_START, studyend_date)
+)
+previous_vax_date = None
+for n in range(1, N_VAX + 1):
+    if previous_vax_date is None:
+        current_vax = covid_vaccinations.sort_by(vaccinations.date).first_for_patient()
+    else:
+        current_vax = (
+            covid_vaccinations.where(vaccinations.date.is_on_or_after(previous_vax_date + days(VAX_MIN_GAP)))
+            .sort_by(vaccinations.date)
+            .first_for_patient()
+        )
+    dataset.add_column(f"cov_date_covid_vax_{n}", current_vax.date)
+    previous_vax_date = current_vax.date
 
 #######################################################################################
 # C. STATUS AT EACH TRIAL START (suffix _t0 ... _t6)
@@ -405,3 +439,94 @@ for i in range(N_GRID):
     hdl_chol_last = last_matching_event_clinical_snomed_between(hdl_cholesterol_snomed, grid_date - days(LOOKBACK_LAB), grid_date, where=clinical_events.numeric_value > 0)
     dataset.add_column(f"cov_num_hdl_chol_g{i}", hdl_chol_last.numeric_value)
     dataset.add_column(f"cov_date_hdl_chol_g{i}", hdl_chol_last.date)
+
+#######################################################################################
+# E. OUTCOMES (first date between study start and study end, both inclusive)
+#######################################################################################
+# Any prior COVID-19 (out_date_covid, and Long COVID/post-viral fatigue codes) on or before the trial start = ineligible (applied in R).
+# Hence, for the eligible people, the first date in the study period is the first event after the trial start, and first dates are sufficient for all COVID-19 outcomes.
+# COVID-19 codes and tests do not exist before 2020, hence no events are lost by starting at study start.
+
+### COVID-19 HOSPITALISATION
+## Hospital admission with COVID-19 as the primary diagnosis
+dataset.out_date_covid_hes = first_matching_event_apc_between(covid_codes_incl_clin_diag, studystart_date, studyend_date, only_prim_diagnoses=True).admission_date
+## Emergency care attendance with a COVID-19 diagnosis
+dataset.out_date_covid_emergency = first_matching_event_ec_snomed_between(covid_emergency, studystart_date, studyend_date).arrival_date
+## Combined: first COVID-19 hospitalisation
+dataset.out_date_covid_hosp = minimum_of(dataset.out_date_covid_hes, dataset.out_date_covid_emergency)
+
+### COVID-19 DEATH: COVID-19 anywhere on the death certificate (underlying or contributing cause)
+dataset.out_date_covid_death = case(
+    when(matching_death_between(covid_codes_incl_clin_diag, studystart_date, studyend_date)).then(ons_deaths.date)
+)
+
+### SEVERE COVID-19 (primary outcome): first COVID-19 hospitalisation or death
+dataset.out_date_severecovid = minimum_of(dataset.out_date_covid_hosp, dataset.out_date_covid_death)
+
+### ANY COVID-19 (outcome, and eligibility: no prior COVID-19): first COVID-19 code in primary care, positive SARS-CoV-2 test, COVID-19 hospitalisation or death
+## COVID-19 code in primary care (clinical code, positive test or sequelae; CTV3)
+tmp_covid_primary_care_date = first_matching_event_clinical_ctv3_between(
+    covid_primary_care_code + covid_primary_care_positive_test + covid_primary_care_sequelae, studystart_date, studyend_date
+).date
+## Positive SARS-CoV-2 test (SGSS, date of specimen)
+tmp_covid_sgss_date = (
+    sgss_covid_all_tests.where(sgss_covid_all_tests.specimen_taken_date.is_on_or_between(studystart_date, studyend_date))
+    .where(sgss_covid_all_tests.is_positive)
+    .sort_by(sgss_covid_all_tests.specimen_taken_date)
+    .first_for_patient()
+    .specimen_taken_date
+)
+## Combined
+dataset.out_date_covid = minimum_of(tmp_covid_primary_care_date, tmp_covid_sgss_date, dataset.out_date_covid_hosp, dataset.out_date_covid_death)
+
+### LONG COVID (outcome, and eligibility: no prior Long COVID/post-viral fatigue code, as it implies a prior infection)
+## Long COVID code in primary care (diagnosis, referral or assessment)
+dataset.out_date_longcovid = first_matching_event_clinical_snomed_between(
+    long_covid_diagnostic_snomed_clinical + long_covid_referral_snomed_clinical + long_covid_assessment_snomed_clinical, studystart_date, studyend_date
+).date
+## Long COVID diagnosis in hospital (any diagnosis position)
+dataset.out_date_longcovid_sec_care = first_matching_event_apc_between(long_covid_diagnostic_icd10, studystart_date, studyend_date).admission_date
+## Post-viral fatigue code in primary care
+dataset.out_date_virfat = first_matching_event_clinical_snomed_between(post_viral_fatigue_snomed_clinical, studystart_date, studyend_date).date
+## Combined: first Long COVID or post-viral fatigue code
+dataset.out_date_longcovid_virfat = minimum_of(dataset.out_date_longcovid, dataset.out_date_longcovid_sec_care, dataset.out_date_virfat)
+
+### POSITIVE CONTROL: diabetes-related death (T2DM anywhere on the death certificate; ICD-10 with "X" padding, as cause of death is matched exactly)
+# CAVEAT (kept for now): T2DM is often a contributing cause on deaths from any cause, incl. COVID-19 deaths (overlap with the primary outcome); its recording may depend on treatment; and the expected effect of metformin within 1-2 years is unknown.
+# A second positive control, the HbA1c change after the trial start, is derived in R from the HbA1c grid (D)
+dataset.out_date_dm_death = case(
+    when(matching_death_between(dmalgo_type2_icd10, studystart_date, studyend_date)).then(ons_deaths.date)
+)
+
+### All-cause death: see out_date_death above (B1; competing event)
+
+#######################################################################################
+# F. LOSS TO FOLLOW-UP, per trial (suffix _t0 ... _t6)
+#######################################################################################
+for k in range(N_TRIALS):
+    trial_start = dataset.elig_date_t2dm + days(TRIAL_STEP * k)
+
+    ## Deregistration: end date of the practice registration active on the trial start (as in landmark; missing = still registered)
+    # for_patient_on() picks the most recent registration if several overlap on that date
+    registration_end = practice_registrations.for_patient_on(trial_start).end_date
+    dataset.add_column(f"cens_date_dereg_t{k}", registration_end)
+
+    ## Practice move: registered again (with any TPP practice) on the day after the deregistration date, i.e. the person moved between TPP practices and is not actually lost to follow-up
+    # Used to report how many deregistrations are practice moves (if many, we may change this approach and also extract on the grid instead)
+    dataset.add_column(
+        f"cens_bin_dereg_move_t{k}",
+        practice_registrations.for_patient_on(registration_end + days(1)).exists_for_patient()
+    )
+
+#######################################################################################
+# G. NEGATIVE CONTROL OUTCOME ON THE 30-DAY GRID (suffix _g0 ... _g31)
+#######################################################################################
+# Fracture: first hospital admission for a fracture (any diagnosis position) within period i = [elig_date_t2dm + 30*i, elig_date_t2dm + 30*(i+1)).
+# Per period because fractures recur and a prior fracture does not make a person ineligible, so each trial counts the first fracture after its start
+for i in range(N_GRID):
+    period_start = dataset.elig_date_t2dm + days(TRIAL_STEP * i)
+    period_end = dataset.elig_date_t2dm + days(TRIAL_STEP * (i + 1) - 1)
+    dataset.add_column(
+        f"out_date_fracture_g{i}",
+        first_matching_event_apc_between(fracture_icd10, period_start, period_end).admission_date
+    )
